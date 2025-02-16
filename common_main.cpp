@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <pwd.h>
 #endif
+#include "string_conversion.h"
 
 static std::u16string s_names(u"ECRCommonSC");
 static AppCapabilities g_capabilities = eAppCapabilitiesInvalid;
@@ -17,7 +18,7 @@ long GetClassObject(const WCHAR_T* wsName, IComponentBase** pInterface)
 {
     if (!*pInterface)
     {
-        *pInterface = new CAddInECRCommon;
+        *pInterface = new CAddInECRDriver;
         return (long)*pInterface;
     }
     return 0;
@@ -49,22 +50,22 @@ const WCHAR_T* GetClassNames()
     return s_names.c_str();
 }
 
-std::wstring getLogDriverFilePath() {
-    std::wstring logPath;
+std::string getLogDriverFilePath() {
+    std::string logPath;
 
 #if defined(_WIN32) || defined(_WIN64)
     wchar_t path[MAX_PATH];
     if (SUCCEEDED(SHGetFolderPathW(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, path))) {
-        logPath = path;
-        logPath += L"\\AddInECRCommon\\logs\\";
+        logPath = wcharToString(path);
+        logPath += "\\AddInECRCommon\\logs\\";
     }
 #elif defined(__linux__) || defined(__APPLE__)
-    const char* homeDir = getenv("HOME");
+    const std::string homeDir = getenv("HOME");
     if (!homeDir) {
         homeDir = getpwuid(getuid())->pw_dir;
     }
-    logPath = std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(homeDir);
-    logPath += L"/.addinecrcommon/logs/";
+    logPath = homeDir;
+    logPath += "/.addinecrcommon/logs/";
 #endif
 
     return logPath;

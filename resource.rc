@@ -1,0 +1,85 @@
+﻿#include "resource.h"
+
+// Ukrainian language
+LANGUAGE 0x22, 0x01
+STRINGTABLE
+BEGIN
+IDS_DRIVER_NAME, "ECR Driver ПриватБанк"
+IDS_DRIVER_DESCRIPTION, "Драйвер підключення платіжного терміналу по протоколу ECR протокол ПриватБанк (JSON based)"
+IDS_DRIVER_EQUIPMENT_TYPE, "POSTerminal"
+IDS_DRIVER_VERSION, "1.0.0"
+IDS_DRIVER_INTEGRATION_COMPONENT_VERSION, "1.0.0"
+IDS_DRIVER_DOWNLOAD_URL, ""
+IDS_DRIVER_ENVIRONMENT_INFORMATION, "Драйвер підключення платіжного термінала за протоколом ECR ПриватБанк (JSON-based)\r\nСклад пакета входить файл драйверу SCODE_ERCDriver.dll"
+IDS_DRIVER_LOG_NAME, "ecr_driver.log"
+END
+
+// Russian language
+LANGUAGE 0x19, 0x01
+STRINGTABLE
+BEGIN
+IDS_DRIVER_NAME, "ECR Driver ПриватБанк"
+IDS_DRIVER_DESCRIPTION, "Драйвер подключения платежного терминала по протоколу ECR протокол ПриватБанк (JSON based)"
+IDS_DRIVER_EQUIPMENT_TYPE, "POSTerminal"
+IDS_DRIVER_VERSION, "1.0.0"
+IDS_DRIVER_INTEGRATION_COMPONENT_VERSION, "1.0.0"
+IDS_DRIVER_DOWNLOAD_URL, ""
+IDS_DRIVER_ENVIRONMENT_INFORMATION, "Драйвер подключения платежного терминала по протоколу ECR ПриватБанк (JSON-based)\r\nСостав пакета входит исполняемый файл драйвера SCODE_ERCDriver.dll"
+IDS_DRIVER_LOG_NAME, "ecr_driver.log"
+END
+
+// English (US) language
+LANGUAGE 0x09, 0x01
+STRINGTABLE
+BEGIN
+IDS_DRIVER_NAME, "ECR Driver PrivatBank"
+IDS_DRIVER_DESCRIPTION, "Driver of payment terminal connection via ECR protocol PrivatBank protocol (JSON based)"
+IDS_DRIVER_EQUIPMENT_TYPE, "POSTerminal"
+IDS_DRIVER_VERSION, "1.0.0"
+IDS_DRIVER_INTEGRATION_COMPONENT_VERSION, "1.0.0"
+IDS_DRIVER_DOWNLOAD_URL, ""
+IDS_DRIVER_ENVIRONMENT_INFORMATION, "PrivatBank ECR payment terminal connection driver (JSON-based)\r\nThe package includes executable driver SCODE_ERCDriver.dll"
+IDS_DRIVER_LOG_NAME, "ecr_driver.log"
+END
+
+// French (France) language
+LANGUAGE 0x0C, 0x01
+STRINGTABLE
+BEGIN
+IDS_DRIVER_NAME, "Pilote ECR PrivatBank"
+IDS_DRIVER_DESCRIPTION, "Pilote de connexion du terminal de paiement via le protocole ECR protocole PrivatBank (basé sur JSON)"
+IDS_DRIVER_EQUIPMENT_TYPE, "POSTerminal"
+IDS_DRIVER_VERSION, "1.0.0"
+IDS_DRIVER_INTEGRATION_COMPONENT_VERSION, "1.0.0"
+IDS_DRIVER_DOWNLOAD_URL, ""
+IDS_DRIVER_ENVIRONMENT_INFORMATION, "Pilote de connexion du terminal de paiement ECR PrivatBank (basé sur JSON)\r\nLe package inclut le pilote exécutable SCODE_ERCDriver.dll"
+IDS_DRIVER_LOG_NAME, "ecr_driver.log"
+END
+
+// German (Germany) language
+LANGUAGE 0x07, 0x01
+STRINGTABLE
+BEGIN
+IDS_DRIVER_NAME, "ECR Treiber PrivatBank"
+IDS_DRIVER_DESCRIPTION, "Treiber für die Verbindung des Zahlungsterminals über das ECR-Protokoll PrivatBank-Protokoll (JSON-basiert)"
+IDS_DRIVER_EQUIPMENT_TYPE, "POSTerminal"
+IDS_DRIVER_VERSION, "1.0.0"
+IDS_DRIVER_INTEGRATION_COMPONENT_VERSION, "1.0.0"
+IDS_DRIVER_DOWNLOAD_URL, ""
+IDS_DRIVER_ENVIRONMENT_INFORMATION, "PrivatBank ECR-Zahlungsterminal-Verbindungstreiber (JSON-basiert)\r\nDas Paket enthält den ausführbaren Treiber SCODE_ERCDriver.dll"
+IDS_DRIVER_LOG_NAME, "ecr_driver.log"
+END
+
+// Japanese language
+LANGUAGE 0x11, 0x01
+STRINGTABLE
+BEGIN
+IDS_DRIVER_NAME, "ECR ドライバ プリバトバンク"
+IDS_DRIVER_DESCRIPTION, "ECR プロトコル プリバトバンク プロトコル (JSON ベース) を介した支払い端末接続のドライバ"
+IDS_DRIVER_EQUIPMENT_TYPE, "POSTerminal"
+IDS_DRIVER_VERSION, "1.0.0"
+IDS_DRIVER_INTEGRATION_COMPONENT_VERSION, "1.0.0"
+IDS_DRIVER_DOWNLOAD_URL, ""
+IDS_DRIVER_ENVIRONMENT_INFORMATION, "プリバトバンク ECR 支払い端末接続ドライバ (JSON ベース)\r\nパッケージには実行可能なドライバ SCODE_ERCDriver.dll が含まれています"
+IDS_DRIVER_LOG_NAME, "ecr_driver.log"
+END

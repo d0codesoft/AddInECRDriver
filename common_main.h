@@ -14,6 +14,6 @@ long DestroyObject(IComponentBase** pIntf);
 const WCHAR_T* GetClassNames();
 
 
-std::wstring getLogDriverFilePath();
+std::string getLogDriverFilePath();
 
 #endif // ADDINECRCOMMONSCFUNCTIONS_H

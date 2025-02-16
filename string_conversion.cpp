@@ -1,58 +1,191 @@
-#include "string_conversion.h"
+﻿#include "string_conversion.h"
 #include <cstring>
 #include <sstream>
 #include <cwchar>
+#include <unicode/ucnv.h>
+#include <unicode/ustring.h>
+#include <string>
+#include <vector>
+#include <stdexcept>
 
-uint32_t convToShortWchar(WCHAR_T** Dest, const wchar_t* Source, size_t len)
-{
-    if (!len)
-        len = wcslen(Source) + 1;
+// Function to load a string resource
+std::string LoadStringResource(UINT resourceId) {
+    wchar_t buffer[256] = { 0 };
 
-    *Dest = new WCHAR_T[len];
-    for (size_t i = 0; i < len; ++i)
-        (*Dest)[i] = (WCHAR_T)Source[i];
+    // Получаем текущий язык пользователя
+    //LANGID langId = GetUserDefaultUILanguage(); // Можно заменить на GetThreadUILanguage()
 
-    return (uint32_t)len;
+    // Загружаем строку для текущего языка
+    HMODULE hModule = GetModuleHandle(NULL);
+    int length = LoadStringW(hModule, resourceId, buffer, sizeof(buffer) / sizeof(buffer[0]));
+
+    // Если строка не найдена, пробуем загрузить английскую версию (как запасной вариант)
+    if (length == 0) {
+        length = LoadStringW(hModule, MAKELANGID(LANG_ENGLISH, SUBLANG_DEFAULT), buffer, sizeof(buffer) / sizeof(buffer[0]));
+    }
+
+	if (length == 0) {
+		return {};
+	}
+	return wcharToString(buffer);
 }
 
-uint32_t convFromShortWchar(wchar_t** Dest, const WCHAR_T* Source, uint32_t len)
-{
-    if (!len)
-        len = getLenShortWcharStr(Source) + 1;
+// Conversion function UTF-16 -> UTF-8
+std::string utf16ToUtf8(const std::u16string& utf16) {
+    UErrorCode error = U_ZERO_ERROR;
+    UConverter* conv = ucnv_open("UTF-8", &error);
+    if (U_FAILURE(error)) return {};
 
-    *Dest = new wchar_t[len];
-    for (uint32_t i = 0; i < len; ++i)
-        (*Dest)[i] = (wchar_t)Source[i];
+    int32_t utf8Len = ucnv_fromUChars(conv, nullptr, 0, reinterpret_cast<const UChar*>(utf16.c_str()), utf16.length(), &error);
+    if (error != U_BUFFER_OVERFLOW_ERROR) {
+        ucnv_close(conv);
+        return {};
+    }
 
-    return len;
+    error = U_ZERO_ERROR;
+    std::string utf8(utf8Len, 0);
+    ucnv_fromUChars(conv, utf8.data(), utf8Len, reinterpret_cast<const UChar*>(utf16.c_str()), utf16.length(), &error);
+    ucnv_close(conv);
+
+    return utf8;
 }
 
-uint32_t getLenShortWcharStr(const WCHAR_T* Source)
-{
-    uint32_t len = 0;
-    while (Source[len] != 0)
-        ++len;
-
-    return len;
+// Функция конвертации WCHAR_T* -> wchar_t* (UTF-16)
+std::string convFromShortToString(const WCHAR_T* Source, uint32_t len) {
+    return utf16ToUtf8(std::u16string(Source, len));
 }
 
-std::wstring convertDriverDescriptionToJson(const DriverDescription& desc) {
-	std::wstringstream ss;
-    ss << L"{";
-    ss << L"\"Name\": \"" << desc.Name << L"\", ";
-    ss << L"\"Description\": \"" << desc.Description << L"\", ";
-    ss << L"\"EquipmentType\": \"" << desc.EquipmentType << L"\", ";
-    ss << L"\"IntegrationComponent\": " << (desc.IntegrationComponent ? L"true" : L"false") << L", ";
-    ss << L"\"MainDriverInstalled\": " << (desc.MainDriverInstalled ? L"true" : L"false") << L", ";
-    ss << L"\"DriverVersion\": \"" << desc.DriverVersion << L"\", ";
-    ss << L"\"IntegrationComponentVersion\": \"" << desc.IntegrationComponentVersion << L"\", ";
-    ss << L"\"IsEmulator\": " << (desc.IsEmulator ? L"true" : L"false") << L", ";
-    ss << L"\"LocalizationSupported\": " << (desc.LocalizationSupported ? L"true" : L"false") << L", ";
-    ss << L"\"AutoSetup\": " << (desc.AutoSetup ? L"true" : L"false") << L", ";
-    ss << L"\"DownloadURL\": \"" << desc.DownloadURL << L"\", ";
-    ss << L"\"EnvironmentInformation\": \"" << desc.EnvironmentInformation << L"\", ";
-    ss << L"\"LogIsEnabled\": " << (desc.LogIsEnabled ? L"true" : L"false") << L", ";
-    ss << L"\"LogPath\": \"" << desc.LogPath << L"\"";
-    ss << L"}";
+// Conversion function UTF-8 -> UTF-16
+std::u16string utf8ToUtf16(const std::string& utf8) {
+    UErrorCode error = U_ZERO_ERROR;
+    UConverter* conv = ucnv_open("UTF-16LE", &error);
+    if (U_FAILURE(error)) return {};
+
+    int32_t utf16Len = ucnv_toUChars(conv, nullptr, 0, utf8.c_str(), utf8.length(), &error);
+    if (error != U_BUFFER_OVERFLOW_ERROR) {
+        ucnv_close(conv);
+        return {};
+    }
+
+    error = U_ZERO_ERROR;
+    std::u16string utf16(utf16Len, 0);
+    ucnv_toUChars(conv, reinterpret_cast<UChar*>(utf16.data()), utf16Len, utf8.c_str(), utf8.length(), &error);
+    ucnv_close(conv);
+
+    return utf16;
+}
+
+std::string wstringToUtf8(const std::wstring& wstr) {
+    if (wstr.empty()) return {};
+
+    UErrorCode status = U_ZERO_ERROR;
+    int32_t utf8Length = 0;
+
+    // Определяем размер буфера для UTF-8
+    u_strToUTF8(nullptr, 0, &utf8Length, reinterpret_cast<const UChar*>(wstr.data()), wstr.size(), &status);
+
+    if (status != U_BUFFER_OVERFLOW_ERROR && U_FAILURE(status)) {
+        throw std::runtime_error("ICU: u_strToUTF8 failed");
+    }
+
+    status = U_ZERO_ERROR;
+    std::vector<char> utf8Buffer(utf8Length);
+
+    // Конвертация в UTF-8
+    u_strToUTF8(utf8Buffer.data(), utf8Length, nullptr, reinterpret_cast<const UChar*>(wstr.data()), wstr.size(), &status);
+
+    if (U_FAILURE(status)) {
+        throw std::runtime_error("ICU: u_strToUTF8 conversion failed");
+    }
+
+    return std::string(utf8Buffer.begin(), utf8Buffer.end());
+}
+
+// Конвертация std::string (UTF-8) → std::wstring (UTF-16)
+std::wstring utf8ToWstring(const std::string& str) {
+    if (str.empty()) return {};
+
+    UErrorCode status = U_ZERO_ERROR;
+    UConverter* converter = ucnv_open("UTF-8", &status);
+    if (U_FAILURE(status)) {
+        throw std::runtime_error("Ошибка открытия ICU конвертера");
+    }
+
+    // Подсчет нужного размера выходного буфера
+    int32_t utf16Len = ucnv_toUChars(converter, nullptr, 0, str.c_str(), str.size(), &status);
+    if (status != U_BUFFER_OVERFLOW_ERROR) {
+        ucnv_close(converter);
+        throw std::runtime_error("Ошибка при расчете размера строки");
+    }
+
+    status = U_ZERO_ERROR;
+    std::vector<wchar_t> utf16Buffer(utf16Len);
+    ucnv_toUChars(converter, reinterpret_cast<UChar*>(utf16Buffer.data()), utf16Len, str.c_str(), str.size(), &status);
+    ucnv_close(converter);
+
+    if (U_FAILURE(status)) {
+        throw std::runtime_error("Ошибка конвертации в UTF-16");
+    }
+
+    return std::wstring(utf16Buffer.begin(), utf16Buffer.end());
+}
+
+std::string wcharToString(const wchar_t* wstr) {
+    if (!wstr) return "";
+
+    UErrorCode err = U_ZERO_ERROR;
+    UConverter* conv = ucnv_open("UTF-8", &err);
+    if (U_FAILURE(err)) return "";
+
+    int32_t len = ucnv_fromUChars(conv, nullptr, 0, reinterpret_cast<const UChar*>(wstr), -1, &err);
+    err = U_ZERO_ERROR;  // Сброс ошибки
+    std::vector<char> buffer(len);
+    ucnv_fromUChars(conv, buffer.data(), len, reinterpret_cast<const UChar*>(wstr), -1, &err);
+    ucnv_close(conv);
+
+    return std::string(buffer.data(), buffer.size() - 1);
+}
+
+std::string convertDriverDescriptionToJson(const DriverDescription& desc) {
+	std::stringstream ss;
+    ss << "{";
+    ss << "\"Name\": \"" << desc.Name << "\", ";
+    ss << "\"Description\": \"" << desc.Description << "\", ";
+    ss << "\"EquipmentType\": \"" << desc.EquipmentType << "\", ";
+    ss << "\"IntegrationComponent\": " << (desc.IntegrationComponent ? "true" : "false") << ", ";
+    ss << "\"MainDriverInstalled\": " << (desc.MainDriverInstalled ? "true" : "false") << ", ";
+    ss << "\"DriverVersion\": \"" << desc.DriverVersion << "\", ";
+    ss << "\"IntegrationComponentVersion\": \"" << desc.IntegrationComponentVersion << "\", ";
+    ss << "\"IsEmulator\": " << (desc.IsEmulator ? "true" : "false") << ", ";
+    ss << "\"LocalizationSupported\": " << (desc.LocalizationSupported ? "true" : "false") << ", ";
+    ss << "\"AutoSetup\": " << (desc.AutoSetup ? "true" : "false") << ", ";
+    ss << "\"DownloadURL\": \"" << desc.DownloadURL << "\", ";
+    ss << "\"EnvironmentInformation\": \"" << desc.EnvironmentInformation << "\", ";
+    ss << "\"LogIsEnabled\": " << (desc.LogIsEnabled ? "true" : "false") << ", ";
+    ss << "\"LogPath\": \"" << desc.LogPath << "\"";
+    ss << "}";
     return ss.str();
 }
+
+//// Function to convert const WCHAR_T* to char*
+//char* convertWCharToChar(const WCHAR_T* wstr) {
+//
+//    wchar_t* result = nullptr;
+//    convFromShortWchar(&result, wstr, 0);
+//	//convFromShortWchar(&wstr, wstr);
+//    // Get the length of the wide string
+//    size_t wlen = wcslen(result);
+//
+//    // Allocate memory for the multibyte string
+//    size_t len = wlen * MB_CUR_MAX + 1;
+//    char* str = (char*)malloc(len);
+//
+//    if (str) {
+//        // Convert the wide string to a multibyte string
+//        wcstombs(str, result, len);
+//    }
+//
+//	delete[] result;
+//
+//    return str;
+//}
