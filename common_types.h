@@ -54,6 +54,7 @@ struct DriverDescription {
     std::string EnvironmentInformation;
     bool LogIsEnabled;
     std::string LogPath;
+    std::string ExtensionName;
 };
 
 MethodName createMethod(

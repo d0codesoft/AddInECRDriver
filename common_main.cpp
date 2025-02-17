@@ -1,9 +1,10 @@
+#include "pch.h"
 #include "common_main.h"
 #include <string>
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(OS_WINDOWS)
 #include <windows.h>
 #include <shlobj.h>
-#elif defined(__linux__) || defined(__APPLE__)
+#elif defined(OS_MACOS) || defined(OS_LINUX)
 #include <unistd.h>
 #include <sys/types.h>
 #include <pwd.h>

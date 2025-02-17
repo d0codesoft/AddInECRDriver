@@ -148,17 +148,23 @@
   <ItemGroup>
     <ClInclude Include="addin_ecr_common.h" />
     <ClInclude Include="common_types.h" />
+    <ClInclude Include="DriverPOSTerminal.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="common_main.h" />
+    <ClInclude Include="IAddInBase.h" />
+    <ClInclude Include="IDriver1CUniBase.h" />
+    <ClInclude Include="IDriverPosTerminal.h" />
     <ClInclude Include="interface_fiscal_driver.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="string_conversion.h" />
+    <ClInclude Include="SysUtils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="addin_ecr_common.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="common_main.cpp" />
+    <ClCompile Include="DriverPOSTerminal.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -167,6 +173,7 @@
     </ClCompile>
     <ClCompile Include="resource.rc" />
     <ClCompile Include="string_conversion.cpp" />
+    <ClCompile Include="SysUtils.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

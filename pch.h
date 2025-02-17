@@ -10,4 +10,35 @@
 // add headers that you want to pre-compile here
 #include "framework.h"
 
+// Standard libraries
+#include <iostream>
+#include <vector>
+#include <string>
+#include <map>
+#include <memory>
+#include <algorithm>
+#include <functional>
+#include <stdexcept>
+#include <cassert>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+
+// Detect OS
+#if defined(_WIN32) || defined(_WIN64)
+#define OS_WINDOWS
+#include <windows.h>
+#include <tchar.h>
+#elif defined(__APPLE__) || defined(__MACH__)
+#define OS_MACOS
+#include <unistd.h>
+#elif defined(__linux__)
+#define OS_LINUX
+#include <unistd.h>
+#include <pthread.h>
+#else
+#error "Unsupported operating system"
+#endif
+
 #endif //PCH_H

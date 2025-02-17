@@ -1,6 +1,7 @@
+#include "pch.h"
 #include "addin_ecr_common.h"
 
-#if defined( __linux__ ) || defined(__APPLE__)
+#if defined(OS_MACOS) || defined(OS_LINUX)
 #include <unistd.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -22,6 +23,7 @@
 #include "resource.h"
 #include <filesystem>
 #include <iostream>
+#include "DriverPOSTerminal.h"
 
 #define BASE_ERRNO     7
 
@@ -39,64 +41,26 @@ CAddInECRDriver::CAddInECRDriver()
     m_iConnect = nullptr;
 
 	std::string logDirectory = getLogDriverFilePath();
+	m_driver = std::make_unique<DriverPOSTerminal>(this);
 }
 
 //---------------------------------------------------------------------------//
 CAddInECRDriver::~CAddInECRDriver()
 {
+	if (m_driver)
+        m_driver.reset();
 }
-
-std::string get_full_path(const std::string& path)
-{
-	std::string path_folder = LoadStringResource(IDS_DRIVER_LOG_NAME);
-	std::string full = path_folder + path;
-	
-    try {
-        // Check if the directory exists
-        std::filesystem::path dir(path_folder);
-        if (!std::filesystem::exists(dir)) {
-            // Create the directory and all subdirectories
-            std::filesystem::create_directories(dir);
-        }
-    }
-    catch (const std::filesystem::filesystem_error& e) {
-        // Handle filesystem errors
-        std::cerr << "Filesystem error: " << e.what() << std::endl;
-		full = "";
-    }
-    catch (const std::exception& e) {
-        // Handle other exceptions
-        std::cerr << "Error: " << e.what() << std::endl;
-		full = "";
-        // You can also log the error or take other appropriate actions
-    }
-
-	return full;
-}
-
-// Static initialization of descriptionDriver
-DriverDescription CAddInECRDriver::descriptionDriver = {
-    LoadStringResource(IDS_DRIVER_NAME),
-    LoadStringResource(IDS_DRIVER_DESCRIPTION),
-    LoadStringResource(IDS_EQUIPMENT_TYPE),
-    false, // IntegrationComponent
-    false, // MainDriverInstalled
-    LoadStringResource(IDS_DRIVER_VERSION),
-    LoadStringResource(IDS_DRIVER_INTEGRATION_COMPONENT_VERSION),
-    false, // IsEmulator
-    true, // LocalizationSupported
-    false, // AutoSetup
-    LoadStringResource(IDS_DRIVER_DOWNLOAD_URL),
-    LoadStringResource(IDS_DRIVER_ENVIRONMENT_INFORMATION),
-    true, // LogIsEnabled
-    get_full_path(LoadStringResource(IDS_DRIVER_LOG_NAME))
-};
 
 //---------------------------------------------------------------------------//
 bool CAddInECRDriver::Init(void* pConnection)
 {
-    m_iConnect = (IAddInDefBase*)pConnection;
-    return m_iConnect != NULL;
+    if (!pConnection) return false;
+    m_iConnect = static_cast<IAddInDefBase*>(pConnection);
+	
+    if (m_iConnect)
+        m_driver->InitDriver();
+
+    return m_iConnect != nullptr;
 }
 //---------------------------------------------------------------------------//
 long CAddInECRDriver::GetInfo()
@@ -119,7 +83,8 @@ void CAddInECRDriver::Done()
 //---------------------------------------------------------------------------//
 bool CAddInECRDriver::RegisterExtensionAs(WCHAR_T** wsExtensionName)
 {
-    const std::u16string wsExtension = u"AddInECRDriverJSON";
+    std::string extensionName = this->m_driver->getDescriptionDriver().ExtensionName;
+    const std::u16string wsExtension = utf8ToUtf16(extensionName);
     size_t iActualSize = wsExtension.size() + 1;
     WCHAR_T* dest = 0;
 
@@ -143,7 +108,7 @@ bool CAddInECRDriver::RegisterExtensionAs(WCHAR_T** wsExtensionName)
 //---------------------------------------------------------------------------//
 long CAddInECRDriver::GetNProps()
 {
-    return this->m_PropNames.size();
+    return this->m_driver->GetProperties().size();
 }
 //---------------------------------------------------------------------------//
 long CAddInECRDriver::FindProp(const WCHAR_T* wsPropName)
@@ -151,7 +116,7 @@ long CAddInECRDriver::FindProp(const WCHAR_T* wsPropName)
     long plPropNum = -1;
 	auto prop_name = utf16ToUtf8(wsPropName);
 
-	for (auto& prop : this->m_PropNames)
+	for (auto& prop : this->m_driver->GetProperties())
 	{
 		if (prop_name == prop.second.name_en || prop_name == prop.second.name_ru)
 		{
@@ -165,8 +130,9 @@ long CAddInECRDriver::FindProp(const WCHAR_T* wsPropName)
 //---------------------------------------------------------------------------//
 const WCHAR_T* CAddInECRDriver::GetPropName(long lPropNum, long lPropAlias)
 {
-    auto it = m_PropNames.find(lPropNum);
-    if (it == m_PropNames.end())
+	auto propNames = m_driver->GetProperties();
+    auto it = propNames.find(lPropNum);
+    if (it == propNames.end())
         return NULL;
 
     PropName prop = it->second;
@@ -207,8 +173,9 @@ const WCHAR_T* CAddInECRDriver::GetPropName(long lPropNum, long lPropAlias)
 //---------------------------------------------------------------------------//
 bool CAddInECRDriver::GetPropVal(const long lPropNum, tVariant* pvarPropVal)
 {
-    auto it = m_PropNames.find(lPropNum);
-    if (it == m_PropNames.end())
+    auto propNames = m_driver->GetProperties();
+    auto it = propNames.find(lPropNum);
+    if (it == propNames.end())
         return false;
 
     PropName prop = it->second;
@@ -218,8 +185,9 @@ bool CAddInECRDriver::GetPropVal(const long lPropNum, tVariant* pvarPropVal)
 //---------------------------------------------------------------------------//
 bool CAddInECRDriver::SetPropVal(const long lPropNum, tVariant* varPropVal)
 {
-    std::map<UINT, PropName>::iterator it = m_PropNames.find(lPropNum);
-    if (it != m_PropNames.end() && !it->second.getParamDefValueFunc) {
+    auto propNames = m_driver->GetProperties();
+    std::map<UINT, PropName>::iterator it = propNames.find(lPropNum);
+    if (it != propNames.end() && !it->second.getParamDefValueFunc) {
         return it->second.getParamDefValueFunc(varPropVal);
     }
 
@@ -228,8 +196,9 @@ bool CAddInECRDriver::SetPropVal(const long lPropNum, tVariant* varPropVal)
 //---------------------------------------------------------------------------//
 bool CAddInECRDriver::IsPropReadable(const long lPropNum)
 {
-    std::map<UINT, PropName>::iterator it = m_PropNames.find(lPropNum);
-    if (it != m_PropNames.end()) {
+    auto propNames = m_driver->GetProperties();
+    std::map<UINT, PropName>::iterator it = propNames.find(lPropNum);
+    if (it != propNames.end()) {
         return it->second.isReadable;
     }
 
@@ -238,8 +207,9 @@ bool CAddInECRDriver::IsPropReadable(const long lPropNum)
 //---------------------------------------------------------------------------//
 bool CAddInECRDriver::IsPropWritable(const long lPropNum)
 {
-    std::map<UINT, PropName>::iterator it = m_PropNames.find(lPropNum);
-    if (it != m_PropNames.end()) {
+    auto propNames = m_driver->GetProperties();
+    std::map<UINT, PropName>::iterator it = propNames.find(lPropNum);
+    if (it != propNames.end()) {
         return it->second.isWritable;
     }
 
@@ -248,14 +218,16 @@ bool CAddInECRDriver::IsPropWritable(const long lPropNum)
 //---------------------------------------------------------------------------//
 long CAddInECRDriver::GetNMethods()
 {
-    return this->m_MethodNames.size();
+    auto methodNames = m_driver->GetMethods();
+    return methodNames.size();
 }
 //---------------------------------------------------------------------------//
 long CAddInECRDriver::FindMethod(const WCHAR_T* wsMethodName)
 {
+    auto methodNames = m_driver->GetMethods();
 	auto methodName = utf16ToUtf8(wsMethodName);
 
-	for (auto& method : this->m_MethodNames)
+	for (auto& method : methodNames)
 	{
 		if (methodName == method.second.name_en || methodName == method.second.name_ru)
 		{
@@ -268,8 +240,9 @@ long CAddInECRDriver::FindMethod(const WCHAR_T* wsMethodName)
 //---------------------------------------------------------------------------//
 const WCHAR_T* CAddInECRDriver::GetMethodName(const long lMethodNum, const long lMethodAlias)
 {
-	auto it = m_MethodNames.find(lMethodNum);
-	if (it == m_MethodNames.end())
+    auto methodNames = m_driver->GetMethods();
+	auto it = methodNames.find(lMethodNum);
+	if (it == methodNames.end())
 		return NULL;
 
 	MethodName method = it->second;
@@ -309,8 +282,9 @@ const WCHAR_T* CAddInECRDriver::GetMethodName(const long lMethodNum, const long 
 //---------------------------------------------------------------------------//
 long CAddInECRDriver::GetNParams(const long lMethodNum)
 {
-	auto it = m_MethodNames.find(lMethodNum);
-    if (it == m_MethodNames.end())
+    auto methodNames = m_driver->GetMethods();
+	auto it = methodNames.find(lMethodNum);
+    if (it == methodNames.end())
         return 0;
 
 	return (long)it->second.paramCount;
@@ -341,7 +315,7 @@ bool CAddInECRDriver::CallAsProc(const long lMethodNum,
 	if (it == m_MethodNames.end())
 		return false;
 
-	return it->second.callAsProcFunc(paParams, lSizeArray);
+	return it->second..callAsProcFunc(paParams, lSizeArray);
 }
 //---------------------------------------------------------------------------//
 bool CAddInECRDriver::CallAsFunc(const long lMethodNum,
@@ -384,8 +358,11 @@ void ADDIN_API CAddInECRDriver::SetUserInterfaceLanguageCode(const WCHAR_T* lang
 //---------------------------------------------------------------------------//
 bool CAddInECRDriver::setMemManager(void* mem)
 {
-    m_iMemory = (IMemoryManager*)mem;
-    return m_iMemory != 0;
+	if (!mem)
+		return false;
+
+    m_iMemory = static_cast<IMemoryManager*>(mem);
+    return m_iMemory != nullptr;
 }
 
 //---------------------------------------------------------------------------//
@@ -401,42 +378,18 @@ void CAddInECRDriver::addError(uint32_t wcode, const std::string source,
     }
 }
 
-void CAddInECRDriver::initPropNames()
+IAddInDefBase* CAddInECRDriver::getAddInDefBase() const
 {
-
+    return m_iConnect;
 }
 
-void CAddInECRDriver::initMethodNames()
+IMemoryManager* CAddInECRDriver::getMemoryManager() const
 {
-	this->m_MethodNames = {
-		{0, {0, "GetInterfaceRevision", "ПолучитьРевизиюИнтерфейса",
-                "Возвращает поддерживаемую версию требований для данного типа оборудования", 
-                true, 0, NULL, &CAddInECRDriver::GetInterfaceRevision}}
-	};
+    return m_iMemory;
 }
 
 /////////////////////////////////////////////////////////////////////////////
 // 
-
-bool CAddInECRDriver::GetInterfaceRevision(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray)
-{
-    // Ensure no parameters are expected
-    if (lSizeArray != 0)
-    {
-        addError(ADDIN_E_VERY_IMPORTANT, "GetDescription", "Method does not accept parameters", -1);
-        return false;
-    }
-
-    // 2000 revision is the minimum supported revision 2.0
-	// 2004 revision is the maximum supported revision 2.4
-	// 4004 revision is the maximum supported revision 4.4
-
-    tVarInit(pvarRetValue);
-    TV_VT(pvarRetValue) = VTYPE_I4;
-    TV_I4(pvarRetValue) = 4004;
-
-    return true; 
-}
 
 bool CAddInECRDriver::GetDescription(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray)
 {
