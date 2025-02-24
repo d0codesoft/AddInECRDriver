@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<drivers>
+<component progid="AddIn.ECRDriverTerminal" type="ЭквайринговыйТерминал" name="SCODE: Драйвер POS Терминала (Приватбанк JSON) (NativeApi)" version="1.0.0"/>
+</drivers>

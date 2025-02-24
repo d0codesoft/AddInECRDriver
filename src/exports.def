@@ -1,0 +1,6 @@
+EXPORTS
+    DllMain
+    GetClassObject
+    DestroyObject
+    GetClassNames
+    SetPlatformCapabilities
