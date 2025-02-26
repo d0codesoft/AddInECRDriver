@@ -3,6 +3,7 @@
 #include <cstring>
 #include <sstream>
 #include <cwchar>
+#include <charconv>
 #include <unicode/ucnv.h>
 #include <unicode/ustring.h>
 #include <unicode/unistr.h>
@@ -68,6 +69,19 @@ std::wstring convertStringToWString(const std::string& str) {
     std::runtime_error("Unknown Platform");
 #endif
     return ret;
+}
+
+uint16_t wstringToUint16(const std::wstring& str)
+{
+    std::string utf8(str.begin(), str.end()); // Convert wstring to narrow string
+    uint16_t value;
+    auto [ptr, ec] = std::from_chars(utf8.data(), utf8.data() + utf8.size(), value);
+    if (ec == std::errc() && ptr == utf8.data() + utf8.size()) {
+        return value;
+    }
+    else {
+        return 0;
+    }
 }
 
 std::string convertWStringToString(const std::wstring& wstr) {

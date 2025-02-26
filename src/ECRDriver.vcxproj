@@ -75,13 +75,17 @@
     <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)build\lib\$(Platform)\$(Configuration)\</IntDir>
     <TargetName>ECR_Driver_PT_win64</TargetName>
-    <IncludePath>..\include\vncomp;..\include;..\..\boost;$(IncludePath)</IncludePath>
+    <IncludePath>..\include\vncomp;..\include;..\include\pugixml;..\..\boost;$(IncludePath)</IncludePath>
+    <LibraryPath>..\libs\x64\Debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)build\lib\$(Platform)\$(Configuration)\</IntDir>
     <TargetName>ECR_Driver_PT_win32</TargetName>
     <IncludePath>..\include\vncomp;..\include\unicode;..\include;..\..\boost;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>..\include\vncomp;..\include;..\include\pugixml;..\..\boost;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -126,12 +130,12 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>U_STATIC_IMPLEMENTATION;_DEBUG;ECRDRIVER_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>PUGIXML_WCHAR_MODE;U_STATIC_IMPLEMENTATION;_DEBUG;ECRDRIVER_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>..\include\vncomp;..\include;..\..\boost;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\include\vncomp;..\include;..\include\pugixml;..\..\boost;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -141,7 +145,7 @@
       <ShowProgress>LinkVerboseLib</ShowProgress>
       <AdditionalLibraryDirectories>..\libs\x64\Debug;..\..\boost\stage\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ModuleDefinitionFile>exports.def</ModuleDefinitionFile>
-      <AdditionalDependencies>icuucd.lib;icuind.lib;icuiod.lib;icudtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>icuucd.lib;icuind.lib;icuiod.lib;icudtd.lib;pugixml.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -156,6 +160,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>..\include\vncomp;..\include;..\include\pugixml;..\..\boost;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -163,7 +168,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>icuuc.lib;icuin.lib;icuio.lib;icudt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>icuuc.lib;icuin.lib;icuio.lib;icudt.lib;pugixml.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -172,20 +177,24 @@
     <ClInclude Include="common_types.h" />
     <ClInclude Include="driver_pos_terminal.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="interface_connection.h" />
     <ClInclude Include="interface_addin_base.h" />
     <ClInclude Include="interface_driver_base.h" />
     <ClInclude Include="interface_pos_terminal.h" />
     <ClInclude Include="localization_manager.h" />
     <ClInclude Include="logger.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="setting_driver_pos.h" />
     <ClInclude Include="string_conversion.h" />
     <ClInclude Include="sys_utils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="addin_driver.cpp" />
     <ClCompile Include="common_main.cpp" />
+    <ClCompile Include="common_types.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="driver_pos_terminal.cpp" />
+    <ClCompile Include="interface_connection.cpp" />
     <ClCompile Include="interface_driver_base.cpp" />
     <ClCompile Include="localization_manager.cpp" />
     <ClCompile Include="logger.cpp" />
@@ -195,6 +204,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="setting_driver_pos.cpp" />
     <ClCompile Include="string_conversion.cpp" />
     <ClCompile Include="sys_utils.cpp" />
   </ItemGroup>

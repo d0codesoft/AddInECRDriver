@@ -28,4 +28,21 @@ public:
     virtual bool setBoolValue(tVariant* pvarParamDefValue, const bool flag) = 0;
 };
 
+// Function to check if the variant is a string
+#define IS_STRING(var) ( \
+    (TV_VT(var) == VTYPE_PSTR)  || \
+    (TV_VT(var) == VTYPE_PWSTR)   \
+)
+
+#define IS_LONG(var) ( \
+    (TV_VT(var) == VTYPE_I4)   || \
+    (TV_VT(var) == VTYPE_INT)  || \
+    (TV_VT(var) == VTYPE_I8)   || \
+    (TV_VT(var) == VTYPE_UI4)  || \
+    (TV_VT(var) == VTYPE_UINT) || \
+    (TV_VT(var) == VTYPE_UI8)    \
+)
+
+#define IS_BOOL(var) (TV_VT(var) == VTYPE_BOOL)
+
 #endif // IADDINBASE_H

@@ -7,6 +7,7 @@
 #include "interface_driver_base.h"
 #include "interface_pos_terminal.h"
 #include "common_types.h"
+#include "interface_connection.h"
 
 class DriverPOSTerminal : public IDriver1CUniBase, public IDriverPosTerminal
 {
@@ -53,10 +54,20 @@ public:
     bool EmergencyReversal(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool GetOperationByCards(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool Settlement(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
+    const std::u16string getEquipmentId();
+
+protected:
+
+	bool InitConnection();
+    void addErrorDriver(const std::u16string& lastError, const std::wstring& logError);
+	void clearError();
+    static std::u16string createUID(const std::wstring& host, uint32_t port);
 
 private:
 
     IAddInBase* m_addInBase = nullptr;
+
+	std::u16string m_lastError = u"";
 
     std::vector<MethodName> m_MethodNames = {
         IDriver1CUniBase::createMethod(0, u"GetInterfaceRevision", u"ѕолучить–евизию»нтерфейса",
@@ -113,6 +124,11 @@ private:
     };
 
     std::vector<PropName> m_PropNames = {};
+	std::vector<DriverParameter> m_ParamConnection = {};
+	std::unique_ptr<IConnection> m_connection;
+	ConnectionType m_connectionType = ConnectionType::TCP;
+	std::u16string m_equipmentId = u"";
+
     DriverDescription m_driverDescription;
 };
 
