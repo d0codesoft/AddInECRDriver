@@ -63,6 +63,8 @@ protected:
 	void clearError();
     static std::u16string createUID(const std::wstring& host, uint32_t port);
 
+	std::optional<EquipmentTypeInfo> getEquipmentTypeInfoFromVariant(tVariant* paParam);
+
 private:
 
     IAddInBase* m_addInBase = nullptr;

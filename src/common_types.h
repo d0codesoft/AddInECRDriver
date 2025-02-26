@@ -111,5 +111,8 @@ struct DriverParameter {
 
 std::vector<DriverParameter> ParseParameters(const std::wstring& xmlPath);
 std::optional<std::wstring> findParameterValue(const std::vector<DriverParameter>& params, const std::wstring& paramName);
+std::u16string toXml(const DriverDescription& driver);
+
+#define BOOL_TO_STRING(b) ((b) ? L"true" : L"false")
 
 #endif // COMMON_TYPES_H

@@ -1,9 +1,11 @@
 ﻿#include "pch.h"
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <vector>
 #include "pugixml.hpp"
 #include "common_types.h"
+#include "string_conversion.h"
 
 bool isValidEquipmentType(const std::u16string& input) {
     return std::any_of(EquipmentTypes.begin(), EquipmentTypes.end(), [&](const EquipmentType& eq) {
@@ -82,4 +84,35 @@ std::optional<std::wstring> findParameterValue(
         return it->value;
     }
     return std::nullopt;
+}
+
+std::u16string toXml(const DriverDescription& driver)
+{
+    pugi::xml_document doc;
+    auto decl = doc.append_child(pugi::node_declaration);
+    decl.append_attribute(L"version") = "1.0";
+    decl.append_attribute(L"encoding") = "UTF-8";
+
+    auto root = doc.append_child(L"DriverDescription");
+    root.append_attribute(L"Name") = driver.Name.c_str();
+    root.append_attribute(L"Description") = driver.Description.c_str();
+    root.append_attribute(L"EquipmentType") = driver.EquipmentType.c_str();
+    root.append_attribute(L"IntegrationComponent") = BOOL_TO_STRING(driver.IntegrationComponent);
+    root.append_attribute(L"MainDriverInstalled") = BOOL_TO_STRING(driver.MainDriverInstalled);
+    root.append_attribute(L"DriverVersion") = driver.DriverVersion.c_str();
+    root.append_attribute(L"IntegrationComponentVersion") = driver.IntegrationComponentVersion.c_str();
+    root.append_attribute(L"IsEmulator") = BOOL_TO_STRING(driver.IsEmulator);
+    root.append_attribute(L"LocalizationSupported") = BOOL_TO_STRING(driver.LocalizationSupported);
+    root.append_attribute(L"AutoSetup") = BOOL_TO_STRING(driver.AutoSetup);
+    root.append_attribute(L"DownloadURL") = driver.DownloadURL.c_str();
+    root.append_attribute(L"EnvironmentInformation") = driver.EnvironmentInformation.c_str();
+    root.append_attribute(L"LogIsEnabled") = BOOL_TO_STRING(driver.LogIsEnabled);
+    root.append_attribute(L"LogPath") = driver.LogPath.c_str();
+    root.append_attribute(L"ExtensionName") = driver.ExtensionName.c_str();
+
+    std::wostringstream oss;
+    doc.save(oss);
+
+    std::wstring xml_str = oss.str();
+    return wstringToU16string(xml_str);
 }
