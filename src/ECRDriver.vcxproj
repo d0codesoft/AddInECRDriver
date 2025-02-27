@@ -175,6 +175,7 @@
     <ClInclude Include="addin_driver.h" />
     <ClInclude Include="common_main.h" />
     <ClInclude Include="common_types.h" />
+    <ClInclude Include="define_driver.h" />
     <ClInclude Include="driver_pos_terminal.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="interface_connection.h" />

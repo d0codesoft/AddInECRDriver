@@ -60,6 +60,9 @@
     <ClInclude Include="setting_driver_pos.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="define_driver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">

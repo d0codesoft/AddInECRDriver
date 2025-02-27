@@ -25,32 +25,51 @@ public:
     bool GetInterfaceRevision(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool GetDescription(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool GetLastError(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
+    
+    //methods version standart 3.2
+    bool GetParameters(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
+    bool SetParameter(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
+    bool Open(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
+    bool Close(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
+    bool DeviceTest(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
+    bool GetAdditionalActions(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
+    bool DoAdditionalAction(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
+
+    //methods version standart 4.4
     bool EquipmentParameters(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool ConnectEquipment(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool DisconnectEquipment(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool EquipmentTest(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool EquipmentAutoSetup(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool SetApplicationInformation(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
-    bool GetAdditionalActions(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
-    bool DoAdditionalAction(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool GetLocalizationPattern(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool SetLocalization(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
+    
     const std::vector<MethodName>& GetMethods() override;
     const std::vector<PropName>& GetProperties() override;
 
     // Implementing methods from IDriverPosTerminal
     bool TerminalParameters(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool Pay(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
+    bool PayByPaymentCard(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
+    bool ReturnPaymentByPaymentCard(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool ReturnPayment(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool CancelPayment(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
+    bool CancelPaymentByPaymentCard(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool Authorisation(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
+    bool AuthorisationByPaymentCard(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool AuthConfirmation(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool CancelAuthorisation(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
+    bool CancelAuthorisationByPaymentCard(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool PayWithCashWithdrawal(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
+    bool PayByPaymentCardWithCashWithdrawal(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool PurchaseWithEnrollment(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool GetCardParameters(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
+    bool GetCardParametrs(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool PayCertificate(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
+    bool PayElectronicCertificate(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool ReturnCertificate(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
+    bool ReturnElectronicCertificate(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool EmergencyReversal(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool GetOperationByCards(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool Settlement(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
