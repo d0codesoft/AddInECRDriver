@@ -36,23 +36,57 @@ def create_info_xml(config, output_dir):
 
 def create_manifest_xml(config, output_dir):
     root = ET.Element("bundle", {"xmlns": "http://v8.1c.ru/8.2/addin/bundle", "name": "ECRDriverTerminal"})
+    path_values = []
 
     for section in config.sections():
-       for key, value in config.items(section):
-          arch = key
-          path = value
-          ET.SubElement(root, "component", {"os": section, "path": path, "type": "native", "arch": arch})
+        component_info = {
+            "os": None,
+            "path": None,
+            "type": None,
+            "object": None,
+            "arch": None,
+            "client": None,
+            "clientVersion": None,
+            "codeType": None
+        }
+        for key, value in config.items(section):
+           if key in component_info:
+               component_info[key] = value
+
+        # Collect path values
+        if component_info["path"] is not None:
+            path_values.append(component_info["path"])
+
+        # Filter out None values
+        filedsComponents = { "os" : section }
+        filedsComponents.update({k: v for k, v in component_info.items() if v is not None})
+
+        print(f"Write information components: {filedsComponents}")
+        ET.SubElement(root, "component", filedsComponents)
 
     tree = ET.ElementTree(root)
     manifest_xml_path = os.path.join(output_dir, "manifest.xml")
     tree.write(manifest_xml_path, encoding="utf-8", xml_declaration=True)
 
+    return path_values
 
-def copy_files(src_dir, dest_dir, extensions):
-    for file in os.listdir(src_dir):
-        if file.endswith(extensions):
-            shutil.copy(os.path.join(src_dir, file), dest_dir)
+def copy_files(path_files, src_dir, dest_dir, exclude_dir):
+    find_files = []
+    for root, dirs, files in os.walk(src_dir):
+        print(f"Searching in directory: {root}")
+        dirs[:] = [d for d in dirs if not any(e.lower() == d.lower() for e in exclude_dir)]
+        for file in files:
+            if file in path_files:
+                print(f"Copy library: {file}")
+                shutil.copy(os.path.join(root, file), dest_dir)
+                find_files.append(file)
 
+    missing_files = set(path_files) - set(find_files)
+    if missing_files:
+        print(f"The following files were not found: {', '.join(missing_files)}")
+        return False
+
+    return True
 
 def create_zip(archive_path, src_dir):
     with zipfile.ZipFile(archive_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
@@ -60,7 +94,7 @@ def create_zip(archive_path, src_dir):
             zipf.write(os.path.join(src_dir, file), arcname=file)
 
 
-def main(build_dir="bin", output_dir="output", build_type="Release"):
+def main():
     config_path = os.path.join(os.path.dirname(__file__), "config.ini")
     if not os.path.exists(config_path):
         raise FileNotFoundError("Файл конфигурации не найден: config.ini")
@@ -68,22 +102,29 @@ def main(build_dir="bin", output_dir="output", build_type="Release"):
     parser = argparse.ArgumentParser(description="Формирование файла драйвера для загрузки в конфигурации 1С 8.3.")
     parser.add_argument("--build_type", choices=["DEBUG", "RELEASE"], default="DEBUG",
                         help="Тип сборки (DEBUG или RELEASE)")
-    parser.add_argument("build_dir", help="Каталог сохранения архива файла драйвера")
+    parser.add_argument("build_dir", help="Каталог файлов библиотек")
+    parser.add_argument("output_dir", nargs='?', default=os.getcwd(), help="Каталог для сохранения выходного архива (по умолчанию текущий каталог)")
     args = parser.parse_args()
+
+    build_dir = args.build_dir
+    output_dir = args.output_dir
+    build_type = args.build_type
 
     config = read_config(config_path)
     with TemporaryDirectory() as temp_dir:
+        print(f"Создан временный каталог для файлов драйвера {temp_dir}")
+        os.makedirs(temp_dir, exist_ok=True)
+
         create_info_xml(config, temp_dir)
-        create_manifest_xml(config, temp_dir)
+        path_files = create_manifest_xml(config, temp_dir)
 
-        extensions = (".dll", ".so", ".dylib")
-        copy_files(build_dir, temp_dir, extensions)
+        if not copy_files(path_files, build_dir, temp_dir, build_type.lower()):
+            return
 
-        output_zip = os.path.join(output_dir, f"release_{build_type}.zip")
+        output_zip = os.path.join(output_dir, f"ECRDriverPOSTerminal_{build_type}.zip")
         os.makedirs(output_dir, exist_ok=True)
         create_zip(output_zip, temp_dir)
-        print(f"Package created: {output_zip}")
-
+        print(f"Архив драйвера создан: {output_zip}")
 
 if __name__ == "__main__":
     main()
