@@ -381,3 +381,16 @@ packages/
 # Ignore CMake generated files
 CMakeUserPresets.json
 CMakeLists.txt.user
+
+tools/.env
+tools/.venv
+tools/env/
+tools/venv/
+tools/ENV/
+tools/env.bak/
+tools/venv.bak/
+
+tools/__pycache__/
+*.py[cod]
+*$py.class
+/tools/.idea
