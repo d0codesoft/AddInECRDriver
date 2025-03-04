@@ -6,6 +6,7 @@
 #include "pugixml.hpp"
 #include "common_types.h"
 #include "string_conversion.h"
+#include "logger.h"
 
 bool isValidEquipmentType(const std::u16string& input) {
     return std::any_of(EquipmentTypes.begin(), EquipmentTypes.end(), [&](const EquipmentType& eq) {
@@ -53,7 +54,7 @@ std::vector<DriverParameter> ParseParameters(const std::wstring& xmlPath) {
     // 📂 Загрузка XML файла
     pugi::xml_parse_result result = doc.load_file(xmlPath.c_str(), pugi::parse_default, pugi::encoding_utf8);
     if (!result) {
-        std::wcerr << L"Ошибка загрузки XML: " << result.description() << std::endl;
+        LOG_ERROR_ADD(L"CommonTypes", L"Ошибка загрузки XML: " + convertStringToWString(result.description()));
         return parameters;
     }
 
@@ -65,7 +66,7 @@ std::vector<DriverParameter> ParseParameters(const std::wstring& xmlPath) {
 
         // ✂️ Удаляем лишние пробелы и переносы строк
         param.name.erase(remove_if(param.name.begin(), param.name.end(), iswspace), param.name.end());
-        param.value.erase(remove_if(param.value.begin(), param.value.end(), iswspace), param.value.end());
+        //param.value.erase(remove_if(param.value.begin(), param.value.end(), iswspace), param.value.end());
 
         parameters.push_back(param);
     }
@@ -73,17 +74,51 @@ std::vector<DriverParameter> ParseParameters(const std::wstring& xmlPath) {
     return parameters;
 }
 
-std::optional<std::wstring> findParameterValue(
-    const std::vector<DriverParameter>& params, const std::wstring& paramName)
+bool ParseParametersFromXML(std::vector<DriverParameter>& params, const std::wstring& xmlSource)
 {
-    auto it = std::ranges::find_if(params, [&paramName](const DriverParameter& p) {
-        return p.name == paramName;
-        });
+    std::vector<DriverParameter> parameters;
+    pugi::xml_document doc;
 
-    if (it != params.end()) {
-        return it->value;
+    // 📂 Загрузка XML файла
+    pugi::xml_parse_result result = doc.load_file(xmlSource.c_str(), pugi::parse_default, pugi::encoding_utf8);
+    if (!result) {
+        LOG_ERROR_ADD(L"CommonTypes", L"Ошибка загрузки XML: " + convertStringToWString(result.description()));
+        return false;
     }
-    return std::nullopt;
+
+    // 🔍 Поиск всех узлов Parameter
+    for (pugi::xml_node paramNode : doc.child(L"Parameters").children(L"Parameter")) {
+        std::wstring paramName = paramNode.attribute(L"Name").as_string();
+        std::wstring paramValue = paramNode.attribute(L"Value").as_string();
+
+        // Найти параметр по имени
+        auto it = std::find_if(parameters.begin(), parameters.end(), [&](const DriverParameter& param) {
+            return param.name == paramName;
+            });
+
+        // Если параметр найден, установить его значение
+        if (it != parameters.end()) {
+			if (it->type == TypeParameter::String) {
+				it->value = paramValue;
+			}
+			else if (it->type == TypeParameter::Number) {
+				it->value = std::stoi(paramValue);
+			}
+			else if (it->type == TypeParameter::Bool) {
+				it->value = paramValue == L"true";
+			}
+        }
+        else {
+            // Если параметр не найден, добавить новый параметр
+            DriverParameter param;
+            param.name = paramName;
+            param.value = paramValue;
+			param.type = TypeParameter::String;
+            parameters.push_back(param);
+        }
+    }
+
+    return true;
 }
 
 std::u16string toXml(const DriverDescription& driver)

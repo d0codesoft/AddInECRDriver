@@ -8,6 +8,9 @@
 #include "interface_pos_terminal.h"
 #include "common_types.h"
 #include "interface_connection.h"
+#include "setting_driver_pos.h"
+
+const std::wstring DRIVER_VERSION = L"1.0.0"; // ќбъ€вление константы версии драйвера
 
 class DriverPOSTerminal : public IDriver1CUniBase, public IDriverPosTerminal
 {
@@ -59,9 +62,11 @@ public:
     bool Authorisation(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool AuthorisationByPaymentCard(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool AuthConfirmation(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
+    bool AuthConfirmationByPaymentCard(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool CancelAuthorisation(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool CancelAuthorisationByPaymentCard(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool PayWithCashWithdrawal(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
+	bool CashWithdrawal(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool PayByPaymentCardWithCashWithdrawal(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool PurchaseWithEnrollment(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool GetCardParameters(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
@@ -73,6 +78,7 @@ public:
     bool EmergencyReversal(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool GetOperationByCards(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool Settlement(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
+	bool PrintSlipOnTerminal(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     const std::u16string getEquipmentId();
 
 protected:
@@ -149,6 +155,7 @@ private:
 	std::unique_ptr<IConnection> m_connection;
 	ConnectionType m_connectionType = ConnectionType::TCP;
 	std::u16string m_equipmentId = u"";
+    SettingSettings m_settings;
 
     DriverDescription m_driverDescription;
 };

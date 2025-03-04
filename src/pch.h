@@ -8,7 +8,6 @@
 #define PCH_H
 
 
-
 #define U_STATIC_IMPLEMENTATION
 
 // add headers that you want to pre-compile here

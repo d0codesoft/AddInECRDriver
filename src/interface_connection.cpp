@@ -77,21 +77,72 @@ std::optional<std::vector<uint8_t>> TcpConnection::receive(std::optional<uint32_
     }
 }
 
-bool WebSocketConnection::connect(const std::string& host, std::optional<uint16_t> port)
+void TcpConnection::disconnect()
 {
-	return false;
+	boost::system::error_code ec;
+	socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
+	socket_.close();
 }
 
-bool WebSocketConnection::send(const std::span<const uint8_t> data)
+bool TcpConnection::isConnected() const
 {
-    return false;
+    return socket_.is_open();
 }
 
-std::optional<std::vector<uint8_t>> WebSocketConnection::receive(std::optional<uint32_t> timeoutMs)
-{
-	return std::vector<uint8_t>();
+bool WebSocketConnection::connect(const std::string& host, std::optional<uint16_t> port) {
+    try {
+        auto resolved = resolver_.resolve(host, port ? std::to_string(*port) : "80");
+        boost::asio::connect(ws_.next_layer(), resolved);
+
+        ws_.handshake(host, "/");
+        connected_ = true;
+        return true;
+    }
+    catch (const std::exception& e) {
+        std::cerr << "WebSocket connection error: " << e.what() << std::endl;
+        return false;
+    }
 }
 
-void WebSocketConnection::disconnect()
-{
+bool WebSocketConnection::send(const std::span<const uint8_t> data) {
+    if (!connected_) return false;
+    try {
+        ws_.binary(true);
+        ws_.write(boost::asio::buffer(data.data(), data.size()));
+        return true;
+    }
+    catch (const std::exception& e) {
+        std::cerr << "WebSocket send error: " << e.what() << std::endl;
+        return false;
+    }
+}
+
+std::optional<std::vector<uint8_t>> WebSocketConnection::receive(std::optional<uint32_t> timeoutMs) {
+    if (!connected_) return std::nullopt;
+    try {
+        std::string data;
+        auto buf = boost::asio::dynamic_buffer(data);
+        ws_.read(buf);
+		std::vector<uint8_t> result(data.begin(), data.end());
+        return result;
+    }
+    catch (const std::exception& e) {
+        std::cerr << "WebSocket receive error: " << e.what() << std::endl;
+        return std::nullopt;
+    }
+}
+
+void WebSocketConnection::disconnect() {
+    if (connected_) {
+        try {
+            ws_.close(boost::beast::websocket::close_code::normal);
+        }
+        catch (...) {
+        }
+        connected_ = false;
+    }
+}
+
+bool WebSocketConnection::isConnected() const {
+    return connected_;
 }

@@ -63,6 +63,12 @@
     <ClInclude Include="define_driver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="storage_manager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="license_manager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -102,6 +108,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="common_types.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="storage_manager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="license_manager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

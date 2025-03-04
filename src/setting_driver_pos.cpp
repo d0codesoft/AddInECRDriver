@@ -18,9 +18,9 @@ const SettingSettings SettingDriverPos::m_settings = {
 
                     {L"Address", L"Адрес подключения", L"Введите адрес сервера.", L"String", L"", L"", false, {}},
 
-                    {L"Port", L"Порт", L"Введите номер порта.", L"Number", L"", L"2000", false, {}},
+                    {L"Port", L"Порт", L"Введите номер порта.", L"Number", L"", L"2000", false, {}}
 
-                    {L"Speed", L"Скорость подключения", L"Укажите скорость соединения.", L"Number", L"", L"9600", false, {}}
+                    //{L"Speed", L"Скорость подключения", L"Укажите скорость соединения.", L"Number", L"", L"9600", false, {}}
                 }
             },
             {   // Group licensing

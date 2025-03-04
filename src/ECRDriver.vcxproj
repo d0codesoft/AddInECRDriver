@@ -145,7 +145,7 @@
       <ShowProgress>LinkVerboseLib</ShowProgress>
       <AdditionalLibraryDirectories>..\libs\x64\Debug;..\..\boost\stage\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ModuleDefinitionFile>exports.def</ModuleDefinitionFile>
-      <AdditionalDependencies>icuucd.lib;icuind.lib;icuiod.lib;icudtd.lib;pugixml.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>icuucd.lib;icuind.lib;icuiod.lib;icudtd.lib;pugixml.lib;libssl.lib;libcrypto.lib;Ws2_32.lib;Crypt32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -168,7 +168,8 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>icuuc.lib;icuin.lib;icuio.lib;icudt.lib;pugixml.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>icuuc.lib;icuin.lib;icuio.lib;icudt.lib;pugixml.lib;libssl.lib;libcrypto.lib;Ws2_32.lib;Crypt32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ModuleDefinitionFile>exports.def</ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -182,10 +183,12 @@
     <ClInclude Include="interface_addin_base.h" />
     <ClInclude Include="interface_driver_base.h" />
     <ClInclude Include="interface_pos_terminal.h" />
+    <ClInclude Include="license_manager.h" />
     <ClInclude Include="localization_manager.h" />
     <ClInclude Include="logger.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="setting_driver_pos.h" />
+    <ClInclude Include="storage_manager.h" />
     <ClInclude Include="string_conversion.h" />
     <ClInclude Include="sys_utils.h" />
   </ItemGroup>
@@ -197,6 +200,7 @@
     <ClCompile Include="driver_pos_terminal.cpp" />
     <ClCompile Include="interface_connection.cpp" />
     <ClCompile Include="interface_driver_base.cpp" />
+    <ClCompile Include="license_manager.cpp" />
     <ClCompile Include="localization_manager.cpp" />
     <ClCompile Include="logger.cpp" />
     <ClCompile Include="pch.cpp">
@@ -206,6 +210,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="setting_driver_pos.cpp" />
+    <ClCompile Include="storage_manager.cpp" />
     <ClCompile Include="string_conversion.cpp" />
     <ClCompile Include="sys_utils.cpp" />
   </ItemGroup>

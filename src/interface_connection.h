@@ -4,6 +4,8 @@
 #include <optional>
 #include <span>
 #include <boost/asio.hpp>
+#include <boost/beast.hpp>
+#include <boost/beast/websocket.hpp>
 
 #ifndef INTERFACECONNECTION_H
 #define INTERFACECONNECTION_H
@@ -77,6 +79,8 @@ private:
 // 🔄 COM connection
 class TcpConnection : public IConnection {
 public:
+    TcpConnection() : socket_(io_context_) {}
+
     bool connect(const std::string& host, std::optional<uint16_t> port) override;
 
     bool send(const std::span<const uint8_t> data) override;
@@ -84,6 +88,8 @@ public:
     std::optional<std::vector<uint8_t>> receive(std::optional<uint32_t> timeoutMs) override;
 
     void disconnect() override;
+
+    bool isConnected() const override;
 
 private:
     boost::asio::io_context io_context_;
@@ -93,6 +99,10 @@ private:
 // 🌐 WebSocket
 class WebSocketConnection : public IConnection {
 public:
+    WebSocketConnection()
+        : resolver_(ioc_), ws_(ioc_) {
+    }
+
     bool connect(const std::string& host, std::optional<uint16_t> port) override;
 
     bool send(const std::span<const uint8_t> data) override;
@@ -100,6 +110,14 @@ public:
     std::optional<std::vector<uint8_t>> receive(std::optional<uint32_t> timeoutMs) override;
 
     void disconnect() override;
+
+    bool isConnected() const override;
+
+private:
+    boost::asio::io_context ioc_;
+    boost::asio::ip::tcp::resolver resolver_;
+    boost::beast::websocket::stream<boost::asio::ip::tcp::socket> ws_;
+    bool connected_ = false;
 };
 
 class ConnectionFactory {

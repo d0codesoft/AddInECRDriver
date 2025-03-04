@@ -26,6 +26,14 @@ public:
 	virtual bool getStringFromWchart(const WCHAR_T* source, std::u16string& desct) = 0;
     virtual bool setStringValue(tVariant* pvarParamDefValue, const std::u16string& source) = 0;
     virtual bool setBoolValue(tVariant* pvarParamDefValue, const bool flag) = 0;
+
+	// Function to save and load value to storage 1C
+	virtual bool saveValue(const std::u16string& key, const std::u16string& value) = 0;
+    virtual bool saveValue(const std::u16string& key, const int value) = 0;
+    virtual bool saveValue(const std::u16string& key, const bool value) = 0;
+    virtual bool loadValue(const std::u16string& key, std::u16string& value) = 0;
+	virtual bool loadValue(const std::u16string& key, int& value) = 0;
+	virtual bool loadValue(const std::u16string& key, bool& value) = 0;
 };
 
 // Function to check if the variant is a string

@@ -104,13 +104,34 @@ std::u16string detectLanguage(const std::u16string& input);
 std::u16string findEquivalent(const std::u16string& input);
 std::optional<EquipmentTypeInfo> getEquipmentTypeInfo(const std::u16string& input);
 
+enum class TypeParameter {
+	String,
+	Number,
+	Bool
+};
+
 struct DriverParameter {
     std::wstring name;
-    std::wstring value;
+    std::variant<std::wstring,int,bool> value;
+	TypeParameter type;
 };
 
 std::vector<DriverParameter> ParseParameters(const std::wstring& xmlPath);
-std::optional<std::wstring> findParameterValue(const std::vector<DriverParameter>& params, const std::wstring& paramName);
+
+bool ParseParametersFromXML(std::vector<DriverParameter>& params, const std::wstring& xmlSource);
+
+template <typename T>
+std::optional<T> findParameterValue(const std::vector<DriverParameter>& params, const std::wstring& paramName) {
+    for (const auto& param : params) {
+        if (param.name == paramName) {
+            if (auto value = std::get_if<T>(&param.value)) {
+                return *value;
+            }
+        }
+    }
+    return std::nullopt;
+}
+
 std::u16string toXml(const DriverDescription& driver);
 
 #define BOOL_TO_STRING(b) ((b) ? L"true" : L"false")

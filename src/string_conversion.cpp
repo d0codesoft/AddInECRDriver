@@ -23,48 +23,16 @@ std::wstring convertStringToWString(const std::string& str) {
     size_t begin = 0;
     std::wstring ret;
 #if defined(OS_WINDOWS)
-    int size = 0;
-    pos = str.find(static_cast<char>(0), begin);
-    while (pos != std::string::npos) {
-        std::string segment = std::string(&str[begin], pos - begin);
-        std::wstring converted = std::wstring(segment.size() + 1, 0);
-        size = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, &segment[0], segment.size(), &converted[0], converted.length());
-        converted.resize(size);
-        ret.append(converted);
-        ret.append({ 0 });
-        begin = pos + 1;
-        pos = str.find(static_cast<char>(0), begin);
-    }
-    if (begin < str.length()) {
-        std::string segment = std::string(&str[begin], str.length() - begin);
-        std::wstring converted = std::wstring(segment.size() + 1, 0);
-        size = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, segment.c_str(), segment.size(), &converted[0], converted.length());
-        converted.resize(size);
-        ret.append(converted);
-    }
+    int size_needed = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, nullptr, 0);
+    std::wstring wstr(size_needed - 1, L'\0'); // -1 to exclude null terminator
 
+    MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, &wstr[0], size_needed);
+	ret = wstr;
 #elif defined(OS_LINUX) || defined(OS_MACOS)
-    size_t size;
-    pos = str.find(static_cast<char>(0), begin);
-    while (pos != String::npos)
-    {
-        std::string segment = std::string(&str[begin], pos - begin);
-        std::wstring converted = std::wstring(segment.size(), 0);
-        size = mbstowcs(&converted[0], &segment[0], converted.size());
-        converted.resize(size);
-        ret.append(converted);
-        ret.append({ 0 });
-        begin = pos + 1;
-        pos = str.find(static_cast<char>(0), begin);
-    }
-    if (begin < str.length())
-    {
-        std::string segment = std::string(&str[begin], str.length() - begin);
-        std::wstring converted = std::wstring(segment.size(), 0);
-        size = mbstowcs(&converted[0], &segment[0], converted.size());
-        converted.resize(size);
-        ret.append(converted);
-    }
+    size_t size_needed = std::mbstowcs(nullptr, utf8Str.c_str(), 0) + 1;
+    std::wstring wstr(size_needed, L'\0');
+    std::mbstowcs(&wstr[0], utf8Str.c_str(), size_needed);
+	ret = wstr;
 #else
     std::runtime_error("Unknown Platform");
 #endif
@@ -95,49 +63,16 @@ std::string convertWStringToString(const std::wstring& wstr) {
     std::string ret;
 
 #if defined(OS_WINDOWS)
-    int size;
-    pos = wstr.find(static_cast<wchar_t>(0), begin);
-    while (pos != std::wstring::npos && begin < wstr.length())
-    {
-        std::wstring segment = std::wstring(&wstr[begin], pos - begin);
-        size = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, &segment[0], segment.size(), NULL, 0, NULL, NULL);
-        std::string converted = std::string(size, 0);
-        WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, &segment[0], segment.size(), &converted[0], converted.size(), NULL, NULL);
-        ret.append(converted);
-        ret.append({ 0 });
-        begin = pos + 1;
-        pos = wstr.find(static_cast<wchar_t>(0), begin);
-    }
-    if (begin <= wstr.length())
-    {
-        std::wstring segment = std::wstring(&wstr[begin], wstr.length() - begin);
-        size = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, &segment[0], segment.size(), NULL, 0, NULL, NULL);
-        std::string converted = std::string(size, 0);
-        WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, &segment[0], segment.size(), &converted[0], converted.size(), NULL, NULL);
-        ret.append(converted);
-    }
+    int size_needed = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, nullptr, 0, nullptr, nullptr);
+    std::string utf8Str(size_needed - 1, '\0'); // -1 to exclude null terminator
+
+    WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, &utf8Str[0], size_needed, nullptr, nullptr);
+	ret = utf8Str;
 #elif defined(OS_LINUX) || defined(OS_MACOS)
-    size_t size;
-    pos = wstr.find(static_cast<wchar_t>(0), begin);
-    while (pos != WString::npos && begin < wstr.length())
-    {
-        WString segment = WString(&wstr[begin], pos - begin);
-        size = wcstombs(nullptr, segment.c_str(), 0);
-        String converted = String(size, 0);
-        wcstombs(&converted[0], segment.c_str(), converted.size());
-        ret.append(converted);
-        ret.append({ 0 });
-        begin = pos + 1;
-        pos = wstr.find(static_cast<wchar_t>(0), begin);
-    }
-    if (begin <= wstr.length())
-    {
-        WString segment = WString(&wstr[begin], wstr.length() - begin);
-        size = wcstombs(nullptr, segment.c_str(), 0);
-        String converted = String(size, 0);
-        wcstombs(&converted[0], segment.c_str(), converted.size());
-        ret.append(converted);
-    }
+    size_t size_needed = std::wcstombs(nullptr, wstr.c_str(), 0) + 1;
+    std::string utf8Str(size_needed, '\0');
+    std::wcstombs(&utf8Str[0], wstr.c_str(), size_needed);
+	ret = utf8Str;
 #else
     static_assert(false, "Unknown Platform");
 #endif
@@ -237,13 +172,13 @@ std::u16string utf8ToUtf16(const std::string& source) {
     }
 
 #if defined(OS_WINDOWS)
-    int len = MultiByteToWideChar(CP_ACP, 0, source.c_str(), -1, nullptr, 0);
+    int len = MultiByteToWideChar(CP_UTF8, 0, source.c_str(), -1, nullptr, 0);
     if (len <= 0) {
         throw std::runtime_error("Failed to get UTF-16 size.");
     }
 
     std::u16string utf16(len - 1, u'\0'); // -1 исключает нулевой символ
-    MultiByteToWideChar(CP_ACP, 0, source.c_str(), -1, reinterpret_cast<LPWSTR>(&utf16[0]), len);
+    MultiByteToWideChar(CP_UTF8, 0, source.c_str(), -1, reinterpret_cast<LPWSTR>(&utf16[0]), len);
 
     return utf16;
 #else

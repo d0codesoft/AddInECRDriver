@@ -41,6 +41,46 @@ void DriverPOSTerminal::InitDriver()
         drivePath,
         LoadStringResource(L"IDS_DRIVER_NAME_ADDIN")
     };
+
+    m_ParamConnection = {
+        { L"ConnectionType", L"", TypeParameter::String },
+	    { L"Address", L"", TypeParameter::String },
+	    { L"Port", 2000, TypeParameter::Number }
+		//{ L"Speed", 9600, TypeParameter::Number }
+    };
+
+
+
+    m_settings = {
+        {
+            {
+                L"Параметры", // PageCaption
+                {
+                    {   // Group Connection parameters
+                        L"Параметры подключения",
+                        {
+                            {L"ConnectionType", L"Тип подключения", L"Выберите тип подключения.", L"String", L"", L"TCP", false,
+                             {{L"TCP", L"TCP"}, {L"COM", L"COM"}, {L"WebSocket", L"WebSocket"}}},
+
+                            {L"Address", L"Адрес подключения", L"Введите адрес сервера.", L"String", L"", L"", false, {}},
+
+                            {L"Port", L"Порт", L"Введите номер порта.", L"Number", L"", L"2000", false, {}}
+
+                            //{L"Speed", L"Скорость подключения", L"Укажите скорость соединения.", L"Number", L"", L"9600", false, {}}
+                        }
+                    },
+                    {   // Group licensing
+                        L"Лицензирование",
+                        {
+                            {L"DriverVersion", L"Версия драйвера", L"", L"String", L"", DRIVER_VERSION, true, {}},
+                            {L"LicenseStatus", L"Статус лицензии", L"", L"String", L"", L"Не активирована", true, {}},
+                            {L"LicenseKey", L"Ключ лицензии", L"Введите ключ лицензии.", L"String", L"", L"", false, {} }
+                        }
+                    }
+                }
+            }
+        }
+    };
 }
 
 const DriverDescription& DriverPOSTerminal::getDescriptionDriver()
@@ -87,14 +127,8 @@ bool DriverPOSTerminal::GetInterfaceRevision(tVariant* pvarRetValue, tVariant* p
 // Возвращает `true`, если информация о драйвере успешно получена, иначе `false`.
 bool DriverPOSTerminal::GetDescription(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
     clearError();
-    // Ensure no parameters are expected
-    if (lSizeArray != 0 || !paParams)
-    {
-        m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"GetDescription", u"Method does not accept parameters", -1);
-        addErrorDriver(u"Method GetDescription does not accept parameters", L"GetDescription: Method does not accept parameters");
-        m_addInBase->setBoolValue(pvarRetValue, false);
-        return false;
-    }
+
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 1, u"GetDescription");
 
     // Convert the structure to a JSON string
     std::u16string xmlDescription = toXml(this->m_driverDescription);
@@ -116,6 +150,9 @@ bool DriverPOSTerminal::GetDescription(tVariant* pvarRetValue, tVariant* paParam
 // LONG  
 // Возвращает код последней ошибки.
 bool DriverPOSTerminal::GetLastError(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
+
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 1, u"GetDescription");
+
     m_addInBase->setBoolValue(pvarRetValue, true);
     m_addInBase->setStringValue(paParams, m_lastError);
     return true;
@@ -134,6 +171,8 @@ bool DriverPOSTerminal::GetLastError(tVariant* pvarRetValue, tVariant* paParams,
 // Возвращает `true`, если список параметров успешно получен, иначе `false`.
 bool DriverPOSTerminal::GetParameters(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray)
 {
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 1, u"GetDescription");
+
     return false;
 }
 
@@ -153,7 +192,11 @@ bool DriverPOSTerminal::GetParameters(tVariant* pvarRetValue, tVariant* paParams
 // Возвращает `true`, если значение параметра успешно установлено, иначе `false`.
 bool DriverPOSTerminal::SetParameter(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray)
 {
-    return false;
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 2, u"SetParameter");
+
+
+
+    return true;
 }
 
 // Метод: Подключить (Open)
@@ -170,6 +213,8 @@ bool DriverPOSTerminal::SetParameter(tVariant* pvarRetValue, tVariant* paParams,
 // Возвращает `true`, если подключение выполнено успешно, иначе `false`.
 bool DriverPOSTerminal::Open(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray)
 {
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 1, u"Open");
+
     return false;
 }
 
@@ -186,6 +231,8 @@ bool DriverPOSTerminal::Open(tVariant* pvarRetValue, tVariant* paParams, const l
 // Возвращает `true`, если оборудование успешно отключено, иначе `false`.
 bool DriverPOSTerminal::Close(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray)
 {
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 1, u"Close");
+
     return false;
 }
 
@@ -209,6 +256,8 @@ bool DriverPOSTerminal::Close(tVariant* pvarRetValue, tVariant* paParams, const 
 // Возвращает `true`, если устройство успешно прошло тестирование, иначе `false`.
 bool DriverPOSTerminal::DeviceTest(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray)
 {
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 2, u"DeviceTest");
+
     return false;
 }
 
@@ -232,16 +281,7 @@ bool DriverPOSTerminal::DeviceTest(tVariant* pvarRetValue, tVariant* paParams, c
 bool DriverPOSTerminal::EquipmentParameters(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
     clearError();
 
-    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 2, u"GetInterfaceRevision");
-
-	if (lSizeArray != 2 || !paParams)
-	{
-		m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"EquipmentParameters", u"Method expects two parameter", -1);
-		addErrorDriver(u"Method EquipmentParameters expects two parameter", L"EquipmentParameters: Method expects two parameter");
-		m_addInBase->setBoolValue(pvarRetValue, false);
-		return false;
-	}
-
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 2, u"EquipmentParameters");
 
 	auto type = getEquipmentTypeInfoFromVariant(&paParams[1]);
 	if (!type.has_value() || type.value() != EquipmentTypeInfo::POSTerminal) {
@@ -280,14 +320,9 @@ bool DriverPOSTerminal::EquipmentParameters(tVariant* pvarRetValue, tVariant* pa
 //************************************************************
 bool DriverPOSTerminal::ConnectEquipment(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
     clearError();
-	if (lSizeArray != 3 || !paParams)
-	{
-		m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"ConnectEquipment", u"Method expects three parameter", -1);
-        addErrorDriver(u"Method ConnectEquipment expects three parameter", L"ConnectEquipment: Method expects three parameter");
-        m_addInBase->setBoolValue(pvarRetValue, false);
-        return false;
-	}
-    
+
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 1, u"ConnectEquipment");
+
     // Get EquipmentType (STRING[IN])
     auto type = getEquipmentTypeInfoFromVariant(&paParams[1]);
     if (!type.has_value() || type.value() != EquipmentTypeInfo::POSTerminal) {
@@ -447,7 +482,7 @@ bool DriverPOSTerminal::EquipmentTest(tVariant* pvarRetValue, tVariant* paParams
 //    XML-таблица, содержащая параметры подключения, установленные в результате автонастройки.
 //
 // Возвращаемое значение:
-// BOOL  
+// BOOL
 // Возвращает `true`, если автонастройка оборудования выполнена успешно, иначе `false`.
 //********************************************************************************************************************
 bool DriverPOSTerminal::EquipmentAutoSetup(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
@@ -913,6 +948,11 @@ bool DriverPOSTerminal::AuthConfirmation(tVariant* pvarRetValue, tVariant* paPar
     return false;
 }
 
+bool DriverPOSTerminal::AuthConfirmationByPaymentCard(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray)
+{
+    return false;
+}
+
 // Метод: ОтменитьПреавторизацию (CancelAuthorisation)
 // Описание: 
 // Отменяет ранее выполненную операцию преавторизации, разблокируя сумму на счете пользователя. 
@@ -1002,6 +1042,11 @@ bool DriverPOSTerminal::CancelAuthorisationByPaymentCard(tVariant* pvarRetValue,
 // Возвращает `true`, если операция оплаты с выдачей наличных выполнена успешно, иначе `false`.
 bool DriverPOSTerminal::PayWithCashWithdrawal(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
     clearError();
+    return false;
+}
+
+bool DriverPOSTerminal::CashWithdrawal(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray)
+{
     return false;
 }
 
@@ -1386,6 +1431,11 @@ bool DriverPOSTerminal::Settlement(tVariant* pvarRetValue, tVariant* paParams, c
     return false;
 }
 
+bool DriverPOSTerminal::PrintSlipOnTerminal(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray)
+{
+    return false;
+}
+
 const std::u16string DriverPOSTerminal::getEquipmentId()
 {
     return m_equipmentId;
@@ -1401,19 +1451,19 @@ bool DriverPOSTerminal::InitConnection()
 		}
 	}
 
-	auto paramTypeConnection = findParameterValue(m_ParamConnection, L"ConnectionType");
+	auto paramTypeConnection = findParameterValue<std::wstring>(m_ParamConnection, L"ConnectionType");
     if (paramTypeConnection.has_value()) {
         addErrorDriver(u"Invalid connection type", L"InitConnection: Invalid connection type");
         return false;
     }
 
-	auto paramHost = findParameterValue(m_ParamConnection, L"Host");
+	auto paramHost = findParameterValue<std::wstring>(m_ParamConnection, L"Host");
 	if (paramHost.has_value()) {
 		addErrorDriver(u"Invalid host", L"InitConnection: Invalid host");
 		return false;
 	}
 
-	auto paramPort = findParameterValue(m_ParamConnection, L"Port");
+	auto paramPort = findParameterValue<int>(m_ParamConnection, L"Port");
 	if (paramPort.has_value()) {
 		addErrorDriver(u"Invalid port", L"InitConnection: Invalid port");
 		return false;
@@ -1428,7 +1478,7 @@ bool DriverPOSTerminal::InitConnection()
 	m_connectionType = connType.value();
     m_connection = ConnectionFactory::create(m_connectionType);
 	auto host = convertWStringToString(paramHost.value());
-	auto port = wstringToUint16(paramPort.value());
+	auto port = paramPort.value();
 
 	if (!m_connection.get()->connect(host, port)) {
 		addErrorDriver(u"Failed to connect", L"InitConnection: Failed to connect");
@@ -1461,7 +1511,7 @@ std::u16string DriverPOSTerminal::createUID(const std::wstring& host, uint32_t p
 
     // Convert the combined hash to a hexadecimal string
     std::wstringstream ss;
-    ss << std::hex << std::setw(16) << std::setfill('0') << combined_hash;
+    ss << std::hex << std::setw(16) << std::setfill(L'0') << combined_hash;
     return wstringToU16string(ss.str());
 }
 

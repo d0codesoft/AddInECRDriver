@@ -57,6 +57,15 @@ public:
     virtual bool setStringValue(tVariant* pvarParamDefValue, const std::u16string& source) override;
 	virtual bool setBoolValue(tVariant* pvarParamDefValue, const bool flag) override;
 
+	// IAddInBase
+    bool saveValue(const std::u16string& key, const std::u16string& value) override;
+    bool saveValue(const std::u16string& key, const int value) override;
+    bool saveValue(const std::u16string& key, const bool value) override;
+    bool loadValue(const std::u16string& key, std::u16string& value) override;
+    bool loadValue(const std::u16string& key, int& value) override;
+    bool loadValue(const std::u16string& key, bool& value) override;
+
+
     IAddInDefBase* getAddInDefBase() const override;
     IMemoryManager* getMemoryManager() const override;
 

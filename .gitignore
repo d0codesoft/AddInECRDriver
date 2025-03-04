@@ -394,3 +394,4 @@ tools/__pycache__/
 *.py[cod]
 *$py.class
 /tools/.idea
+/lic_key/license.key

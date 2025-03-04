@@ -102,7 +102,7 @@ private:
     Logger::getInstance(channelName)->error(message)
 
 #define LOG_ERROR_ADD_EX(channelName, message, exception) \
-    Logger::getInstance(channelName)->error(message + L" Exception: " + std::wstring(exception.what(), exception.what() + strlen(exception.what())))
+    Logger::getInstance(channelName)->error(message + L" Exception: " + convertStringToWString(exception.what()))
 
 #endif // LOGGER_H
 

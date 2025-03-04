@@ -24,6 +24,7 @@
 #include "interface_pos_terminal.h"
 #include "sys_utils.h"
 #include "driver_pos_terminal.h"
+#include "logger.h"
 
 #define BASE_ERRNO     7
 
@@ -452,6 +453,113 @@ bool CAddInECRDriver::setBoolValue(tVariant* pvarParamDefValue, const bool flag)
 	TV_VT(pvarParamDefValue) = VTYPE_BOOL;
 	TV_BOOL(pvarParamDefValue) = flag;
 	return true;
+}
+
+bool CAddInECRDriver::saveValue(const std::u16string& key, const std::u16string& value)
+{
+	if (m_iConnect) {
+        tVariant var;
+        TV_VT(&var) = VTYPE_PWSTR;
+        TV_WSTR(&var) = const_cast<char16_t*>(value.c_str());
+		return m_iConnect->Write(const_cast<char16_t*>(key.c_str()), &var);
+    }
+
+    return false;
+}
+
+bool CAddInECRDriver::saveValue(const std::u16string& key, const int value)
+{
+    if (m_iConnect) {
+        tVariant var;
+        TV_VT(&var) = VTYPE_I4;
+        TV_I4(&var) = value;
+        return m_iConnect->Write(const_cast<char16_t*>(key.c_str()), &var);
+    }
+	return false;
+}
+
+bool CAddInECRDriver::saveValue(const std::u16string& key, const bool value)
+{
+    if (m_iConnect) {
+        tVariant var;
+        TV_VT(&var) = VTYPE_BOOL;
+        TV_BOOL(&var) = value;
+        return m_iConnect->Write(const_cast<char16_t*>(key.c_str()), &var);
+    }
+	return false;
+}
+
+bool CAddInECRDriver::loadValue(const std::u16string& key, std::u16string& value)
+{
+	if (m_iConnect) {
+		tVariant var;
+        long errorCode = 0;
+        WCHAR_T* errorDesc = nullptr;
+
+		if (m_iConnect->Read(const_cast<char16_t*>(key.c_str()), &var, &errorCode, &errorDesc)) {
+			if (var.vt == VTYPE_PWSTR) {
+				value = std::u16string(var.pwstrVal);
+				return true;
+			}
+		}
+        else {
+            if (errorCode != 0) {
+                std::u16string _errorDesc = std::u16string(errorDesc);
+                std::wstring werrorDesc = u16stringToWstring(_errorDesc);
+                std::wstring wnameProp = u16stringToWstring(key);
+                std::wstring wErrorCode = std::to_wstring(errorCode);
+                LOG_ERROR_ADD(L"AddIn", L"Error read property '" + wnameProp + L"' : " + werrorDesc + L" Code " + wErrorCode);
+            }
+        }
+	}
+}
+
+bool CAddInECRDriver::loadValue(const std::u16string& key, int& value)
+{
+	if (m_iConnect) {
+		tVariant var;
+		long errorCode = 0;
+		WCHAR_T* errorDesc = nullptr;
+		if (m_iConnect->Read(const_cast<char16_t*>(key.c_str()), &var, &errorCode, &errorDesc)) {
+			if (var.vt == VTYPE_I4) {
+				value = var.intVal;
+				return true;
+			}
+		}
+		else {
+			if (errorCode != 0) {
+				std::u16string _errorDesc = std::u16string(errorDesc);
+				std::wstring werrorDesc = u16stringToWstring(_errorDesc);
+				std::wstring wnameProp = u16stringToWstring(key);
+				std::wstring wErrorCode = std::to_wstring(errorCode);
+				LOG_ERROR_ADD(L"AddIn", L"Error read property '" + wnameProp + L"' : " + werrorDesc + L" Code " + wErrorCode);
+			}
+		}
+	}
+}
+
+bool CAddInECRDriver::loadValue(const std::u16string& key, bool& value)
+{
+    if (m_iConnect) {
+        tVariant var;
+        long errorCode = 0;
+        WCHAR_T* errorDesc = nullptr;
+        if (m_iConnect->Read(const_cast<char16_t*>(key.c_str()), &var, &errorCode, &errorDesc)) {
+            if (var.vt == VTYPE_BOOL) {
+                value = var.bVal;
+                return true;
+            }
+        }
+        else {
+            if (errorCode != 0) {
+                std::u16string _errorDesc = std::u16string(errorDesc);
+                std::wstring werrorDesc = u16stringToWstring(_errorDesc);
+                std::wstring wnameProp = u16stringToWstring(key);
+                std::wstring wErrorCode = std::to_wstring(errorCode);
+                LOG_ERROR_ADD(L"AddIn", L"Error read property '" + wnameProp + L"' : " + werrorDesc + L" Code " + wErrorCode);
+            }
+        }
+    }
 }
 
 bool CAddInECRDriver::SetParam(tVariant* pvarParamDefValue, const ParamDefault* defaultParam)
