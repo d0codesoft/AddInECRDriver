@@ -18,5 +18,25 @@
     <ClCompile Include="test_addin.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="AddInBaseStub.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="common_platform.h">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="common_platform.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ComponentBaseTester.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="AddInBaseStub.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ComponentBaseTester.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

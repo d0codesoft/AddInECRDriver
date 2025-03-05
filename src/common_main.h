@@ -8,15 +8,15 @@
 #include "addin_driver.h"
 
 // Определяем экспорт для разных ОС
-#ifdef _WIN32
-	#ifdef LIB_EXPORTS
-		#define LIB_API __declspec(dllexport)   // Windows (при сборке DLL)
-	#else
-		#define LIB_API __declspec(dllimport)   // Windows (при использовании DLL)
-	#endif
-#else
-	#define LIB_API __attribute__((visibility("default"))) // Linux/macOS
-#endif
+//#ifdef _WIN32
+//	#ifdef LIB_EXPORTS
+//		#define LIB_API __declspec(dllexport)    //  Windows (при сборке DLL)
+//	#else
+//		#define LIB_API __declspec(dllimport)   // Windows (при использовании DLL)
+//	#endif
+//#else
+//	#define LIB_API __attribute__((visibility("default"))) // Linux/macOS
+//#endif
 
 
 //extern LIB_API long GetClassObject(const WCHAR_T* wsName, IComponentBase** pInterface);

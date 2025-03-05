@@ -7,6 +7,7 @@
 #include "interface_driver_base.h"
 #include "interface_pos_terminal.h"
 #include "common_types.h"
+#include "common_main.h"
 #include "interface_connection.h"
 #include "setting_driver_pos.h"
 
@@ -66,7 +67,6 @@ public:
     bool CancelAuthorisation(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool CancelAuthorisationByPaymentCard(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool PayWithCashWithdrawal(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
-	bool CashWithdrawal(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool PayByPaymentCardWithCashWithdrawal(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool PurchaseWithEnrollment(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool GetCardParameters(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;

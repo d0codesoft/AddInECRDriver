@@ -256,7 +256,7 @@ enum AttachType
 /**
  * These functions should be implemented that component can be loaded and created. 
  */
-extern "C" long GetClassObject(const WCHAR_T*, IComponentBase** pIntf);
+extern "C" intptr_t GetClassObject(const WCHAR_T*, IComponentBase** pIntf);
 extern "C" long DestroyObject(IComponentBase** pIntf);
 extern "C" const WCHAR_T* GetClassNames();
 extern "C" AppCapabilities SetPlatformCapabilities(const AppCapabilities capabilities);

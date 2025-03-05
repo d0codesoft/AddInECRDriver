@@ -512,6 +512,8 @@ bool CAddInECRDriver::loadValue(const std::u16string& key, std::u16string& value
             }
         }
 	}
+
+	return false;
 }
 
 bool CAddInECRDriver::loadValue(const std::u16string& key, int& value)
@@ -536,6 +538,8 @@ bool CAddInECRDriver::loadValue(const std::u16string& key, int& value)
 			}
 		}
 	}
+
+    return false;
 }
 
 bool CAddInECRDriver::loadValue(const std::u16string& key, bool& value)
@@ -560,6 +564,8 @@ bool CAddInECRDriver::loadValue(const std::u16string& key, bool& value)
             }
         }
     }
+
+    return false;
 }
 
 bool CAddInECRDriver::SetParam(tVariant* pvarParamDefValue, const ParamDefault* defaultParam)

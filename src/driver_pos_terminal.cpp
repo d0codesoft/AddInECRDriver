@@ -384,6 +384,8 @@ bool DriverPOSTerminal::ConnectEquipment(tVariant* pvarRetValue, tVariant* paPar
 bool DriverPOSTerminal::DisconnectEquipment(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
     clearError();
 
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 1, u"DisconnectEquipment");
+
     std::u16string equipmentId;
     if (paParams->vt == VTYPE_PWSTR) {
         equipmentId = std::u16string(paParams->pwstrVal);
@@ -441,9 +443,9 @@ bool DriverPOSTerminal::DisconnectEquipment(tVariant* pvarRetValue, tVariant* pa
 // Возвращает `true`, если устройство успешно прошло тестирование, иначе `false`.
 //********************************************************************************************************************
 bool DriverPOSTerminal::EquipmentTest(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
+
     clearError();
-
-
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 4, u"EquipmentTest");
 
    // Get EquipmentType (STRING[IN])
     auto type = getEquipmentTypeInfoFromVariant(&paParams[1]);
@@ -487,6 +489,7 @@ bool DriverPOSTerminal::EquipmentTest(tVariant* pvarRetValue, tVariant* paParams
 //********************************************************************************************************************
 bool DriverPOSTerminal::EquipmentAutoSetup(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
     clearError();
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 5, u"EquipmentAutoSetup");
     return false;
 }
 
@@ -513,6 +516,7 @@ bool DriverPOSTerminal::EquipmentAutoSetup(tVariant* pvarRetValue, tVariant* paP
 //********************************************************************************************************************
 bool DriverPOSTerminal::SetApplicationInformation(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
     clearError();
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 1, u"SetApplicationInformation");
     return false;
 }
 
@@ -548,6 +552,7 @@ bool DriverPOSTerminal::SetApplicationInformation(tVariant* pvarRetValue, tVaria
 //********************************************************************************************************************
 bool DriverPOSTerminal::GetAdditionalActions(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
     clearError();
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 1, u"GetAdditionalActions");
     return false;
 }
 
@@ -568,6 +573,7 @@ bool DriverPOSTerminal::GetAdditionalActions(tVariant* pvarRetValue, tVariant* p
 //********************************************************************************************************************
 bool DriverPOSTerminal::DoAdditionalAction(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
     clearError();
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 1, u"DoAdditionalAction");
     return false;
 }
 
@@ -594,6 +600,7 @@ bool DriverPOSTerminal::DoAdditionalAction(tVariant* pvarRetValue, tVariant* paP
 //********************************************************************************************************************
 bool DriverPOSTerminal::GetLocalizationPattern(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
     clearError();
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 1, u"GetLocalizationPattern");
     return false;
 }
 
@@ -622,6 +629,7 @@ bool DriverPOSTerminal::GetLocalizationPattern(tVariant* pvarRetValue, tVariant*
 //********************************************************************************************************************
 bool DriverPOSTerminal::SetLocalization(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
     clearError();
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 2, u"EquipmentTest");
     return false;
 }
 
@@ -655,6 +663,8 @@ const std::vector<PropName>& DriverPOSTerminal::GetProperties() {
 // Возвращает `true`, если параметры терминала успешно получены, иначе `false`.
 bool DriverPOSTerminal::TerminalParameters(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
     clearError();
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 2, u"TerminalParameters");
+
     return false;
 }
 
@@ -684,6 +694,8 @@ bool DriverPOSTerminal::TerminalParameters(tVariant* pvarRetValue, tVariant* paP
 // Возвращает `true`, если операция оплаты выполнена успешно, иначе `false`.
 bool DriverPOSTerminal::Pay(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
     clearError();
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 4, u"Pay");
+
     return false;
 }
 
@@ -720,6 +732,10 @@ bool DriverPOSTerminal::Pay(tVariant* pvarRetValue, tVariant* paParams, const lo
 // Возвращает `true`, если операция успешно выполнена, иначе `false`.
 bool DriverPOSTerminal::PayByPaymentCard(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray)
 {
+    clearError();
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 7, u"PayByPaymentCard");
+
+
     return false;
 }
 
@@ -758,6 +774,9 @@ bool DriverPOSTerminal::PayByPaymentCard(tVariant* pvarRetValue, tVariant* paPar
 // Возвращает `true`, если операция возврата успешно выполнена, иначе `false`.
 bool DriverPOSTerminal::ReturnPaymentByPaymentCard(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray)
 {
+    clearError();
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 7, u"ReturnPaymentByPaymentCard");
+
     return false;
 }
 
@@ -787,6 +806,8 @@ bool DriverPOSTerminal::ReturnPaymentByPaymentCard(tVariant* pvarRetValue, tVari
 // Возвращает `true`, если возврат платежа выполнен успешно, иначе `false`.
 bool DriverPOSTerminal::ReturnPayment(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
     clearError();
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 4, u"ReturnPayment");
+
     return false;
 }
 
@@ -815,6 +836,7 @@ bool DriverPOSTerminal::ReturnPayment(tVariant* pvarRetValue, tVariant* paParams
 // Возвращает `true`, если операция отмены выполнена успешно, иначе `false`.
 bool DriverPOSTerminal::CancelPayment(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
     clearError();
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 4, u"CancelPayment");
     return false;
 }
 
@@ -853,6 +875,9 @@ bool DriverPOSTerminal::CancelPayment(tVariant* pvarRetValue, tVariant* paParams
 // Возвращает `true`, если операция отмены успешно выполнена, иначе `false`.
 bool DriverPOSTerminal::CancelPaymentByPaymentCard(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray)
 {
+    clearError();
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 7, u"CancelPaymentByPaymentCard");
+
     return false;
 }
 
@@ -881,6 +906,8 @@ bool DriverPOSTerminal::CancelPaymentByPaymentCard(tVariant* pvarRetValue, tVari
 // Возвращает `true`, если операция преавторизации выполнена успешно, иначе `false`.
 bool DriverPOSTerminal::Authorisation(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
     clearError();
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 4, u"Authorisation");
+
     return false;
 }
 
@@ -917,6 +944,9 @@ bool DriverPOSTerminal::Authorisation(tVariant* pvarRetValue, tVariant* paParams
 // Возвращает `true`, если операция преавторизации успешно выполнена, иначе `false`.
 bool DriverPOSTerminal::AuthorisationByPaymentCard(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray)
 {
+    clearError();
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 7, u"AuthorisationByPaymentCard");
+
     return false;
 }
 
@@ -945,11 +975,26 @@ bool DriverPOSTerminal::AuthorisationByPaymentCard(tVariant* pvarRetValue, tVari
 // Возвращает `true`, если операция завершения преавторизации выполнена успешно, иначе `false`.
 bool DriverPOSTerminal::AuthConfirmation(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
     clearError();
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 4, u"AuthConfirmation");
+
     return false;
 }
 
+// Завершает пре-авторизацию — списывает сумму со счета карты
+// AuthConfirmationByPaymentCard
+// Параметры:
+// [0] STRING  DeviceID          [IN]     - Идентификатор устройства
+// [1] STRING& CardNumber        [IN/OUT] - Номер карты / Данные карты
+// [2] DOUBLE  Amount            [IN]     - Сумма операции
+// [3] STRING& ReceiptNumber     [IN/OUT] - Номер чека
+// [4] STRING  RRNCode           [IN]     - Уникальный код транзакции RRN
+// [5] STRING  AuthorizationCode [IN]     - Код авторизации транзакции
+// [6] STRING& Slip              [OUT]    - Текст квитанции, сформированный эквайринговым ПО
 bool DriverPOSTerminal::AuthConfirmationByPaymentCard(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray)
 {
+    clearError();
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 7, u"AuthConfirmationByPaymentCard");
+
     return false;
 }
 
@@ -978,6 +1023,8 @@ bool DriverPOSTerminal::AuthConfirmationByPaymentCard(tVariant* pvarRetValue, tV
 // Возвращает `true`, если операция отмены преавторизации выполнена успешно, иначе `false`.
 bool DriverPOSTerminal::CancelAuthorisation(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
     clearError();
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 4, u"CancelAuthorisation");
+
     return false;
 }
 
@@ -1014,6 +1061,9 @@ bool DriverPOSTerminal::CancelAuthorisation(tVariant* pvarRetValue, tVariant* pa
 // Возвращает `true`, если отмена преавторизации успешно выполнена, иначе `false`.
 bool DriverPOSTerminal::CancelAuthorisationByPaymentCard(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray)
 {
+    clearError();
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 7, u"CancelAuthorisationByPaymentCard");
+
     return false;
 }
 
@@ -1042,11 +1092,8 @@ bool DriverPOSTerminal::CancelAuthorisationByPaymentCard(tVariant* pvarRetValue,
 // Возвращает `true`, если операция оплаты с выдачей наличных выполнена успешно, иначе `false`.
 bool DriverPOSTerminal::PayWithCashWithdrawal(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
     clearError();
-    return false;
-}
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 4, u"PayWithCashWithdrawal");
 
-bool DriverPOSTerminal::CashWithdrawal(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray)
-{
     return false;
 }
 
@@ -1093,6 +1140,9 @@ bool DriverPOSTerminal::CashWithdrawal(tVariant* pvarRetValue, tVariant* paParam
 // Возвращает `true`, если операция успешно выполнена, иначе `false`.
 bool DriverPOSTerminal::PayByPaymentCardWithCashWithdrawal(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray)
 {
+    clearError();
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 10, u"PayByPaymentCardWithCashWithdrawal");
+
     return false;
 }
 
@@ -1120,6 +1170,8 @@ bool DriverPOSTerminal::PayByPaymentCardWithCashWithdrawal(tVariant* pvarRetValu
 // Возвращает `true`, если операция покупки с зачислением выполнена успешно, иначе `false`.
 bool DriverPOSTerminal::PurchaseWithEnrollment(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
     clearError();
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 3, u"PurchaseWithEnrollment");
+
     return false;
 }
 
@@ -1163,6 +1215,8 @@ bool DriverPOSTerminal::PurchaseWithEnrollment(tVariant* pvarRetValue, tVariant*
 // Возвращает `true`, если параметры карты успешно получены, иначе `false`.
 bool DriverPOSTerminal::GetCardParameters(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
     clearError();
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 8, u"GetCardParameters");
+
     return false;
 }
 
@@ -1206,6 +1260,9 @@ bool DriverPOSTerminal::GetCardParameters(tVariant* pvarRetValue, tVariant* paPa
 // Возвращает `true`, если параметры карты успешно получены, иначе `false`.
 bool DriverPOSTerminal::GetCardParametrs(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray)
 {
+    clearError();
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 8, u"GetCardParametrs");
+
     return false;
 }
 
@@ -1233,6 +1290,9 @@ bool DriverPOSTerminal::GetCardParametrs(tVariant* pvarRetValue, tVariant* paPar
 // Возвращает `true`, если операция прошла успешно, иначе `false`.
 bool DriverPOSTerminal::PayCertificate(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
     clearError();
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 4, u"PayCertificate");
+
+
     return false;
 }
 
@@ -1286,6 +1346,9 @@ bool DriverPOSTerminal::PayCertificate(tVariant* pvarRetValue, tVariant* paParam
 // Возвращает `true`, если операция успешно выполнена, иначе `false`.
 bool DriverPOSTerminal::PayElectronicCertificate(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray)
 {
+    clearError();
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 12, u"PayElectronicCertificate");
+
     return false;
 }
 
@@ -1313,6 +1376,9 @@ bool DriverPOSTerminal::PayElectronicCertificate(tVariant* pvarRetValue, tVarian
 // Возвращает `true`, если операция прошла успешно, иначе `false`.
 bool DriverPOSTerminal::ReturnCertificate(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
     clearError();
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 4, u"ReturnCertificate");
+
+
     return false;
 }
 
@@ -1370,6 +1436,9 @@ bool DriverPOSTerminal::ReturnCertificate(tVariant* pvarRetValue, tVariant* paPa
 // Возвращает `true`, если операция успешно выполнена, иначе `false`.
 bool DriverPOSTerminal::ReturnElectronicCertificate(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray)
 {
+    clearError();
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 12, u"ReturnElectronicCertificate");
+
     return false;
 }
 
@@ -1386,6 +1455,8 @@ bool DriverPOSTerminal::ReturnElectronicCertificate(tVariant* pvarRetValue, tVar
 // Возвращает `true`, если операция отмены последней транзакции прошла успешно, иначе `false`.
 bool DriverPOSTerminal::EmergencyReversal(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
     clearError();
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 1, u"EmergencyReversal");
+
     return false;
 }
 
@@ -1405,6 +1476,8 @@ bool DriverPOSTerminal::EmergencyReversal(tVariant* pvarRetValue, tVariant* paPa
 // Возвращает `true`, если отчет успешно сформирован, иначе `false`.
 bool DriverPOSTerminal::GetOperationByCards(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
     clearError();
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 2, u"GetOperationByCards");
+
     return false;
 }
 
@@ -1428,11 +1501,16 @@ bool DriverPOSTerminal::GetOperationByCards(tVariant* pvarRetValue, tVariant* pa
 // Возвращает `true`, если операция выполнена успешно, иначе `false`.
 bool DriverPOSTerminal::Settlement(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
     clearError();
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 2, u"Settlement");
+
     return false;
 }
 
 bool DriverPOSTerminal::PrintSlipOnTerminal(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray)
 {
+    clearError();
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 0, u"Settlement");
+
     return false;
 }
 

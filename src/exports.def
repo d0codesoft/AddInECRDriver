@@ -3,4 +3,5 @@ EXPORTS
     GetClassObject
     DestroyObject
     GetClassNames
+    GetAttachType
     SetPlatformCapabilities

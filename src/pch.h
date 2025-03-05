@@ -7,6 +7,7 @@
 #ifndef PCH_H
 #define PCH_H
 
+#define LIB_EXPORTS
 
 #define U_STATIC_IMPLEMENTATION
 

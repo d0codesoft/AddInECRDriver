@@ -4,6 +4,7 @@
 #define IDRIVERPOSTERMINAL_H
 
 #include "AddInDefBase.h"
+#include "common_types.h"
 
 class IDriverPosTerminal
 {
@@ -49,7 +50,6 @@ public:
     virtual bool CancelAuthorisationByPaymentCard(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) = 0;
 
 //#if DRIVER_REQUIREMENTS_VERSION >= DRIVER_REQUIREMENTS_VERSION_3_5
-    virtual bool CashWithdrawal(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) = 0;
 
     virtual bool PayWithCashWithdrawal(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) = 0;
     virtual bool PurchaseWithEnrollment(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) = 0;

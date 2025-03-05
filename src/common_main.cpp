@@ -7,12 +7,12 @@ static std::u16string sClassName(u"CAddInECRDriver");
 static AppCapabilities g_capabilities = eAppCapabilitiesInvalid;
 
 //---------------------------------------------------------------------------//
-long GetClassObject(const WCHAR_T* wsName, IComponentBase** pInterface)
+intptr_t GetClassObject(const WCHAR_T* wsName, IComponentBase** pInterface)
 {
     if (!*pInterface)
     {
         *pInterface = new CAddInECRDriver;
-        return (long)(*pInterface);
+        return reinterpret_cast<intptr_t>(*pInterface);
     }
     return 0;
 }

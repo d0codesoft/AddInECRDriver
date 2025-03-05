@@ -19,7 +19,7 @@ std::string Base64Encode(const std::vector<unsigned char>& data) {
     bio = BIO_push(b64, bio);
 
     BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL); // Do not add newlines
-    BIO_write(bio, data.data(), data.size());
+    BIO_write(bio, data.data(), static_cast<int>(data.size()));
     BIO_flush(bio);
 
     BUF_MEM* bufferPtr;
@@ -32,7 +32,7 @@ std::string Base64Encode(const std::vector<unsigned char>& data) {
 
 // Helper function to decode a base64 string to a regular string
 std::string Base64Decode(const std::string& base64Str) {
-    BIO* bio = BIO_new_mem_buf(base64Str.data(), base64Str.size());
+    BIO* bio = BIO_new_mem_buf(base64Str.data(), static_cast<int>(base64Str.size()));
     BIO* b64 = BIO_new(BIO_f_base64());
     bio = BIO_push(b64, bio);
 
@@ -87,7 +87,7 @@ std::wstring LicenseManager::getOpenSSLErrorString() const {
 // 📌 Loading the public key
 EVP_PKEY* LicenseManager::LoadPublicKey() const {
     auto pemKey = GetPublicKey();
-    BIO* bio = BIO_new_mem_buf(pemKey.c_str(), pemKey.size());
+    BIO* bio = BIO_new_mem_buf(pemKey.c_str(), static_cast<int>(pemKey.size()));
     if (!bio) return nullptr;
 
     EVP_PKEY* pkey = PEM_read_bio_PUBKEY(bio, nullptr, nullptr, nullptr);
