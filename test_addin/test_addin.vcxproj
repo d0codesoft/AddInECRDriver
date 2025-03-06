@@ -148,10 +148,12 @@
     <ClCompile Include="common_platform.h" />
     <ClCompile Include="ComponentBaseTester.cpp" />
     <ClCompile Include="test_addin.cpp" />
+    <ClCompile Include="wide_console.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AddInBaseStub.h" />
     <ClInclude Include="ComponentBaseTester.h" />
+    <ClInclude Include="wide_console.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

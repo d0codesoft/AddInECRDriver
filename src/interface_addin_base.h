@@ -21,7 +21,6 @@ public:
     virtual void addError(uint32_t wcode, const std::u16string& source,
         const std::u16string& descriptor, long code) = 0;
 
-    virtual bool getString1C(const std::u16string& source, WCHAR_T* value, uint32_t& length) = 0;
     virtual bool getString1C(const std::u16string& source, WCHAR_T** value, uint32_t& length) = 0;
 	virtual bool getStringFromWchart(const WCHAR_T* source, std::u16string& desct) = 0;
     virtual bool setStringValue(tVariant* pvarParamDefValue, const std::u16string& source) = 0;

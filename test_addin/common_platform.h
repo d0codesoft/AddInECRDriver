@@ -29,6 +29,9 @@ using LibHandle = void*;
 #include <stdexcept>
 #include <vector>
 #include <types.h>
+#include "wide_console.h"
+
+void printConsole(const std::wstring& text);
 
 std::wstring getLibraryName();
 
@@ -44,7 +47,7 @@ T GetProcAddressSafe(HMODULE hModule, const char* procName) {
 std::wstring toWString(const std::u16string& u16str);
 std::wstring toWString(const std::string& str);
 
-inline std::wstring getVariantValue(const tVariant& variant);
+std::wstring getVariantValue(const tVariant& variant);
 
 class SharedLibrary {
 public:

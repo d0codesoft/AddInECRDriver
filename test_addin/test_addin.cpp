@@ -7,13 +7,19 @@
 #include <iostream>
 #include "AddInBaseStub.h"
 #include "ComponentBase.h"
+#include "ComponentBaseTester.h"
+#include "wide_console.h"
 
 int main()
 {
+
+#if defined(_WIN32)
+#endif
+
 	std::wstring libName = getLibraryName();
 	auto library = std::make_unique<SharedLibrary>(libName);
     if (!library->isValid()) {
-        std::cerr << "Failed to load the library!" << std::endl;
+		wconsole << L"Failed to load the library!" << std::endl;
         return 1;
     }
 
@@ -24,44 +30,47 @@ int main()
     GetAttachTypePtr getAttachTypePtr = GetProcAddressSafe<GetAttachTypePtr>(library->getHandle(), "GetAttachType");
 
 	if (!getClassObjectPtr || !destroyObjectPtr || !getClassNamesPtr || !setPlatformCapabilitiesPtr || !getAttachTypePtr) {
-		std::cerr << "Error test library" << std::endl;
+		wconsole << L"Error test library" << std::endl;
 		return 1;
 	}
 	else {
-		std::wcout << L"Successfully found all required functions in the library." << std::endl;
+		wconsole << L"Successfully found all required functions in the library." << std::endl;
 	}
 	
 	auto class_names = getClassNamesPtr();
 	auto names = splitString(class_names, u'|');
 	if (names.empty()) {
-		std::cerr << "Failed to get class names!" << std::endl;
+		wconsole << L"Failed to get class names!" << std::endl;
 		return 1;
 	}
 
 	std::wcout << L"Class names in library" << std::endl;
 	for (const auto& name : names) {
-		std::wcout << L"	class: " << toWString(name) << std::endl;
+		wconsole << L"	class: " << toWString(name) << std::endl;
 	}
-	std::wcout << L"Success get class names" << std::endl;
+	wconsole << L"Success get class names" << std::endl;
 
 	AppCapabilities capabilities = setPlatformCapabilitiesPtr(eAppCapabilities3);
-	std::wcout << L"Success set capabilities: " << capabilities << std::endl;
+	wconsole << L"Success set capabilities: " << capabilities << std::endl;
 
 	AttachType attachType = getAttachTypePtr();
-	std::wcout << L"Success get attach type: " << attachType << std::endl;
+	wconsole << L"Success get attach type: " << attachType << std::endl;
 
 	IComponentBase* pComponent = nullptr;
 	intptr_t result = getClassObjectPtr(names[0].c_str(), &pComponent);
 	if (result == 0) {
-		std::cerr << "Failed to create the object!" << std::endl;
+		wconsole << L"Failed to create the object!" << std::endl;
 		return 1;
 	}
 
-	
+	ComponentBaseTester tester(pComponent);
+	tester.runTests();
 
 	destroyObjectPtr(&pComponent);
 
 	library.release();
 
-    std::cout << "Finish test\n";
+	wconsole << L"Finish test" << std::endl;
+	std::wcin.get();
+	return 1;
 }

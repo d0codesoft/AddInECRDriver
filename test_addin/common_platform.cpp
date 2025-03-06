@@ -16,6 +16,17 @@ std::wstring getLibraryName() {
 #endif
 }
 
+void printConsole(const std::wstring& text) {
+#ifdef _WIN32
+    DWORD written;
+    WriteConsoleW(GetStdHandle(STD_OUTPUT_HANDLE), text.c_str(), static_cast<DWORD>(text.size()), &written, NULL);
+#else
+    // На Linux/macOS можно просто использовать std::wcout
+    std::wcout << text;
+#endif
+}
+
+
 std::wstring toWString(const std::u16string& u16str) {
     if (sizeof(wchar_t) == 2) {
         // Windows: wchar_t == UTF-16, можно копировать напрямую
@@ -69,68 +80,68 @@ std::wstring toWString(const std::string& str)
 	return wstr;
 }
 
-inline std::wstring getVariantValue(const tVariant& variant)
+std::wstring getVariantValue(const tVariant& variant)
 {
     std::wstringstream wss;
     wss << L"";
     switch (TV_VT(&variant)) {
     case VTYPE_I1:
-        wss << L"int8 = " << static_cast<int>(TV_I1(&variant));
+        wss << static_cast<int>(TV_I1(&variant)) << L" (int8)";
         break;
     case VTYPE_I2:
-        wss << L"short int = " << TV_I2(&variant);
+        wss << TV_I2(&variant) << L" (int16)";
         break;
     case VTYPE_I4:
-        wss << L"int4 = " << TV_I4(&variant);
+        wss << TV_I4(&variant) << L" (int32)";
         break;
     case VTYPE_INT:
-        wss << L"int = " << TV_INT(&variant);
+        wss << TV_INT(&variant) << L" (int)";
         break;
     case VTYPE_UI1:
-        wss << L"u8int = " << static_cast<unsigned int>(TV_UI1(&variant));
+        wss << static_cast<unsigned int>(TV_UI1(&variant)) << L" (uint8)";
         break;
     case VTYPE_UI2:
-        wss << L"ushort = " << TV_UI2(&variant);
+        wss << TV_UI2(&variant) << L" (uint16)";
         break;
     case VTYPE_UI4:
-        wss << L"u4int = " << TV_UI4(&variant);
+        wss << TV_UI4(&variant) << L" (uint32)";
         break;
     case VTYPE_UINT:
-        wss << L"int = " << TV_UINT(&variant);
+        wss << TV_UINT(&variant) << L" (uint)";
         break;
     case VTYPE_I8:
-        wss << L"long = " << TV_I8(&variant);
+        wss << TV_I8(&variant) << L" (int64)";
         break;
     case VTYPE_UI8:
-        wss << L"ulong = " << TV_UI8(&variant);
+        wss << TV_UI8(&variant) << L" (uint64)";
         break;
     case VTYPE_ERROR:
-        wss << L"error = " << TV_JOIN(&variant, errCode);
+        wss << TV_JOIN(&variant, errCode) << L" (error)";
         break;
     case VTYPE_HRESULT:
-        wss << L"HRESULT = " << TV_JOIN(&variant, hRes);
+        wss << TV_JOIN(&variant, hRes) << L" (HRESULT)";
         break;
     case VTYPE_R4:
-        wss << L"float = " << TV_R4(&variant);
+        wss << TV_R4(&variant) << L" (float)";
         break;
     case VTYPE_R8:
-        wss << L"double = " << TV_R8(&variant);
+        wss << TV_R8(&variant) << L" (double)";
         break;
     case VTYPE_BOOL:
-        wss << L"bool = " << (TV_BOOL(&variant) ? L"true" : L"false");
+        wss << (TV_BOOL(&variant) ? L"true" : L"false");
         break;
     case VTYPE_PSTR:
-        wss << L"PSTR = " << toWString(std::string(TV_STR(&variant)));
+        wss << toWString(std::string(TV_STR(&variant))) << L" (PSTR)";
         break;
     case VTYPE_PWSTR:
-        wss << L"PWSTR = " << toWString(TV_WSTR(&variant));
+        wss << toWString(TV_WSTR(&variant)) << L" (PWSTR)";
         break;
     case VTYPE_DATE:
-        wss << L"date = " << TV_DATE(&variant);
+        wss << TV_DATE(&variant) << L" (date)";
         break;
     case VTYPE_TM:
         auto val = TV_JOIN(&variant, tmVal);
-        wss << L"Time = " << std::put_time(&val, L"%c");
+        wss << std::put_time(&val, L"%c") << L" (time)";
         break;
     default:
         wss << L"";

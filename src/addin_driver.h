@@ -51,7 +51,6 @@ public:
     virtual void addError(uint32_t wcode, const std::u16string& source,
         const std::u16string& descriptor, long code) override;
 
-    virtual bool getString1C(const std::u16string& source, WCHAR_T* value, uint32_t& length) override;
     virtual bool getString1C(const std::u16string& source, WCHAR_T** value, uint32_t& length) override;
     virtual bool getStringFromWchart(const WCHAR_T* source, std::u16string& desct) override;
     virtual bool setStringValue(tVariant* pvarParamDefValue, const std::u16string& source) override;

@@ -30,12 +30,18 @@
     <ClCompile Include="ComponentBaseTester.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="wide_console.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AddInBaseStub.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ComponentBaseTester.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="wide_console.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

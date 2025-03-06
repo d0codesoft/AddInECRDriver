@@ -147,8 +147,8 @@ const WCHAR_T* CAddInECRDriver::GetPropName(long lPropNum, long lPropAlias)
     }
 
     uint32_t iActualSize = 0;
-    WCHAR_T* wsPropName = NULL;
-    if (getString1C(wsCurrentName, wsPropName, iActualSize)) {
+    WCHAR_T* wsPropName = nullptr;
+    if (getString1C(wsCurrentName, &wsPropName, iActualSize)) {
         return wsPropName;
     }
 
@@ -213,7 +213,7 @@ long CAddInECRDriver::FindMethod(const WCHAR_T* wsMethodName)
 		return plMethodNum;
 
     std::u16string methodName = {};
-	if (getStringFromWchart(wsMethodName, methodName)) {
+	if (!getStringFromWchart(wsMethodName, methodName)) {
 		return plMethodNum;
 	}
 
@@ -253,8 +253,8 @@ const WCHAR_T* CAddInECRDriver::GetMethodName(const long lMethodNum, const long 
     }
 
     uint32_t iActualSize = 0;
-    WCHAR_T* wsMethodName = NULL;
-    if (getString1C(wsCurrentName, wsMethodName, iActualSize)) {
+    WCHAR_T* wsMethodName = nullptr;
+    if (getString1C(wsCurrentName, &wsMethodName, iActualSize)) {
 		return wsMethodName;
     }
 
@@ -380,26 +380,6 @@ IMemoryManager* CAddInECRDriver::getMemoryManager() const
     return m_iMemory;
 }
 
-bool CAddInECRDriver::getString1C(const std::u16string& source, WCHAR_T* value, uint32_t& length)
-{
-    size_t iActualSize = source.size() + 1;
-
-    if (m_iMemory && m_iMemory->AllocMemory((void**)&value, static_cast<uint32_t>(iActualSize) * sizeof(WCHAR_T)))
-    {
-        // Set all allocated memory to 0
-        memset(value, 0, iActualSize * sizeof(WCHAR_T));
-		for (size_t i = 0; i < source.size(); i++)
-		{
-			value[i] = (WCHAR_T)source[i];
-		}
-        //memcpy(value, source.c_str(), source.size() * sizeof(char16_t));
-        //value[source.size()] = 0;
-        length = static_cast<uint32_t>(source.size());
-        return true;
-    }
-    return false;
-}
-
 bool CAddInECRDriver::getString1C(const std::u16string& source, WCHAR_T** value, uint32_t& length)
 {
     size_t iActualSize = source.size() + 1;
@@ -439,7 +419,7 @@ bool CAddInECRDriver::setStringValue(tVariant* pvarParamDefValue, const std::u16
         return false;
     }
     TV_VT(pvarParamDefValue) = VTYPE_PWSTR;
-    if (!getString1C(source, pvarParamDefValue->pwstrVal, pvarParamDefValue->wstrLen)) {
+    if (!getString1C(source, &pvarParamDefValue->pwstrVal, pvarParamDefValue->wstrLen)) {
         TV_VT(pvarParamDefValue) = VTYPE_EMPTY;
         return false;
     }
@@ -581,7 +561,7 @@ bool CAddInECRDriver::SetParam(tVariant* pvarParamDefValue, const ParamDefault* 
     }
     else if (std::holds_alternative<std::u16string>(*defaultParam)) {
         std::u16string str = std::get<std::u16string>(*defaultParam);
-        if (getString1C(str, pvarParamDefValue->pwstrVal, pvarParamDefValue->wstrLen)) {
+        if (getString1C(str, &pvarParamDefValue->pwstrVal, pvarParamDefValue->wstrLen)) {
             TV_VT(pvarParamDefValue) = VTYPE_PWSTR;
 		}
 		else {
