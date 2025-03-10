@@ -6,6 +6,10 @@
 #include <iostream>
 #include <string>
 #include <locale>
+#include <fstream>
+#include <chrono>
+#include <iomanip>
+#include "str_utils.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -13,7 +17,7 @@
 
 class Console {
 public:
-    Console() {
+    Console(const std::wstring& logFileName = L"test.log") {
 #ifdef _WIN32
         // Установить кодировку консоли на UTF-8
         SetConsoleOutputCP(CP_UTF8);
@@ -29,6 +33,24 @@ public:
         wcscpy_s(cfi.FaceName, L"Consolas");    // Choose your font
         SetCurrentConsoleFontEx(GetStdHandle(STD_OUTPUT_HANDLE), FALSE, &cfi);
 #endif
+
+        std::ifstream check_file(logFileName, std::ios::binary | std::ios::ate);
+        bool is_empty = check_file.tellg() == 0;
+        check_file.close();
+
+        if (is_empty) {
+            std::ofstream logFile(logFileName, std::ios::binary);
+            if (logFile.is_open()) {
+                const char bom[] = "\xFF\xFE";
+                logFile.write(bom, sizeof(bom) - 1);
+                logFile.close();
+            }
+        }
+
+        logFile_.open(logFileName, std::ios::binary | std::ios::app);
+		if (logFile_.is_open()) {
+            logFile_.imbue(std::locale(".UTF-8"));
+		}
     }
 
     // Оператор вывода для std::wstring
@@ -39,16 +61,24 @@ public:
 #else
         std::wcout << text;
 #endif
+        if (logFile_.is_open()) {
+            if (addTimestamp) { logFile_ << getCurrentDateTime(); addTimestamp = false; }
+            logFile_ << text;
+        }
         return *this;
     }
 
     // Оператор вывода для std::string (автоматически преобразует в UTF-16 на Windows)
     Console& operator<<(const std::string& text) {
 #ifdef _WIN32
-        std::wstring wtext = utf8ToWstring(text);
+        std::wstring wtext = str_utils::to_wstring(text);
         return *this << wtext;
 #else
         std::cout << text;
+        if (logFile_.is_open()) {
+            if (addTimestamp) { logFile_ << getCurrentDateTime(); }
+            logFile_ << text;
+        }
 #endif
         return *this;
     }
@@ -61,6 +91,10 @@ public:
 #else
         std::wcout << value;
 #endif
+        if (logFile_.is_open()) {
+            if (addTimestamp) { logFile_ << getCurrentDateTime(); addTimestamp = false; }
+            logFile_ << value;
+        }
         return *this;
     }
 
@@ -71,19 +105,31 @@ public:
 #else
         std::wcout << manip;
 #endif
+        if (logFile_.is_open()) {
+            logFile_ << manip;
+        }
+        addTimestamp = true;
         return *this;
     }
 
 private:
+
+    static std::wstring getCurrentDateTime() {
+        auto now = std::chrono::system_clock::now();
+        auto in_time_t = std::chrono::system_clock::to_time_t(now);
+        std::tm buf;
 #ifdef _WIN32
-    // Преобразование UTF-8 в UTF-16
-    static std::wstring utf8ToWstring(const std::string& str) {
-        int size = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, nullptr, 0);
-        std::wstring wstr(size - 1, L'\0');
-        MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, &wstr[0], size);
-        return wstr;
-    }
+        localtime_s(&buf, &in_time_t);
+#else
+        localtime_r(&in_time_t, &buf);
 #endif
+        std::wstringstream ss;
+        ss << std::put_time(&buf, L"%Y-%m-%d %X") << L" : ";
+        return ss.str();
+    }
+
+    std::wofstream logFile_;
+    bool addTimestamp = true;
 };
 
 extern Console wconsole;

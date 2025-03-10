@@ -26,10 +26,13 @@ using LibHandle = void*;
 #include <unicode/ucnv.h>
 #include <unicode/ustring.h>
 #include <unicode/unistr.h>
+#include <unicode/ucsdet.h>
+#include <unicode/utypes.h>
 #include <stdexcept>
 #include <vector>
 #include <types.h>
 #include "wide_console.h"
+#include "str_utils.h"
 
 void printConsole(const std::wstring& text);
 
@@ -43,9 +46,6 @@ T GetProcAddressSafe(HMODULE hModule, const char* procName) {
     }
     return procAddress;
 }
-
-std::wstring toWString(const std::u16string& u16str);
-std::wstring toWString(const std::string& str);
 
 std::wstring getVariantValue(const tVariant& variant);
 
