@@ -147,6 +147,8 @@
     <ClCompile Include="common_platform.cpp" />
     <ClCompile Include="common_platform.h" />
     <ClCompile Include="ComponentBaseTester.cpp" />
+    <ClCompile Include="extension_test_script.cpp" />
+    <ClCompile Include="parser_call.cpp" />
     <ClCompile Include="str_utils.cpp" />
     <ClCompile Include="test_addin.cpp" />
     <ClCompile Include="wide_console.cpp" />
@@ -154,6 +156,8 @@
   <ItemGroup>
     <ClInclude Include="AddInBaseStub.h" />
     <ClInclude Include="ComponentBaseTester.h" />
+    <ClInclude Include="extension_test_script.h" />
+    <ClInclude Include="parser_call.h" />
     <ClInclude Include="str_utils.h" />
     <ClInclude Include="wide_console.h" />
   </ItemGroup>

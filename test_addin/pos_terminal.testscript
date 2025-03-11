@@ -1,0 +1,16 @@
+# Название теста
+[Test]
+Name = "Тест вызова методов AddIn"
+
+# Вызовы процедур
+[Procedures]
+# Формат: <ИмяПроцедуры> | <Индекс> | <Параметр0> | <Параметр1> | ...
+CallAsProc = "Init" | 1 | "param1" | 42
+CallAsProc = "ProcessData" | 2 | "data1" | "data2" | 3.14
+CallAsProc = "Finalize" | 3
+
+# Вызовы функций
+[Functions]
+# Формат: <ИмяФункции> | <Индекс> | <Параметр0> | <Параметр1> | ... | <ПеременнаяРезультата>
+CallAsFunc = "Compute" | 10 | 5 | 10 | result1
+CallAsFunc = "GetStatus" | 11 | "session1" | statusVar

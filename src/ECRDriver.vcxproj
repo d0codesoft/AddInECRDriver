@@ -190,6 +190,7 @@
     <ClInclude Include="setting_driver_pos.h" />
     <ClInclude Include="storage_manager.h" />
     <ClInclude Include="string_conversion.h" />
+    <ClInclude Include="str_utils.h" />
     <ClInclude Include="sys_utils.h" />
   </ItemGroup>
   <ItemGroup>
@@ -212,6 +213,7 @@
     <ClCompile Include="setting_driver_pos.cpp" />
     <ClCompile Include="storage_manager.cpp" />
     <ClCompile Include="string_conversion.cpp" />
+    <ClCompile Include="str_utils.cpp" />
     <ClCompile Include="sys_utils.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

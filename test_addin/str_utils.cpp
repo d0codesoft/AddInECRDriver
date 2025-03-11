@@ -501,3 +501,43 @@
 
 		return utf8Str;
 	}
+
+	void str_utils::ltrim(std::string& s)
+	{
+		s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
+			return !std::isspace(ch);
+			}));
+	}
+
+	void str_utils::rtrim(std::string& s)
+	{
+		s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
+			return !std::isspace(ch);
+			}).base(), s.end());
+	}
+
+	void str_utils::trim(std::string& s)
+	{
+		ltrim(s);
+		rtrim(s);
+	}
+
+	void str_utils::ltrim(std::wstring& s)
+	{
+		s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](wchar_t ch) {
+			return !std::isspace(ch);
+			}));
+	}
+
+	void str_utils::rtrim(std::wstring& s)
+	{
+		s.erase(std::find_if(s.rbegin(), s.rend(), [](wchar_t ch) {
+			return !std::isspace(ch);
+			}).base(), s.end());
+	}
+
+	void str_utils::trim(std::wstring& s)
+	{
+		ltrim(s);
+		rtrim(s);
+	}

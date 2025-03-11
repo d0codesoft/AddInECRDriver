@@ -10,10 +10,50 @@
 #include "ComponentBaseTester.h"
 #include "wide_console.h"
 #include <map>
+#include <string>
+#include <vector>
+#include <filesystem>
+#include "extension_test_script.h"
 
 void displayVersionInfo() {
 	wconsole << L"Test AddIn for 1C 8.X Version 1.0.0" << std::endl;
 }
+
+std::optional<std::wstring> findParam(
+	const std::unordered_map<std::wstring, std::wstring>& options,
+	const std::wstring& name)
+{
+	auto it = options.find(name);
+	if (it != options.end()) {
+		return it->second; // Return the found value
+	}
+	return std::nullopt; // Parameter not found
+}
+
+std::unordered_map<std::wstring, std::wstring> parseArgs(int argc, char* argv[]) {
+	std::unordered_map<std::wstring, std::wstring> options;
+
+	for (int i = 1; i < argc; ++i) {
+		std::string arg = argv[i];
+
+		if (arg.rfind("--", 0) == 0) { // Starts with "--"
+			std::wstring key = str_utils::to_wstring(arg);
+			std::wstring value = {};
+
+			if (i + 1 < argc) {
+				std::wstring nextArg = str_utils::to_wstring(argv[i + 1]);
+
+				if (nextArg.rfind(L"--", 0) != 0) { // Not another option
+					value = nextArg;
+					++i; // Skip next arg
+				}
+			}
+			options[key] = value;
+		}
+	}
+	return options;
+}
+
 
 int main(int argc, char* argv[])
 {
@@ -27,29 +67,49 @@ int main(int argc, char* argv[])
 		for (const auto& device : getDeviceTypesRu()) {
 			wconsole << L"		" << device.first << L" - " << device.second << std::endl;
 		}
+		wconsole << L"	--script <full path file script *.testscript>" << std::endl;
+		wconsole << L"		see exampl pos_terminal.testscript" << std::endl;
 		return 1;
 	}
 	
-	std::optional<std::wstring> deviceTypeDescription = std::nullopt;
 	std::wstring libName = str_utils::to_wstring(std::string(argv[1]));
-	if (argc == 4 && std::string(argv[2]) == "--deviceType") {
-		std::wstring deviceType = str_utils::to_wstring(std::string(argv[3]));
+	if (libName.empty()) {
+		wconsole << L"Error name AddIn library is empty!" << std::endl;
+		return 1;
+	}
+	if (!std::filesystem::exists(libName) || std::filesystem::is_directory(libName)) {
+		wconsole << L"File AddIn library not found!" << std::endl;
+		return 1;
+	}
+	if (std::filesystem::path(libName).extension() != LIB_EXTENSION) {
+		wconsole << L"File AddIn library not extension library!" << std::endl;
+		return 1;
+	}
+
+	auto paramProgram = parseArgs(argc-1, &argv[1]);
+
+	std::optional<std::wstring> deviceTypeDescription = std::nullopt;
+	auto parDeviseType = findParam(paramProgram, L"--deviceType");
+	if (parDeviseType.has_value()) {
+		std::wstring deviceType = parDeviseType.value();
 		deviceTypeDescription = getDeviceTypeDescription(deviceType);
 		if (!deviceTypeDescription.has_value()) {
 			wconsole << L"Unknown device type: " << deviceType << std::endl;
 			return 1;
 		}
-	}
-	else if (argc > 2) {
-		wconsole << L"Unknown option: " << str_utils::to_wstring(argv[2]) << std::endl;
-		return 1;
+		wconsole << L"Device type: " << deviceTypeDescription.value() << std::endl;
 	}
 
-	if (!deviceTypeDescription.has_value()){
-		deviceTypeDescription = getDeviceTypeDescription(L"DriverBase");
+	std::wstring fileScript = {};
+	auto parFileScript = findParam(paramProgram, L"--script");
+	if (parFileScript.has_value()) {
+		fileScript = parFileScript.value();
+		if (!std::filesystem::exists(fileScript) || std::filesystem::is_directory(fileScript)) {
+			wconsole << L"File script not found!" << std::endl;
+			return 1;
+		}
 	}
 
-	wconsole << L"Device type: " << deviceTypeDescription.value() << std::endl;
 	auto library = std::make_unique<SharedLibrary>(libName);
     if (!library->isValid()) {
 		wconsole << L"Failed to load the library!" << std::endl;
@@ -109,9 +169,14 @@ int main(int argc, char* argv[])
 	}
 
 	TestAddIn tester(pComponent);
-	tester.registerExtension<ExtensionTestAddInDriverBase>();
-	tester.runTests();
+	if (deviceTypeDescription.has_value()) {
+		tester.registerExtension<ExtensionTestAddInDriverBase>();
+	}
+	if (!fileScript.empty()) {
+		tester.registerExtension<IExtensionTestScript>(fileScript);
+	}
 
+	tester.runTests();
 
 	destroyObjectPtr(&pComponent);
 

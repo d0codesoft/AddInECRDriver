@@ -40,6 +40,13 @@ std::wstring to_wstring(icu::UnicodeString& unicodeStr);
 std::u16string to_u16string(icu::UnicodeString& unicodeStr);
 std::string to_string(icu::UnicodeString& unicodeStr);
 
+inline void ltrim(std::string& s);
+inline void rtrim(std::string& s);
+inline void trim(std::string& s);
+inline void ltrim(std::wstring& s);
+inline void rtrim(std::wstring& s);
+inline void trim(std::wstring& s);
+
 }
 
 #endif // STR_UTILS_H
