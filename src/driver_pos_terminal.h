@@ -10,16 +10,18 @@
 #include "common_main.h"
 #include "interface_connection.h"
 #include "setting_driver_pos.h"
+#include "license_manager.h"
 
 const std::wstring DRIVER_VERSION = L"1.0.0"; // ќбъ€вление константы версии драйвера
+//using ParameterMap = std::unordered_map<std::wstring, std::variant<std::wstring, int, bool>>;
+
 
 class DriverPOSTerminal : public IDriver1CUniBase, public IDriverPosTerminal
 {
 public:
-    DriverPOSTerminal(IAddInBase* addInBase) : m_addInBase(addInBase) {
+    DriverPOSTerminal(IAddInBase* addInBase);
 
-    }
-    ~DriverPOSTerminal() = default;
+    ~DriverPOSTerminal();
 
 	void InitDriver() override;
 
@@ -84,6 +86,8 @@ public:
 protected:
 
 	bool InitConnection();
+	bool testConnection();
+    bool testConnection(std::vector<DriverParameter>& paramConnection);
     void addErrorDriver(const std::u16string& lastError, const std::wstring& logError);
 	void clearError();
     static std::u16string createUID(const std::wstring& host, uint32_t port);
@@ -152,12 +156,13 @@ private:
 
     std::vector<PropName> m_PropNames = {};
 	std::vector<DriverParameter> m_ParamConnection = {};
-	std::unique_ptr<IConnection> m_connection;
+	std::unique_ptr<IConnection> m_connection = nullptr;
 	ConnectionType m_connectionType = ConnectionType::TCP;
 	std::u16string m_equipmentId = u"";
-    SettingSettings m_settings;
+    //ParameterMap m_parameters = {};
 
     DriverDescription m_driverDescription;
+    std::unique_ptr<LicenseManager> m_licenseManager;
 };
 
 #endif // DRIVERPOSTERMINAL_H

@@ -152,6 +152,18 @@ bool LicenseManager::VerifyLicenseData(const std::wstring& signedData, const std
     return result == 1;
 }
 
+bool LicenseManager::isDemoMode() const
+{
+    // Need to create the implementation code here
+    return false;
+}
+
+std::wstring LicenseManager::getDemoModeDescription() const
+{
+    // Need to create the implementation code here
+    return L"Драйвер є умовно платним, і для повноцінної роботи потрібен ключ захисту.";
+}
+
 // 📌 Set and Validate License
 bool LicenseManager::SetLicense(const std::wstring& licenseKey) {
     std::wstring decryptedData;

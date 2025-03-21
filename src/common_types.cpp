@@ -7,6 +7,7 @@
 #include "common_types.h"
 #include "string_conversion.h"
 #include "logger.h"
+#include "str_utils.h"
 
 bool isValidEquipmentType(const std::u16string& input) {
     return std::any_of(EquipmentTypes.begin(), EquipmentTypes.end(), [&](const EquipmentType& eq) {

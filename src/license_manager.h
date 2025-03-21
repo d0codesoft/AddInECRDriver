@@ -25,6 +25,8 @@ public:
 
     // Функция проверки лицензии (проверка подписи RSA)
     bool VerifyLicenseData(const std::wstring& signedData, const std::wstring& originalData) const;
+	bool isDemoMode() const;
+	std::wstring getDemoModeDescription() const;
 
 private:
     std::wstring storedLicenseKey;  // Хранение лицензии

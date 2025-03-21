@@ -56,6 +56,12 @@ public:
     virtual bool setStringValue(tVariant* pvarParamDefValue, const std::u16string& source) override;
 	virtual bool setBoolValue(tVariant* pvarParamDefValue, const bool flag) override;
 
+	virtual std::wstring getStringValue(const tVariant& var) override;
+	virtual long getLongValue(const tVariant& var) override;
+	virtual std::optional<bool> getBoolValue(const tVariant& var) override;
+	virtual bool isValueString(const tVariant& var) override;
+
+
 	// IAddInBase
     bool saveValue(const std::u16string& key, const std::u16string& value) override;
     bool saveValue(const std::u16string& key, const int value) override;

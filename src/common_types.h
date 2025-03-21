@@ -132,6 +132,44 @@ std::optional<T> findParameterValue(const std::vector<DriverParameter>& params, 
     return std::nullopt;
 }
 
+template <typename T>
+typename std::enable_if<
+    std::is_same<T, std::wstring>::value ||
+    std::is_same<T, int>::value ||
+    std::is_same<T, bool>::value, bool>::type
+    setParameterValue(std::vector<DriverParameter>& params, const std::wstring& paramName, const T& value) {
+    for (auto& param : params) {
+        if (param.name == paramName) {
+            param.value = value;
+            if constexpr (std::is_same<T, std::wstring>::value) {
+                param.type = TypeParameter::String;
+            }
+            else if constexpr (std::is_same<T, int>::value) {
+                param.type = TypeParameter::Number;
+            }
+            else if constexpr (std::is_same<T, bool>::value) {
+                param.type = TypeParameter::Bool;
+            }
+            return true;
+        }
+    }
+    // Determine the type of the parameter
+    TypeParameter type;
+    if constexpr (std::is_same<T, std::wstring>::value) {
+        type = TypeParameter::String;
+    }
+    else if constexpr (std::is_same<T, int>::value) {
+        type = TypeParameter::Number;
+    }
+    else if constexpr (std::is_same<T, bool>::value) {
+        type = TypeParameter::Bool;
+    }
+
+    // If the parameter is not found, create a new one
+    params.push_back({ paramName, value, type });
+    return true;
+}
+
 std::u16string toXml(const DriverDescription& driver);
 
 #define BOOL_TO_STRING(b) ((b) ? L"true" : L"false")

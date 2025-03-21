@@ -10,6 +10,7 @@
 #include <unicode/ustring.h>
 #include <unicode/ucsdet.h>
 #include <unicode/utypes.h>
+#include <unordered_map>
 
 namespace str_utils
 {
@@ -40,14 +41,26 @@ std::wstring to_wstring(icu::UnicodeString& unicodeStr);
 std::u16string to_u16string(icu::UnicodeString& unicodeStr);
 std::string to_string(icu::UnicodeString& unicodeStr);
 
-inline void ltrim(std::string& s);
-inline void rtrim(std::string& s);
-inline void trim(std::string& s);
-inline void ltrim(std::wstring& s);
-inline void rtrim(std::wstring& s);
-inline void trim(std::wstring& s);
+class strConverter
+{
+public:
+	// Convert string to wstring using specified encoding
+	static std::wstring to_wstring(const std::string& str, const std::string& encoding = "UTF-8");
 
-}
+	// Convert wstring to string using specified encoding
+	static std::string to_string(const std::wstring& str, const std::string& toCoding = "UTF-8");
+
+	// Destroy all converters
+	static void destroy();
+private:
+	// Get converter for given encoding
+	static UConverter* get_converter(const std::string& encoding);
+
+	// Cache for converters
+	static std::unordered_map<std::string, UConverter*> list_converter;
+};
+
+} // namespace str_utils
 
 #endif // STR_UTILS_H
 

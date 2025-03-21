@@ -26,6 +26,19 @@ public:
     virtual bool setStringValue(tVariant* pvarParamDefValue, const std::u16string& source) = 0;
     virtual bool setBoolValue(tVariant* pvarParamDefValue, const bool flag) = 0;
 
+    virtual std::wstring getStringValue(const tVariant& var) = 0;
+    virtual long getLongValue(const tVariant& var) = 0;
+    virtual std::optional<bool> getBoolValue(const tVariant& var) = 0;
+    virtual std::optional<int> getIntValue(const tVariant& var) = 0;
+    virtual bool isValueString(const tVariant& var) = 0;
+    virtual bool isValueInt(const tVariant& var) = 0;
+	virtual bool isValueBool(const tVariant& var) = 0;
+    virtual bool isValueInt(const tVariant& var) = 0;
+	virtual bool isValueDouble(const tVariant& var) = 0;
+	virtual bool isValueDate(const tVariant& var) = 0;
+	virtual bool isValueArray(const tVariant& var) = 0;
+    virtual bool isValueEmpty(const tVariant& var) = 0;
+
 	// Function to save and load value to storage 1C
 	virtual bool saveValue(const std::u16string& key, const std::u16string& value) = 0;
     virtual bool saveValue(const std::u16string& key, const int value) = 0;

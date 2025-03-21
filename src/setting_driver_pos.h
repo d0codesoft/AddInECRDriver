@@ -44,4 +44,6 @@ private:
 
 };
 
+std::u16string toXML(const SettingSettings& settings);
+
 #endif // SETTINGDRIVERPOS_H

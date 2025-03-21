@@ -7,8 +7,10 @@
 #include "interface_pos_terminal.h"
 #include "string_conversion.h"
 #include "sys_utils.h"
+#include "str_utils.h"
 #include "setting_driver_pos.h"
 #include "logger.h"
+#include "tvariant_helper.h"
 
 #define CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, lValidCountParams, methodName) \
     if ((lSizeArray) != (lValidCountParams) || !(paParams)) { \
@@ -19,6 +21,24 @@
         return false; \
     } \
 
+
+DriverPOSTerminal::DriverPOSTerminal(IAddInBase * addInBase) : m_addInBase(addInBase)
+{
+	m_licenseManager = std::make_unique<LicenseManager>();
+}
+
+DriverPOSTerminal::~DriverPOSTerminal()
+{
+	if (m_licenseManager)
+		m_licenseManager.reset();
+
+    if (m_connection) {
+		if (m_connection->isConnected()) {
+			m_connection->disconnect();
+		}
+        m_connection.reset();
+    }
+}
 
 void DriverPOSTerminal::InitDriver()
 {
@@ -45,41 +65,8 @@ void DriverPOSTerminal::InitDriver()
     m_ParamConnection = {
         { L"ConnectionType", L"", TypeParameter::String },
 	    { L"Address", L"", TypeParameter::String },
-	    { L"Port", 2000, TypeParameter::Number }
-		//{ L"Speed", 9600, TypeParameter::Number }
-    };
-
-
-
-    m_settings = {
-        {
-            {
-                L"Параметры", // PageCaption
-                {
-                    {   // Group Connection parameters
-                        L"Параметры подключения",
-                        {
-                            {L"ConnectionType", L"Тип подключения", L"Выберите тип подключения.", L"String", L"", L"TCP", false,
-                             {{L"TCP", L"TCP"}, {L"COM", L"COM"}, {L"WebSocket", L"WebSocket"}}},
-
-                            {L"Address", L"Адрес подключения", L"Введите адрес сервера.", L"String", L"", L"", false, {}},
-
-                            {L"Port", L"Порт", L"Введите номер порта.", L"Number", L"", L"2000", false, {}}
-
-                            //{L"Speed", L"Скорость подключения", L"Укажите скорость соединения.", L"Number", L"", L"9600", false, {}}
-                        }
-                    },
-                    {   // Group licensing
-                        L"Лицензирование",
-                        {
-                            {L"DriverVersion", L"Версия драйвера", L"", L"String", L"", DRIVER_VERSION, true, {}},
-                            {L"LicenseStatus", L"Статус лицензии", L"", L"String", L"", L"Не активирована", true, {}},
-                            {L"LicenseKey", L"Ключ лицензии", L"Введите ключ лицензии.", L"String", L"", L"", false, {} }
-                        }
-                    }
-                }
-            }
-        }
+	    { L"Port", 2000, TypeParameter::Number },
+		{ L"Speed", 9600, TypeParameter::Number }
     };
 }
 
@@ -105,11 +92,12 @@ bool DriverPOSTerminal::GetInterfaceRevision(tVariant* pvarRetValue, tVariant* p
 
     // 2000 revision is the minimum supported revision 2.0
     // 2004 revision is the maximum supported revision 2.4
+	// 3004 revision is the maximum supported revision 2.4
     // 4004 revision is the maximum supported revision 4.4
 
     tVarInit(pvarRetValue);
     TV_VT(pvarRetValue) = VTYPE_I4;
-    TV_I4(pvarRetValue) = 4004;
+    TV_I4(pvarRetValue) = DRIVER_REQUIREMENTS_VERSION;
 
     return true;
 }
@@ -171,9 +159,13 @@ bool DriverPOSTerminal::GetLastError(tVariant* pvarRetValue, tVariant* paParams,
 // Возвращает `true`, если список параметров успешно получен, иначе `false`.
 bool DriverPOSTerminal::GetParameters(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray)
 {
-    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 1, u"GetDescription");
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 1, u"GetParameters");
 
-    return false;
+	auto xmlParam = toXML(SettingDriverPos::getSettings());
+	m_addInBase->setStringValue(paParams, xmlParam);
+	m_addInBase->setBoolValue(pvarRetValue, true);
+
+    return true;
 }
 
 // Метод: УстановитьПараметр (SetParameter)
@@ -194,9 +186,33 @@ bool DriverPOSTerminal::SetParameter(tVariant* pvarRetValue, tVariant* paParams,
 {
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 2, u"SetParameter");
 
+	auto paramName = m_addInBase->getStringValue(paParams[0]);
 
+    if (VariantHelper::isValueString(paParams[1])) {
+        auto valStr = VariantHelper::getStringValue(paParams[1]);
+		if (valStr.has_value()) {
+            setParameterValue(m_ParamConnection, paramName, valStr.value());
+        }
+	}
+	else if (VariantHelper::isValueInt(paParams[1])) {
+        auto valInt = VariantHelper::getIntValue(paParams[1]);
+        if (valInt.has_value()) {
+            setParameterValue(m_ParamConnection, paramName, valInt.value());
+        }
+	}
+	else if (paParams[1].vt == VTYPE_BOOL) {
+        auto valBool = VariantHelper::getBoolValue(paParams[1]);
+        if (valBool.has_value()) {
+            setParameterValue(m_ParamConnection, paramName, valBool.value());
+        }
+	}
+	else {
+		m_addInBase->setBoolValue(pvarRetValue, false);
+		return false;
+	}
 
-    return true;
+    m_addInBase->setBoolValue(pvarRetValue, true);
+	return true;
 }
 
 // Метод: Подключить (Open)
@@ -258,7 +274,18 @@ bool DriverPOSTerminal::DeviceTest(tVariant* pvarRetValue, tVariant* paParams, c
 {
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 2, u"DeviceTest");
 
-    return false;
+	// Test connection
+	auto result = testConnection(m_ParamConnection);
+
+	if (m_licenseManager->isDemoMode()) {
+        m_addInBase->setStringValue(&paParams[1], str_utils::to_u16string(m_licenseManager->getDemoModeDescription()));
+	}
+	else {
+		TV_VT(&paParams[1]) = VTYPE_EMPTY;
+	}
+
+    m_addInBase->setBoolValue(pvarRetValue, result);
+    return result;
 }
 
 
@@ -283,7 +310,7 @@ bool DriverPOSTerminal::EquipmentParameters(tVariant* pvarRetValue, tVariant* pa
 
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 2, u"EquipmentParameters");
 
-	auto type = getEquipmentTypeInfoFromVariant(&paParams[1]);
+	auto type = getEquipmentTypeInfoFromVariant(&paParams[0]);
 	if (!type.has_value() || type.value() != EquipmentTypeInfo::POSTerminal) {
 		m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"EquipmentParameters", u"Invalid type for EquipmentType", -1);
 		addErrorDriver(u"Invalid type for EquipmentType", L"EquipmentParameters: Invalid type for EquipmentType");
@@ -293,7 +320,7 @@ bool DriverPOSTerminal::EquipmentParameters(tVariant* pvarRetValue, tVariant* pa
 
     // Get SettingXML
 	auto settingXml = SettingDriverPos::getSettingXML();
-	m_addInBase->setStringValue(paParams, settingXml);
+	m_addInBase->setStringValue(&paParams[1], settingXml);
     m_addInBase->setBoolValue(pvarRetValue, true);
 
 	return true;
@@ -321,10 +348,10 @@ bool DriverPOSTerminal::EquipmentParameters(tVariant* pvarRetValue, tVariant* pa
 bool DriverPOSTerminal::ConnectEquipment(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
     clearError();
 
-    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 1, u"ConnectEquipment");
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 3, u"ConnectEquipment");
 
     // Get EquipmentType (STRING[IN])
-    auto type = getEquipmentTypeInfoFromVariant(&paParams[1]);
+    auto type = getEquipmentTypeInfoFromVariant(&paParams[0]);
     if (!type.has_value() || type.value() != EquipmentTypeInfo::POSTerminal) {
         m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"EquipmentParameters", u"Invalid type for EquipmentType", -1);
         addErrorDriver(u"Invalid type for EquipmentType", L"EquipmentParameters: Invalid type for EquipmentType");
@@ -333,11 +360,8 @@ bool DriverPOSTerminal::ConnectEquipment(tVariant* pvarRetValue, tVariant* paPar
     }
 
     // Get ConnectionParameters (STRING[IN])
-    std::u16string connectionParameters;
-    if (paParams[2].vt == VTYPE_PWSTR) {
-        connectionParameters = paParams[2].pwstrVal;
-    }
-    else {
+	auto paramConnect = VariantHelper::getStringValue(paParams[1]);
+    if (!paramConnect.has_value()) {
         m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"ConnectEquipment", u"Invalid type for ConnectionParameters", -1);
         addErrorDriver(u"Invalid type for ConnectionParameters", L"ConnectEquipment: Invalid type for ConnectionParameters");
         m_addInBase->setBoolValue(pvarRetValue, false);
@@ -345,16 +369,14 @@ bool DriverPOSTerminal::ConnectEquipment(tVariant* pvarRetValue, tVariant* paPar
     }
 
     // Parce xml parametrs
-	auto paramConnect = ParseParameters(u16stringToWstring(connectionParameters));
-	if (paramConnect.empty())
+	if (!ParseParametersFromXML(m_ParamConnection, paramConnect.value()))
 	{
 		m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"ConnectEquipment", u"Invalid ConnectionParameters", -1);
         addErrorDriver(u"Invalid ConnectionParameters", L"ConnectEquipment: Invalid ConnectionParameters");
         m_addInBase->setBoolValue(pvarRetValue, false);
         return false;
 	}
-	// Connect to equipment
-	m_ParamConnection = paramConnect;
+
     auto result = InitConnection();
 	if (result)
 	{
@@ -448,13 +470,41 @@ bool DriverPOSTerminal::EquipmentTest(tVariant* pvarRetValue, tVariant* paParams
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 4, u"EquipmentTest");
 
    // Get EquipmentType (STRING[IN])
-    auto type = getEquipmentTypeInfoFromVariant(&paParams[1]);
+    auto type = getEquipmentTypeInfoFromVariant(&paParams[0]);
     if (!type.has_value() || type.value() != EquipmentTypeInfo::POSTerminal) {
         m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"EquipmentParameters", u"Invalid type for EquipmentType", -1);
         addErrorDriver(u"Invalid type for EquipmentType", L"EquipmentParameters: Invalid type for EquipmentType");
         m_addInBase->setBoolValue(pvarRetValue, false);
         return false;
     }
+
+	// Get ConnectionParameters (STRING[IN])
+	auto connectionParameters = VariantHelper::getStringValue(paParams[1]);
+    if (!connectionParameters.has_value()) {
+        m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"EquipmentTest", u"Invalid type for ConnectionParameters", -1);
+        addErrorDriver(u"Invalid type for ConnectionParameters", L"EquipmentTest: Invalid type for ConnectionParameters");
+        m_addInBase->setBoolValue(pvarRetValue, false);
+        return false;
+    }
+
+	std::vector<DriverParameter> paramConnection;
+    if (!ParseParametersFromXML(paramConnection, connectionParameters.value()))
+    {
+        m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"ConnectEquipment", u"Invalid ConnectionParameters", -1);
+        addErrorDriver(u"Invalid ConnectionParameters", L"ConnectEquipment: Invalid ConnectionParameters");
+        m_addInBase->setBoolValue(pvarRetValue, false);
+        return false;
+    }
+
+    if (m_licenseManager->isDemoMode()) {
+        m_addInBase->setStringValue(&paParams[2], str_utils::to_u16string(m_licenseManager->getDemoModeDescription()));
+    }
+    else {
+        TV_VT(&paParams[1]) = VTYPE_EMPTY;
+    }
+
+	// Test connection
+	auto result = testConnection(paramConnection);
 
     return false;
 }
@@ -1565,6 +1615,56 @@ bool DriverPOSTerminal::InitConnection()
 	m_equipmentId = createUID(paramHost.value(), port);
 
 	return m_connection->isConnected();
+}
+
+bool DriverPOSTerminal::testConnection()
+{
+    return testConnection(m_ParamConnection);
+}
+
+bool DriverPOSTerminal::testConnection(std::vector<DriverParameter>& paramConnection)
+{
+    auto paramTypeConnection = findParameterValue<std::wstring>(paramConnection, L"ConnectionType");
+    if (!paramTypeConnection.has_value()) {
+        addErrorDriver(u"Invalid connection type", L"InitConnection: Invalid connection type");
+        return false;
+    }
+
+    auto paramHost = findParameterValue<std::wstring>(paramConnection, L"Host");
+    if (!paramHost.has_value()) {
+        addErrorDriver(u"Invalid host", L"InitConnection: Invalid host");
+        return false;
+    }
+
+    auto paramPort = findParameterValue<int>(paramConnection, L"Port");
+    if (!paramPort.has_value()) {
+        addErrorDriver(u"Invalid port", L"InitConnection: Invalid port");
+        return false;
+    }
+
+    auto connType = wstringToConnectionType(paramTypeConnection.value());
+    if (!connType.has_value()) {
+        addErrorDriver(u"Invalid connection type", L"InitConnection: Invalid connection type");
+        return false;
+    }
+
+    auto connectionType = connType.value();
+    std::unique_ptr<IConnection> connection = ConnectionFactory::create(connectionType);
+    auto host = convertWStringToString(paramHost.value());
+    auto port = paramPort.value();
+
+    if (!connection.get()->connect(host, port)) {
+        addErrorDriver(u"Failed to connect", L"InitConnection: Failed to connect");
+        return false;
+    }
+
+    bool result = connection->isConnected();
+    if (result) {
+        connection->disconnect();
+    }
+	connection.reset();
+
+    return result;
 }
 
 void DriverPOSTerminal::addErrorDriver(const std::u16string& lastError, const std::wstring& logError)

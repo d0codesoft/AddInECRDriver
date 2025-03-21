@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -192,6 +192,7 @@
     <ClInclude Include="string_conversion.h" />
     <ClInclude Include="str_utils.h" />
     <ClInclude Include="sys_utils.h" />
+    <ClInclude Include="tvariant_helper.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="addin_driver.cpp" />
@@ -215,6 +216,7 @@
     <ClCompile Include="string_conversion.cpp" />
     <ClCompile Include="str_utils.cpp" />
     <ClCompile Include="sys_utils.cpp" />
+    <ClCompile Include="tvariant_helper.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -3,6 +3,7 @@
 #include <pugixml.hpp>
 #include <sstream>
 #include "string_conversion.h"
+#include "str_utils.h"
 
 
 const SettingSettings SettingDriverPos::m_settings = {
@@ -83,7 +84,47 @@ std::u16string SettingDriverPos::getSettingXML()
     }
 
     std::wostringstream oss;
-    const std::string emptyStr = "\t";
     doc.save(oss);
-    return wstringToU16string(oss.str());
+    return str_utils::to_u16string(oss.str());
+}
+
+std::u16string toXML(const SettingSettings& settings) {
+	pugi::xml_document doc;
+	auto decl = doc.append_child(pugi::node_declaration);
+	decl.append_attribute(L"version") = L"1.0";
+	decl.append_attribute(L"encoding") = L"UTF-8";
+
+	auto root = doc.append_child(L"Settings");
+
+	for (const auto& page : settings.pages) {
+		auto pageNode = root.append_child(L"Page");
+		pageNode.append_attribute(L"Caption") = page.Caption;
+
+		for (const auto& group : page.Groups) {
+			auto groupNode = pageNode.append_child(L"Group");
+			groupNode.append_attribute(L"Caption") = group.Caption;
+
+			for (const auto& param : group.Parameters) {
+				auto paramNode = groupNode.append_child(L"Parameter");
+				paramNode.append_attribute(L"Name") = param.Name;
+				paramNode.append_attribute(L"Caption") = param.Caption;
+				paramNode.append_attribute(L"TypeValue") = param.TypeValue;
+				if (!param.DefaultValue.empty()) {
+					paramNode.append_attribute(L"DefaultValue") = param.DefaultValue;
+				}
+				if (!param.ChoiceList.empty()) {
+					auto choiceListNode = paramNode.append_child(L"ChoiceList");
+					for (const auto& item : param.ChoiceList) {
+						auto itemNode = choiceListNode.append_child(L"Item");
+						itemNode.append_attribute(L"Value") = item.Value;
+						itemNode.text().set(item.DisplayName);
+					}
+				}
+			}
+		}
+	}
+
+    std::wostringstream oss;
+	doc.save(oss);
+	return str_utils::to_u16string(oss.str());
 }
