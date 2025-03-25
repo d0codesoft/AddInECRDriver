@@ -58,7 +58,7 @@ public:
 
 	virtual std::wstring getStringValue(const tVariant& var) override;
 	virtual long getLongValue(const tVariant& var) override;
-	virtual std::optional<bool> getBoolValue(const tVariant& var) override;
+    virtual std::optional<bool> getBoolValue(const tVariant& var) override;
 	virtual bool isValueString(const tVariant& var) override;
 
 
@@ -70,6 +70,7 @@ public:
     bool loadValue(const std::u16string& key, int& value) override;
     bool loadValue(const std::u16string& key, bool& value) override;
 
+    virtual LanguageCode getLanguageCode() const override;
 
     IAddInDefBase* getAddInDefBase() const override;
     IMemoryManager* getMemoryManager() const override;
@@ -87,6 +88,7 @@ private:
 
     std::u16string      m_userLang;
 	std::u16string      m_locale;
+	LanguageCode 	    m_langCode;
 };
 
 #endif // ADDINECRCOMMONSC_H

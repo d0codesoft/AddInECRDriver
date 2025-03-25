@@ -41,6 +41,7 @@ CAddInECRDriver::CAddInECRDriver()
 {
     m_iMemory = nullptr;
     m_iConnect = nullptr;
+	m_langCode = LanguageCode::RU;
 
 	//std::u16string logDirectory = SysUtils::getLogDriverFilePath();
 	m_driver = std::make_unique<DriverPOSTerminal>(this);
@@ -329,12 +330,17 @@ void CAddInECRDriver::SetLocale(const WCHAR_T* loc)
 {
 #if !defined( __linux__ ) && !defined(__APPLE__)
     _wsetlocale(LC_ALL, (wchar_t*)loc);
+    std::u16string locale = std::u16string(loc);
+	m_langCode = detectLanguage(locale);
 #else
     char* char_locale = ConvertWCharToChar(loc);
     setenv("LANG", char_locale, 1);    // Set environment variable
     setenv("LC_ALL", char_locale, 1);  // Apply to all locales
     setlocale(LC_ALL, char_locale);
     free(char_locale); // Free the allocated memory
+    
+    std::u16string locale = str_utils::to_u16string(loc);
+    m_langCode = detectLanguage(locale);
     //We convert in char* char_locale
     //also we establish locale
     //setlocale(LC_ALL, char_locale);
@@ -347,6 +353,8 @@ void CAddInECRDriver::SetLocale(const WCHAR_T* loc)
 void ADDIN_API CAddInECRDriver::SetUserInterfaceLanguageCode(const WCHAR_T* lang)
 {
     m_userLang.assign(lang);
+    std::u16string locale = std::u16string(lang);
+    m_langCode = detectLanguage(locale);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -610,6 +618,11 @@ bool CAddInECRDriver::loadValue(const std::u16string& key, bool& value)
     }
 
     return false;
+}
+
+LanguageCode CAddInECRDriver::getLanguageCode() const
+{
+    return m_langCode;
 }
 
 bool CAddInECRDriver::SetParam(tVariant* pvarParamDefValue, const ParamDefault* defaultParam)

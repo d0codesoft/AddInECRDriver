@@ -13,7 +13,8 @@
 enum class ConnectionType {
     COM,
     TCP,
-    WebSocket
+    WebSocket,
+	Unknown
 };
 
 // Observer interface for error notifications
@@ -62,6 +63,10 @@ public:
         observers_.erase(std::remove(observers_.begin(), observers_.end(), observer), observers_.end());
     }
 
+	virtual ConnectionType getType() const {
+		return ConnectionType::Unknown;
+	}
+
 protected:
     /// @brief Notifying all observers of the error.
     /// @param errorMessage Error message.
@@ -91,6 +96,10 @@ public:
 
     bool isConnected() const override;
 
+    virtual ConnectionType getType() const override {
+        return ConnectionType::TCP;
+    }
+
 private:
     boost::asio::io_context io_context_;
     boost::asio::ip::tcp::socket socket_;
@@ -112,6 +121,11 @@ public:
     void disconnect() override;
 
     bool isConnected() const override;
+
+    virtual ConnectionType getType() const override {
+        return ConnectionType::WebSocket;
+    }
+
 
 private:
     boost::asio::io_context ioc_;

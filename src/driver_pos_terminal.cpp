@@ -231,6 +231,20 @@ bool DriverPOSTerminal::Open(tVariant* pvarRetValue, tVariant* paParams, const l
 {
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 1, u"Open");
 
+    std::wstring error = {}, deviceId = {};
+    auto result = InitConnection(deviceId, error);
+    if (result)
+    {
+        m_addInBase->setStringValue(paParams, str_utils::to_u16string(deviceId));
+    }
+    else {
+        m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"Open", str_utils::to_u16string(error), -1);
+        addErrorDriver(u"Invalid connect", L"Open: " + error);
+        TV_VT(paParams) = VTYPE_EMPTY;
+    }
+
+    m_addInBase->setBoolValue(pvarRetValue, result);
+
     return false;
 }
 
@@ -249,7 +263,37 @@ bool DriverPOSTerminal::Close(tVariant* pvarRetValue, tVariant* paParams, const 
 {
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 1, u"Close");
 
-    return false;
+    std::wstring deviceID;
+    if (paParams->vt == VTYPE_PWSTR) {
+        deviceID = str_utils::to_wstring(paParams->pwstrVal);
+    }
+    else {
+        m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"Close", u"Invalid type for device ID", -1);
+        addErrorDriver(u"Invalid type device ID", L"Close: Invalid type for device ID");
+        m_addInBase->setBoolValue(pvarRetValue, false);
+        return false;
+    }
+
+    auto findId = m_connections.find(deviceID);
+    if (findId == m_connections.end()) {
+        m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"Close", u"Invalid device ID", -1);
+        addErrorDriver(u"Invalid device ID", L"Close: Invalid device ID");
+        m_addInBase->setBoolValue(pvarRetValue, false);
+        return false;
+    }
+
+    if (findId->second != nullptr)
+    {
+        if (findId->second.get()->isConnected())
+        {
+            findId->second.get()->disconnect();
+        }
+        findId->second.reset();
+    }
+    m_connections.erase(findId);
+
+    m_addInBase->setBoolValue(pvarRetValue, true);
+    return true;
 }
 
 // Метод: ТестУстройства (DeviceTest)
@@ -377,13 +421,17 @@ bool DriverPOSTerminal::ConnectEquipment(tVariant* pvarRetValue, tVariant* paPar
         return false;
 	}
 
-    auto result = InitConnection();
+	std::wstring error, deviceId;
+
+    auto result = InitConnection(deviceId, error);
 	if (result)
 	{
-		m_addInBase->setStringValue(&paParams[0], getEquipmentId());
+        m_addInBase->setStringValue(&paParams[2], str_utils::to_u16string(deviceId));
 	}
     else {
-        TV_VT(&paParams[0]) = VTYPE_EMPTY;
+        m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"ConnectEquipment", str_utils::to_u16string(error), -1);
+        addErrorDriver(u"Invalid ConnectionParameters", L"ConnectEquipment: " + error);
+        TV_VT(&paParams[2]) = VTYPE_EMPTY;
     }
 
 	m_addInBase->setBoolValue(pvarRetValue, result);
@@ -408,32 +456,35 @@ bool DriverPOSTerminal::DisconnectEquipment(tVariant* pvarRetValue, tVariant* pa
 
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 1, u"DisconnectEquipment");
 
-    std::u16string equipmentId;
+    std::wstring deviceID;
     if (paParams->vt == VTYPE_PWSTR) {
-        equipmentId = std::u16string(paParams->pwstrVal);
+        deviceID = str_utils::to_wstring(paParams->pwstrVal);
 	}
 	else {
-		m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"DisconnectEquipment", u"Invalid type for equipmentId", -1);
-		addErrorDriver(u"Invalid type for equipmentId", L"DisconnectEquipment: Invalid type for equipmentId");
+		m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"DisconnectEquipment", u"Invalid type for device ID", -1);
+		addErrorDriver(u"Invalid type for device ID", L"DisconnectEquipment: Invalid type for device ID");
         m_addInBase->setBoolValue(pvarRetValue, false);
         return false;
 	}
 
-    if (equipmentId != m_equipmentId) {
-		addErrorDriver(u"Invalid equipmentId", L"DisconnectEquipment: Invalid equipmentId");
-        m_addInBase->setBoolValue(pvarRetValue, false);
-        return false;
-    }
+	auto findId = m_connections.find(deviceID);
+	if (findId == m_connections.end()) {
+		m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"DisconnectEquipment", u"Invalid device ID", -1);
+		addErrorDriver(u"Invalid device ID", L"DisconnectEquipment: Invalid device ID");
+		m_addInBase->setBoolValue(pvarRetValue, false);
+		return false;
+	}
 
-	if (m_connection != nullptr)
+	if (findId->second != nullptr)
 	{
-		if (m_connection.get()->isConnected())
+		if (findId->second.get()->isConnected())
 		{
-			m_connection.get()->disconnect();
+            findId->second.get()->disconnect();
 		}
-		m_connection.reset();
+        findId->second.reset();
 	}
-
+	m_connections.erase(findId);
+    
     m_addInBase->setBoolValue(pvarRetValue, true);
     return true;
 }
@@ -472,8 +523,8 @@ bool DriverPOSTerminal::EquipmentTest(tVariant* pvarRetValue, tVariant* paParams
    // Get EquipmentType (STRING[IN])
     auto type = getEquipmentTypeInfoFromVariant(&paParams[0]);
     if (!type.has_value() || type.value() != EquipmentTypeInfo::POSTerminal) {
-        m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"EquipmentParameters", u"Invalid type for EquipmentType", -1);
-        addErrorDriver(u"Invalid type for EquipmentType", L"EquipmentParameters: Invalid type for EquipmentType");
+        m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"EquipmentTest", u"Invalid type for EquipmentType", -1);
+        addErrorDriver(u"Invalid type for EquipmentType", L"EquipmentTest: Invalid type for EquipmentType");
         m_addInBase->setBoolValue(pvarRetValue, false);
         return false;
     }
@@ -490,8 +541,8 @@ bool DriverPOSTerminal::EquipmentTest(tVariant* pvarRetValue, tVariant* paParams
 	std::vector<DriverParameter> paramConnection;
     if (!ParseParametersFromXML(paramConnection, connectionParameters.value()))
     {
-        m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"ConnectEquipment", u"Invalid ConnectionParameters", -1);
-        addErrorDriver(u"Invalid ConnectionParameters", L"ConnectEquipment: Invalid ConnectionParameters");
+        m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"EquipmentTest", u"Invalid ConnectionParameters", -1);
+        addErrorDriver(u"Invalid ConnectionParameters", L"EquipmentTest: Invalid ConnectionParameters");
         m_addInBase->setBoolValue(pvarRetValue, false);
         return false;
     }
@@ -505,8 +556,13 @@ bool DriverPOSTerminal::EquipmentTest(tVariant* pvarRetValue, tVariant* paParams
 
 	// Test connection
 	auto result = testConnection(paramConnection);
+    m_addInBase->setBoolValue(pvarRetValue, result);
 
-    return false;
+	if (!result) {
+        addErrorDriver(u"Invalid test connection", L"EquipmentTest: Error connection");
+    }
+
+    return result;
 }
 
 //********************************************************************************************************************
@@ -540,6 +596,9 @@ bool DriverPOSTerminal::EquipmentTest(tVariant* pvarRetValue, tVariant* paParams
 bool DriverPOSTerminal::EquipmentAutoSetup(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
     clearError();
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 5, u"EquipmentAutoSetup");
+
+    
+
     return false;
 }
 
@@ -567,7 +626,13 @@ bool DriverPOSTerminal::EquipmentAutoSetup(tVariant* pvarRetValue, tVariant* paP
 bool DriverPOSTerminal::SetApplicationInformation(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
     clearError();
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 1, u"SetApplicationInformation");
-    return false;
+
+    // Convert the structure to a JSON string
+    std::u16string xmlDescription = toXmlApplication(this->m_driverDescription);
+    auto result = m_addInBase->setStringValue(paParams, xmlDescription);
+    m_addInBase->setBoolValue(pvarRetValue, result);
+
+    return result;
 }
 
 //********************************************************************************************************************
@@ -603,6 +668,12 @@ bool DriverPOSTerminal::SetApplicationInformation(tVariant* pvarRetValue, tVaria
 bool DriverPOSTerminal::GetAdditionalActions(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
     clearError();
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 1, u"GetAdditionalActions");
+
+    // Convert the structure to a JSON string
+    std::u16string xmlDescription = toXMLActions(this->getActions(), m_addInBase->getLanguageCode());
+    auto result = m_addInBase->setStringValue(paParams, xmlDescription);
+    m_addInBase->setBoolValue(pvarRetValue, result);
+
     return false;
 }
 
@@ -622,9 +693,26 @@ bool DriverPOSTerminal::GetAdditionalActions(tVariant* pvarRetValue, tVariant* p
 // Возвращает `true`, если действие успешно выполнено, иначе `false`.
 //********************************************************************************************************************
 bool DriverPOSTerminal::DoAdditionalAction(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
+    
     clearError();
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 1, u"DoAdditionalAction");
-    return false;
+
+    auto actions = this->getActions();
+	auto actionName = str_utils::to_u16string(m_addInBase->getStringValue(paParams[0]));
+	auto find_action = std::find_if(actions.begin(), actions.end(), [&](const ActionDriver& action) {
+		return actionName == action.name_en || actionName == action.name_ru;
+		});
+
+	if (find_action == actions.end()) {
+		m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"DoAdditionalAction", u"Invalid type for ActionName", -1);
+		addErrorDriver(u"Invalid type for ActionName", L"DoAdditionalAction: Invalid type for ActionName");
+		m_addInBase->setBoolValue(pvarRetValue, false);
+		return false;
+	}
+
+	auto result = find_action->action(pvarRetValue, paParams, lSizeArray);
+
+    return result;
 }
 
 //********************************************************************************************************************
@@ -651,6 +739,12 @@ bool DriverPOSTerminal::DoAdditionalAction(tVariant* pvarRetValue, tVariant* paP
 bool DriverPOSTerminal::GetLocalizationPattern(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
     clearError();
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 1, u"GetLocalizationPattern");
+
+	// To fu..k with this 
+    // Not deatil documentatition for this method
+    TV_VT(paParams) = VTYPE_EMPTY;
+    this->m_addInBase->setBoolValue(pvarRetValue, false);
+
     return false;
 }
 
@@ -679,7 +773,15 @@ bool DriverPOSTerminal::GetLocalizationPattern(tVariant* pvarRetValue, tVariant*
 //********************************************************************************************************************
 bool DriverPOSTerminal::SetLocalization(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
     clearError();
-    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 2, u"EquipmentTest");
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 2, u"SetLocalization");
+
+	// to fu..k with this
+	// is not implemented yet
+	// Not deatil documentatition for this method
+    TV_VT(&paParams[0]) = VTYPE_EMPTY;
+    TV_VT(&paParams[1]) = VTYPE_EMPTY;
+    this->m_addInBase->setBoolValue(pvarRetValue, false);
+
     return false;
 }
 
@@ -1569,52 +1671,60 @@ const std::u16string DriverPOSTerminal::getEquipmentId()
     return m_equipmentId;
 }
 
-bool DriverPOSTerminal::InitConnection()
+void DriverPOSTerminal::AddActionDriver(const std::u16string& name_en, const std::u16string& name_ru, const std::u16string& caption_en, const std::u16string& caption_ru, CallAsFunc1C ptr_method)
 {
-	if (m_connection != nullptr)
-	{
-		if (m_connection.get()->isConnected())
-		{
-            m_connection.get()->disconnect();
-		}
-	}
+	m_actions.push_back({ name_en, name_ru, caption_en, caption_ru, ptr_method });
+}
 
+std::span<const ActionDriver> DriverPOSTerminal::getActions()
+{
+	return m_actions;
+}
+
+bool DriverPOSTerminal::InitConnection(std::wstring& deviceID, std::wstring &error)
+{
+	auto newDeviceID = generateGUID();
 	auto paramTypeConnection = findParameterValue<std::wstring>(m_ParamConnection, L"ConnectionType");
     if (paramTypeConnection.has_value()) {
-        addErrorDriver(u"Invalid connection type", L"InitConnection: Invalid connection type");
+		error = L"Invalid connection type";
         return false;
     }
 
 	auto paramHost = findParameterValue<std::wstring>(m_ParamConnection, L"Host");
 	if (paramHost.has_value()) {
-		addErrorDriver(u"Invalid host", L"InitConnection: Invalid host");
+		error = L"Invalid host";
 		return false;
 	}
 
 	auto paramPort = findParameterValue<int>(m_ParamConnection, L"Port");
 	if (paramPort.has_value()) {
-		addErrorDriver(u"Invalid port", L"InitConnection: Invalid port");
+		error = L"Invalid port";
 		return false;
 	}
 
     auto connType = wstringToConnectionType(paramTypeConnection.value());
 	if (!connType.has_value()) {
-		addErrorDriver(u"Invalid connection type", L"InitConnection: Invalid connection type");
+		error = L"Invalid connection type";
 		return false;
 	}
 
-	m_connectionType = connType.value();
-    m_connection = ConnectionFactory::create(m_connectionType);
-	auto host = convertWStringToString(paramHost.value());
+	auto connectionType = connType.value();
+    auto connection = ConnectionFactory::create(connectionType);
+	auto host = str_utils::to_string(paramHost.value());
 	auto port = paramPort.value();
 
-	if (!m_connection.get()->connect(host, port)) {
-		addErrorDriver(u"Failed to connect", L"InitConnection: Failed to connect");
+	if (!connection.get()->connect(host, port)) {
+		error = L"Failed to connect";
 		return false;
 	}
-	m_equipmentId = createUID(paramHost.value(), port);
+    
+	bool result = connection->isConnected();
+    if (result) {
+		deviceID = newDeviceID;
+        m_connections.insert({ newDeviceID, std::move(connection) });
+    }
 
-	return m_connection->isConnected();
+	return result;
 }
 
 bool DriverPOSTerminal::testConnection()
@@ -1650,7 +1760,7 @@ bool DriverPOSTerminal::testConnection(std::vector<DriverParameter>& paramConnec
 
     auto connectionType = connType.value();
     std::unique_ptr<IConnection> connection = ConnectionFactory::create(connectionType);
-    auto host = convertWStringToString(paramHost.value());
+    auto host = str_utils::to_string(paramHost.value());
     auto port = paramPort.value();
 
     if (!connection.get()->connect(host, port)) {

@@ -83,9 +83,12 @@ public:
 	bool PrintSlipOnTerminal(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     const std::u16string getEquipmentId();
 
+	void AddActionDriver(const std::u16string& name_en, const std::u16string& name_ru, const std::u16string& caption_en, const std::u16string& caption_ru, CallAsFunc1C ptr_method) override;
+    std::span<const ActionDriver> getActions() override;
+
 protected:
 
-	bool InitConnection();
+	bool InitConnection(std::wstring& deviceID, std::wstring& error);
 	bool testConnection();
     bool testConnection(std::vector<DriverParameter>& paramConnection);
     void addErrorDriver(const std::u16string& lastError, const std::wstring& logError);
@@ -156,13 +159,15 @@ private:
 
     std::vector<PropName> m_PropNames = {};
 	std::vector<DriverParameter> m_ParamConnection = {};
-	std::unique_ptr<IConnection> m_connection = nullptr;
+    //std::unique_ptr<IConnection> m_connection = nullptr;
 	ConnectionType m_connectionType = ConnectionType::TCP;
-	std::u16string m_equipmentId = u"";
+	//std::u16string m_equipmentId = u"";
+	std::unordered_map<std::wstring, std::unique_ptr<IConnection>> m_connections = {};
     //ParameterMap m_parameters = {};
 
     DriverDescription m_driverDescription;
     std::unique_ptr<LicenseManager> m_licenseManager;
+	std::vector<ActionDriver> m_actions = {};
 };
 
 #endif // DRIVERPOSTERMINAL_H

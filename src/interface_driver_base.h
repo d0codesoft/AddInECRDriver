@@ -43,6 +43,11 @@ public:
 	virtual const std::vector<PropName>& GetProperties() = 0;
 	virtual const DriverDescription& getDescriptionDriver() = 0;
 
+	virtual void AddActionDriver(const std::u16string& name_en, const std::u16string& name_ru, 
+        const std::u16string& caption_en, const std::u16string& caption_ru, CallAsFunc1C ptr_method) = 0;
+
+	virtual std::span<const ActionDriver> getActions() = 0;
+    
     static MethodName createMethod(
         const uint32_t& methodId,
         const std::u16string& name_en,

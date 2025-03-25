@@ -9,6 +9,7 @@
 #include <variant>
 #include <functional>
 #include <optional>
+#include <span>
 
 //using GetParamFunc = bool (*)(tVariant* pvarParamDefValue);
 //typedef bool (*CallAsProcFunc)(tVariant* paParams, const long lSizeArray);
@@ -77,6 +78,13 @@ enum class EquipmentTypeInfo {
     RFIDReader,
 };
 
+// 🌐 Localized lang code
+enum class LanguageCode {
+	EN,
+	RU,
+	Unknown
+};
+
 // 🌐 Localized types of equipment
 struct EquipmentType {
     std::u16string english;
@@ -100,7 +108,7 @@ static const std::vector<EquipmentType> EquipmentTypes = {
 };
 
 bool isValidEquipmentType(const std::u16string& input);
-std::u16string detectLanguage(const std::u16string& input);
+LanguageCode detectLanguage(const std::u16string& input);
 std::u16string findEquivalent(const std::u16string& input);
 std::optional<EquipmentTypeInfo> getEquipmentTypeInfo(const std::u16string& input);
 
@@ -114,6 +122,14 @@ struct DriverParameter {
     std::wstring name;
     std::variant<std::wstring,int,bool> value;
 	TypeParameter type;
+};
+
+struct ActionDriver {
+	std::u16string name_en;
+	std::u16string name_ru;
+	std::u16string caption_en;
+	std::u16string caption_ru;
+	CallAsFunc1C action;
 };
 
 std::vector<DriverParameter> ParseParameters(const std::wstring& xmlPath);
@@ -171,6 +187,10 @@ typename std::enable_if<
 }
 
 std::u16string toXml(const DriverDescription& driver);
+std::u16string toXmlApplication(const DriverDescription& driver);
+std::u16string toXMLActions(std::span<const ActionDriver> actions, const LanguageCode currentLang);
+std::wstring generateGUID();
+
 
 #define BOOL_TO_STRING(b) ((b) ? L"true" : L"false")
 

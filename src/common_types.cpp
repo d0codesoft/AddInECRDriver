@@ -9,6 +9,15 @@
 #include "logger.h"
 #include "str_utils.h"
 
+#if defined(_WIN32) || defined(_WIN64)
+#include <windows.h>
+#include <combaseapi.h>
+#elif defined(__APPLE__)
+#include <CoreFoundation/CFUUID.h>
+#else
+#include <uuid/uuid.h>
+#endif
+
 bool isValidEquipmentType(const std::u16string& input) {
     return std::any_of(EquipmentTypes.begin(), EquipmentTypes.end(), [&](const EquipmentType& eq) {
         return eq.english == input || eq.russian == input;
@@ -16,16 +25,21 @@ bool isValidEquipmentType(const std::u16string& input) {
 }
 
 // 🌐 Language definition: Russian or English
-std::u16string detectLanguage(const std::u16string& input) {
-    if (std::any_of(EquipmentTypes.begin(), EquipmentTypes.end(), [&](const EquipmentType& eq) {
-        return eq.english == input;
-        })) return u"EN";
+LanguageCode detectLanguage(const std::u16string& input) {
+    static const std::u16string ru_variants[] = { u"ru", u"ru_ru", u"rus_rus" };
+    static const std::u16string en_variants[] = { u"en", u"en_en" };
 
-    if (std::any_of(EquipmentTypes.begin(), EquipmentTypes.end(), [&](const EquipmentType& eq) {
-        return eq.russian == input;
-        })) return u"RU";
+    std::u16string lower_lang = input;
+    std::transform(lower_lang.begin(), lower_lang.end(), lower_lang.begin(), ::towlower);
 
-    return u"Unknown";
+    for (const auto& ru : ru_variants) {
+        if (lower_lang == ru) return LanguageCode::RU;
+    }
+    for (const auto& en : en_variants) {
+        if (lower_lang == en) return LanguageCode::EN;
+    }
+
+    return LanguageCode::Unknown;
 }
 
 // 🏷️ Search for English analogs in Russian
@@ -122,6 +136,23 @@ bool ParseParametersFromXML(std::vector<DriverParameter>& params, const std::wst
     return true;
 }
 
+std::u16string toXmlApplication(const DriverDescription& driver) {
+    pugi::xml_document doc;
+    auto decl = doc.append_child(pugi::node_declaration);
+    decl.append_attribute(L"version") = "1.0";
+    decl.append_attribute(L"encoding") = "UTF-8";
+
+    auto root = doc.append_child(L"ApplicationSettings");
+    root.append_attribute(L"ApplicationName") = driver.Name.c_str();
+    root.append_attribute(L"ApplicationVersion") = driver.DriverVersion.c_str();
+
+    std::wostringstream oss;
+    doc.save(oss);
+
+    std::wstring xml_str = oss.str();
+    return str_utils::to_u16string(xml_str);
+}
+
 std::u16string toXml(const DriverDescription& driver)
 {
     pugi::xml_document doc;
@@ -150,5 +181,94 @@ std::u16string toXml(const DriverDescription& driver)
     doc.save(oss);
 
     std::wstring xml_str = oss.str();
-    return wstringToU16string(xml_str);
+    return str_utils::to_u16string(xml_str);
+}
+
+std::u16string toXMLActions(std::span<const ActionDriver> actions, const LanguageCode currentLang) {
+    pugi::xml_document doc;
+    auto decl = doc.append_child(pugi::node_declaration);
+    decl.append_attribute(L"version") = "1.0";
+    decl.append_attribute(L"encoding") = "UTF-8";
+
+    auto root = doc.append_child(L"Actions");
+
+    for (const auto& action : actions) {
+        auto actionNode = root.append_child(L"Action");
+        if (currentLang == LanguageCode::EN) {
+            actionNode.append_attribute(L"Name") = action.name_en.c_str();
+            actionNode.append_attribute(L"Caption") = action.caption_en.c_str();
+        }
+        else if (currentLang == LanguageCode::RU) {
+            actionNode.append_attribute(L"Name") = action.name_ru.c_str();
+            actionNode.append_attribute(L"Caption") = action.caption_ru.c_str();
+        }
+        else
+        {
+			actionNode.append_attribute(L"Name") = action.name_en.c_str();
+			actionNode.append_attribute(L"Caption") = action.caption_en.c_str();
+        }
+    }
+
+    std::wostringstream oss;
+    doc.save(oss);
+
+    std::wstring xml_str = oss.str();
+    return str_utils::to_u16string(xml_str);
+}
+
+std::wstring generateGUID() {
+
+    std::wstring guidBuff = {};
+
+#if defined(_WIN32) || defined(_WIN64)
+    GUID guid;
+    HRESULT hr = CoCreateGuid(&guid);
+    if (FAILED(hr)) {
+        throw std::runtime_error("Failed to create GUID");
+    }
+
+    wchar_t guidString[39]; // GUID string format is 38 characters plus null terminator
+    int len = StringFromGUID2(guid, guidString, 39);
+    if (len == 0) {
+        throw std::runtime_error("Failed to convert GUID to string");
+    }
+
+    guidBuff = std::wstring(guidString);
+#elif defined(__APPLE__)
+    CFUUIDRef uuid = CFUUIDCreate(NULL);
+    CFStringRef uuidStr = CFUUIDCreateString(NULL, uuid);
+    CFRelease(uuid);
+
+    const char* cStr = CFStringGetCStringPtr(uuidStr, kCFStringEncodingUTF8);
+    std::wstring guidString;
+    if (cStr) {
+        guidString = std::wstring(cStr, cStr + strlen(cStr));
+    }
+    else {
+        CFIndex length = CFStringGetLength(uuidStr);
+        CFIndex maxSize = CFStringGetMaximumSizeForEncoding(length, kCFStringEncodingUTF8);
+        char* buffer = (char*)malloc(maxSize);
+        if (CFStringGetCString(uuidStr, buffer, maxSize, kCFStringEncodingUTF8)) {
+            guidString = std::wstring(buffer, buffer + strlen(buffer));
+        }
+        free(buffer);
+    }
+    CFRelease(uuidStr);
+
+    guidBuff = guidString;
+
+#else // Linux and other Unix-like systems
+    uuid_t uuid;
+    uuid_generate(uuid);
+
+    char uuidStr[37]; // UUID string format is 36 characters plus null terminator
+    uuid_unparse(uuid, uuidStr);
+
+    guidBuff = guidString(uuidStr, uuidStr + strlen(uuidStr));
+#endif
+
+    if (guidBuff.size() >= 2 && guidBuff.front() == L'{' && guidBuff.back() == L'}') {
+        return guidBuff.substr(1, guidBuff.size() - 2);
+    }
+    return guidBuff;
 }

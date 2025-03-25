@@ -46,6 +46,8 @@ public:
     virtual bool loadValue(const std::u16string& key, std::u16string& value) = 0;
 	virtual bool loadValue(const std::u16string& key, int& value) = 0;
 	virtual bool loadValue(const std::u16string& key, bool& value) = 0;
+
+	virtual LanguageCode getLanguageCode() const = 0;
 };
 
 // Function to check if the variant is a string
