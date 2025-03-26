@@ -186,11 +186,81 @@ typename std::enable_if<
     return true;
 }
 
+
+#include <string>
+
+/**
+ * @brief Структура, описывающая параметры терминала.
+ */
+struct TerminalConfig {
+    /**
+     * @brief Идентификатор терминала или другого технического средства,
+     * предназначенного для совершения операций с использованием платежных карт.
+     *
+     * @note Не является обязательным параметром.
+     */
+    std::wstring TerminalID;
+
+    /**
+     * @brief Будет ли терминал самостоятельно печатать квитанции на своем принтере для операций.
+     */
+    bool PrintSlipOnTerminal;
+
+    /**
+     * @brief Терминал возвращает короткие слип-чеки, которые будут выводиться в теле фискального чека.
+     */
+    bool ShortSlip;
+
+    /**
+     * @brief Терминал поддерживает функцию выдачи наличных денежных средств.
+     */
+    bool CashWithdrawal;
+
+    /**
+     * @brief Терминал поддерживает оплату электронными сертификатами ФЭС НСПК.
+     */
+    bool ElectronicCertificates;
+
+    /**
+     * @brief Терминал поддерживает частичную отмену.
+     */
+    bool PartialCancellation;
+
+    /**
+     * @brief Терминал поддерживает Consumer-Presented QR-операции на стороне эквайреров.
+     */
+    bool ConsumerPresentedQR;
+
+    /**
+     * @brief Терминал поддерживает получение списка операций по картам.
+     */
+    bool ListCardTransactions;
+
+    /**
+     * @brief Терминал поддерживает операцию возврата ЭС без карты по BasketID оригинальной операции оплаты.
+     *
+     * @note Не является обязательным параметром.
+     */
+    bool ReturnElectronicCertificateByBasketID = false;
+
+    /**
+     * @brief Терминал поддерживает операцию покупки с зачислением на карту физического лица.
+     *
+     * @note Не является обязательным параметром.
+     */
+    bool PurchaseWithEnrollment = false;
+};
+
+enum class ProtocolTerminal {
+	JSON,
+	BaseECR
+};
+
 std::u16string toXml(const DriverDescription& driver);
 std::u16string toXmlApplication(const DriverDescription& driver);
+std::u16string toXMLTerminalConfig(const TerminalConfig& config);
 std::u16string toXMLActions(std::span<const ActionDriver> actions, const LanguageCode currentLang);
 std::wstring generateGUID();
-
 
 #define BOOL_TO_STRING(b) ((b) ? L"true" : L"false")
 

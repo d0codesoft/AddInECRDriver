@@ -118,7 +118,7 @@ bool DriverPOSTerminal::GetDescription(tVariant* pvarRetValue, tVariant* paParam
 
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 1, u"GetDescription");
 
-    // Convert the structure to a JSON string
+    // Convert the structure to a XML string
     std::u16string xmlDescription = toXml(this->m_driverDescription);
 	auto result = m_addInBase->setStringValue(paParams, xmlDescription);
     m_addInBase->setBoolValue(pvarRetValue, result);
@@ -627,7 +627,7 @@ bool DriverPOSTerminal::SetApplicationInformation(tVariant* pvarRetValue, tVaria
     clearError();
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 1, u"SetApplicationInformation");
 
-    // Convert the structure to a JSON string
+    // Convert the structure to a XML string
     std::u16string xmlDescription = toXmlApplication(this->m_driverDescription);
     auto result = m_addInBase->setStringValue(paParams, xmlDescription);
     m_addInBase->setBoolValue(pvarRetValue, result);
@@ -669,7 +669,7 @@ bool DriverPOSTerminal::GetAdditionalActions(tVariant* pvarRetValue, tVariant* p
     clearError();
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 1, u"GetAdditionalActions");
 
-    // Convert the structure to a JSON string
+    // Convert the structure to a XML string
     std::u16string xmlDescription = toXMLActions(this->getActions(), m_addInBase->getLanguageCode());
     auto result = m_addInBase->setStringValue(paParams, xmlDescription);
     m_addInBase->setBoolValue(pvarRetValue, result);
@@ -817,7 +817,20 @@ bool DriverPOSTerminal::TerminalParameters(tVariant* pvarRetValue, tVariant* paP
     clearError();
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 2, u"TerminalParameters");
 
-    return false;
+	auto deviceId = m_addInBase->getStringValue(paParams[0]);
+    auto param = getTerminalConfig(deviceId);
+	if (!param.has_value()) {
+		m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"TerminalParameters", u"Invalid type for DeviceID", -1);
+		addErrorDriver(u"Invalid type for DeviceID", L"TerminalParameters: Invalid type for DeviceID");
+		m_addInBase->setBoolValue(pvarRetValue, false);
+		return false;
+	}
+
+    auto xmlParameter = toXMLTerminalConfig(param.value());
+	m_addInBase->setStringValue(&paParams[1], xmlParameter);
+	m_addInBase->setBoolValue(pvarRetValue, true);
+
+    return true;
 }
 
 //********************************************************************************************************************
@@ -847,6 +860,8 @@ bool DriverPOSTerminal::TerminalParameters(tVariant* pvarRetValue, tVariant* paP
 bool DriverPOSTerminal::Pay(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
     clearError();
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 4, u"Pay");
+
+
 
     return false;
 }
@@ -1681,6 +1696,15 @@ std::span<const ActionDriver> DriverPOSTerminal::getActions()
 	return m_actions;
 }
 
+std::optional<TerminalConfig> DriverPOSTerminal::getTerminalConfig(std::wstring deviceID)
+{
+	auto it = m_configTerminals.find(deviceID);
+	if ( it != m_configTerminals.end()) {
+		return it->second;
+	}
+	return std::nullopt;
+}
+
 bool DriverPOSTerminal::InitConnection(std::wstring& deviceID, std::wstring &error)
 {
 	auto newDeviceID = generateGUID();
@@ -1710,18 +1734,20 @@ bool DriverPOSTerminal::InitConnection(std::wstring& deviceID, std::wstring &err
 
 	auto connectionType = connType.value();
     auto connection = ConnectionFactory::create(connectionType);
+    auto protocolChanel = ChannelProtocolFactory::create(m_protocolTerminal, std::move(connection));
+
 	auto host = str_utils::to_string(paramHost.value());
 	auto port = paramPort.value();
 
-	if (!connection.get()->connect(host, port)) {
+	if (!protocolChanel.get()->connect(host, port)) {
 		error = L"Failed to connect";
 		return false;
 	}
     
-	bool result = connection->isConnected();
+	bool result = protocolChanel->isConnected();
     if (result) {
 		deviceID = newDeviceID;
-        m_connections.insert({ newDeviceID, std::move(connection) });
+        m_connections.insert({ newDeviceID, std::move(protocolChanel) });
     }
 
 	return result;

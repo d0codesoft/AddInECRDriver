@@ -76,6 +76,8 @@ public:
     virtual bool PrintSlipOnTerminal(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) = 0;
 
     virtual ~IDriverPosTerminal() = default;
+
+	virtual std::optional<TerminalConfig> getTerminalConfig(std::wstring& deviceID) = 0;
 };
 
 #endif // IDRIVERPOSTERMINAL_H

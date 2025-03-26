@@ -11,6 +11,7 @@
 #include "interface_connection.h"
 #include "setting_driver_pos.h"
 #include "license_manager.h"
+#include "сhannel_protocol.h"
 
 const std::wstring DRIVER_VERSION = L"1.0.0"; // Объявление константы версии драйвера
 //using ParameterMap = std::unordered_map<std::wstring, std::variant<std::wstring, int, bool>>;
@@ -86,6 +87,8 @@ public:
 	void AddActionDriver(const std::u16string& name_en, const std::u16string& name_ru, const std::u16string& caption_en, const std::u16string& caption_ru, CallAsFunc1C ptr_method) override;
     std::span<const ActionDriver> getActions() override;
 
+    std::optional<TerminalConfig> getTerminalConfig(std::wstring& deviceID) override;
+
 protected:
 
 	bool InitConnection(std::wstring& deviceID, std::wstring& error);
@@ -159,11 +162,12 @@ private:
 
     std::vector<PropName> m_PropNames = {};
 	std::vector<DriverParameter> m_ParamConnection = {};
-    //std::unique_ptr<IConnection> m_connection = nullptr;
-	ConnectionType m_connectionType = ConnectionType::TCP;
-	//std::u16string m_equipmentId = u"";
-	std::unordered_map<std::wstring, std::unique_ptr<IConnection>> m_connections = {};
-    //ParameterMap m_parameters = {};
+	
+    ConnectionType m_connectionType = ConnectionType::TCP;
+	ProtocolTerminal m_protocolTerminal = ProtocolTerminal::JSON;
+
+	std::unordered_map<std::wstring, std::unique_ptr<IChannelProtocol>> m_connections = {};
+	std::unordered_map<std::wstring, TerminalConfig> m_configTerminals = {};
 
     DriverDescription m_driverDescription;
     std::unique_ptr<LicenseManager> m_licenseManager;

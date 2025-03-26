@@ -153,6 +153,32 @@ std::u16string toXmlApplication(const DriverDescription& driver) {
     return str_utils::to_u16string(xml_str);
 }
 
+std::u16string toXMLTerminalConfig(const TerminalConfig& config)
+{
+	pugi::xml_document doc;
+	auto decl = doc.append_child(pugi::node_declaration);
+	decl.append_attribute(L"version") = "1.0";
+	decl.append_attribute(L"encoding") = "UTF-8";
+
+	auto root = doc.append_child(L"TerminalParameters");
+	root.append_attribute(L"TerminalID") = config.TerminalID.c_str();
+	root.append_attribute(L"PrintSlipOnTerminal") = BOOL_TO_STRING(config.PrintSlipOnTerminal);
+	root.append_attribute(L"ShortSlip") = BOOL_TO_STRING(config.ShortSlip);
+	root.append_attribute(L"CashWithdrawal") = BOOL_TO_STRING(config.CashWithdrawal);
+	root.append_attribute(L"ElectronicCertificates") = BOOL_TO_STRING(config.ElectronicCertificates);
+	root.append_attribute(L"PartialCancellation") = BOOL_TO_STRING(config.PartialCancellation);
+	root.append_attribute(L"ConsumerPresentedQR") = BOOL_TO_STRING(config.ConsumerPresentedQR);
+	root.append_attribute(L"ListCardTransactions") = BOOL_TO_STRING(config.ListCardTransactions);
+	root.append_attribute(L"ReturnElectronicCertificateByBasketID") = BOOL_TO_STRING(config.ReturnElectronicCertificateByBasketID);
+	root.append_attribute(L"PurchaseWithEnrollment") = BOOL_TO_STRING(config.PurchaseWithEnrollment);
+
+	std::wostringstream oss;
+	doc.save(oss);
+
+	std::wstring xml_str = oss.str();
+	return str_utils::to_u16string(xml_str);
+}
+
 std::u16string toXml(const DriverDescription& driver)
 {
     pugi::xml_document doc;

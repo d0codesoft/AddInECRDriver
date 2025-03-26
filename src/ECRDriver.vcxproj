@@ -193,6 +193,7 @@
     <ClInclude Include="str_utils.h" />
     <ClInclude Include="sys_utils.h" />
     <ClInclude Include="tvariant_helper.h" />
+    <ClInclude Include="сhannel_protocol.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="addin_driver.cpp" />
@@ -217,6 +218,7 @@
     <ClCompile Include="str_utils.cpp" />
     <ClCompile Include="sys_utils.cpp" />
     <ClCompile Include="tvariant_helper.cpp" />
+    <ClCompile Include="сhannel_protocol.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -49,7 +49,7 @@ public:
     /// @brief Obtaining a binary answer.
     /// @param timeoutMs Timeout in milliseconds.
     /// @return Data vector if a response is received, otherwise std::nullopt.
-    virtual std::optional<std::vector<uint8_t>> receive(std::optional<uint32_t> timeoutMs = 15000) = 0;
+    virtual std::optional<std::vector<uint8_t>> receive() = 0;
 
     /// @brief Adding an observer to receive error notifications.
     /// @param observer Pointer to the observer.
@@ -67,6 +67,24 @@ public:
 		return ConnectionType::Unknown;
 	}
 
+	/// <summary>
+	/// включает/выключает режим поддержания соединения.
+	/// </summary>
+	/// <param name="enable"></param>
+	virtual void enableKeepAlive(bool enable) = 0;
+
+	/// <summary>
+	/// задаёт задержку в милисекундах перед попыткой переподключения.
+	/// </summary>
+	/// <param name="delay"></param>
+	virtual void setReconnectDelay(std::chrono::milliseconds delay) = 0;
+
+	/// <summary>
+	/// запускает поток, который читает данные и передает их в обратном вызове.
+	/// </summary>
+	/// <param name="callback"></param>
+	virtual void startListening(std::function<void(std::vector<uint8_t>)> callback) = 0;
+
 protected:
     /// @brief Notifying all observers of the error.
     /// @param errorMessage Error message.
@@ -78,7 +96,6 @@ protected:
 
 private:
     std::vector<IErrorObserver*> observers_;
-
 };
 
 // 🔄 COM connection
@@ -90,19 +107,27 @@ public:
 
     bool send(const std::span<const uint8_t> data) override;
 
-    std::optional<std::vector<uint8_t>> receive(std::optional<uint32_t> timeoutMs) override;
+    std::optional<std::vector<uint8_t>> receive() override;
 
     void disconnect() override;
 
     bool isConnected() const override;
 
-    virtual ConnectionType getType() const override {
+    ConnectionType getType() const override {
         return ConnectionType::TCP;
     }
+
+    void startListening(std::function<void(std::vector<uint8_t>)> callback) override;
 
 private:
     boost::asio::io_context io_context_;
     boost::asio::ip::tcp::socket socket_;
+	std::atomic<bool> keepAlive_{ false };
+	std::chrono::milliseconds reconnectDelay_{ 5000 };
+	std::thread listeningThread_;
+	
+    std::string host_;
+	std::optional<uint16_t> port_;
 };
 
 // 🌐 WebSocket
@@ -132,6 +157,24 @@ private:
     boost::asio::ip::tcp::resolver resolver_;
     boost::beast::websocket::stream<boost::asio::ip::tcp::socket> ws_;
     bool connected_ = false;
+};
+
+class ComConnection : public IConnection {
+public:
+	ComConnection(const std::string& port, uint32_t baud_rate = 9600);
+	bool connect(const std::string& port, std::optional<uint16_t> baudRate) override;
+	void disconnect() override;
+	bool isConnected() const override;
+	bool send(const std::span<const uint8_t> data) override;
+	std::optional<std::vector<uint8_t>> receive(std::optional<uint32_t> timeoutMs) override;
+
+	virtual ConnectionType getType() const override {
+		return ConnectionType::COM;
+	}
+
+private:
+	boost::asio::io_context io_context_;
+	boost::asio::serial_port serial_;
 };
 
 class ConnectionFactory {
