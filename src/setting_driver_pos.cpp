@@ -24,6 +24,12 @@ const SettingSettings SettingDriverPos::m_settings = {
                     //{L"Speed", L"Скорость подключения", L"Укажите скорость соединения.", L"Number", L"", L"9600", false, {}}
                 }
             },
+			{   // Group payement parameters
+				L"Параметры оплаты",
+				{
+					{L"MerchantId", L"Код мерчанта", L"Введите код мерчанта", L"String", L"", L"", false,{}},
+				}
+			},
             {   // Group licensing
                 L"Лицензирование",
                 {

@@ -207,7 +207,7 @@ bool DriverPOSTerminal::SetParameter(tVariant* pvarRetValue, tVariant* paParams,
             setParameterValue(m_ParamConnection, paramName, valInt.value());
         }
 	}
-	else if (paParams[1].vt == VTYPE_BOOL) {
+	else if (VariantHelper::isValueBool(paParams[1])) {
         auto valBool = VariantHelper::getBoolValue(paParams[1]);
         if (valBool.has_value()) {
             setParameterValue(m_ParamConnection, paramName, valBool.value());
@@ -925,6 +925,32 @@ bool DriverPOSTerminal::PayByPaymentCard(tVariant* pvarRetValue, tVariant* paPar
     clearError();
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 7, u"PayByPaymentCard");
 
+	auto optDeviceId = VariantHelper::getStringValue(paParams[0]);
+    if (!optDeviceId.has_value()) {
+        m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"PayByPaymentCard", u"Invalid type for DeviceID", -1);
+        addErrorDriver(u"Invalid type for DeviceID", L"PayByPaymentCard: Invalid type for DeviceID");
+        m_addInBase->setBoolValue(pvarRetValue, false);
+        return false;
+    }
+
+	auto deviceId = optDeviceId.value();
+	auto it = m_connections.find(deviceId);
+    if (it == m_connections.end()) {
+        m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"PayByPaymentCard", u"Invalid type for DeviceID", -1);
+        addErrorDriver(u"Invalid type for DeviceID", L"PayByPaymentCard: Invalid type for DeviceID");
+        m_addInBase->setBoolValue(pvarRetValue, false);
+        return false;
+    }
+
+    auto& connection = it->second;
+    Params paramPayement = { 
+        { L"amount" , L"" },
+		{ L"discount" , L"" },
+		{ L"merchantId" , L"" },
+		{ L"facepay" , L"false" },
+		{ L"subMerchant" , L"" }
+    };
+    jsonSendData dataPayement = { L"Purchase", 0, paramPayement };
 
     return false;
 }
@@ -1844,7 +1870,7 @@ std::u16string DriverPOSTerminal::createUID(const std::wstring& host, uint32_t p
     // Convert the combined hash to a hexadecimal string
     std::wstringstream ss;
     ss << std::hex << std::setw(16) << std::setfill(L'0') << combined_hash;
-    return wstringToU16string(ss.str());
+    return str_utils::to_u16string(ss.str());
 }
 
 std::optional<EquipmentTypeInfo> DriverPOSTerminal::getEquipmentTypeInfoFromVariant(tVariant* paParam)

@@ -89,9 +89,8 @@ std::vector<DriverParameter> ParseParameters(const std::wstring& xmlPath) {
     return parameters;
 }
 
-bool ParseParametersFromXML(std::vector<DriverParameter>& params, const std::wstring& xmlSource)
+bool ParseParametersFromXML(std::vector<DriverParameter>& parameters, const std::wstring& xmlSource)
 {
-    std::vector<DriverParameter> parameters;
     pugi::xml_document doc;
 
     // 📂 Загрузка XML файла
@@ -102,37 +101,42 @@ bool ParseParametersFromXML(std::vector<DriverParameter>& params, const std::wst
     }
 
     // 🔍 Поиск всех узлов Parameter
-    for (pugi::xml_node paramNode : doc.child(L"Parameters").children(L"Parameter")) {
-        std::wstring paramName = paramNode.attribute(L"Name").as_string();
-        std::wstring paramValue = paramNode.attribute(L"Value").as_string();
+	// Iterate over all <Page> elements
+	for (pugi::xml_node pageNode : doc.child(L"Settings").children(L"Page")) {
+		// Iterate over all <Group> elements within each <Page>
+		for (pugi::xml_node groupNode : pageNode.children(L"Group")) {
+			// Iterate over all <Parameter> elements within each <Group>
+			for (pugi::xml_node paramNode : groupNode.children(L"Parameter")) {
+				auto paramName = paramNode.attribute(L"Name").as_string();
+                auto paramValue = paramNode.attribute(L"Value").as_string();
+                
+                auto it = std::find_if(parameters.begin(), parameters.end(), [&](const DriverParameter& param) {
+                    return param.name == paramName;
+                });
 
-        // Найти параметр по имени
-        auto it = std::find_if(parameters.begin(), parameters.end(), [&](const DriverParameter& param) {
-            return param.name == paramName;
-            });
-
-        // Если параметр найден, установить его значение
-        if (it != parameters.end()) {
-			if (it->type == TypeParameter::String) {
-				it->value = paramValue;
-			}
-			else if (it->type == TypeParameter::Number) {
-				it->value = std::stoi(paramValue);
-			}
-			else if (it->type == TypeParameter::Bool) {
-				it->value = paramValue == L"true";
-			}
-        }
-        else {
-            // Если параметр не найден, добавить новый параметр
-            DriverParameter param;
-            param.name = paramName;
-            param.value = paramValue;
-			param.type = TypeParameter::String;
-            parameters.push_back(param);
-        }
-    }
-
+                // Если параметр найден, установить его значение
+                if (it != parameters.end()) {
+			        if (it->type == TypeParameter::String) {
+				        it->value = paramValue;
+			        }
+			        else if (it->type == TypeParameter::Number) {
+				        it->value = std::stoi(paramValue);
+			        }
+        			else if (it->type == TypeParameter::Bool) {
+		        		it->value = paramValue == L"true";
+			        }
+                }
+                else {
+                // Если параметр не найден, добавить новый параметр
+                    DriverParameter param;
+                    param.name = paramName;
+                    param.value = paramValue;
+        			param.type = TypeParameter::String;
+                    parameters.push_back(param);
+                }
+            }
+		}
+	}
     return true;
 }
 

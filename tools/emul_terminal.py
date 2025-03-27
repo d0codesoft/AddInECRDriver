@@ -1,7 +1,6 @@
 import socket
 import json
 
-
 def json_to_bytes(data: dict, null_terminated=True) -> bytes:
     """Преобразует JSON в байты с UTF-8 кодировкой и добавляет NULL-терминатор."""
     json_bytes = json.dumps(data, ensure_ascii=False).encode('utf-8')
