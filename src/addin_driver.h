@@ -52,15 +52,9 @@ public:
         const std::u16string& descriptor, long code) override;
 
     virtual bool getString1C(const std::u16string& source, WCHAR_T** value, uint32_t& length) override;
-    virtual bool getStringFromWchart(const WCHAR_T* source, std::u16string& desct) override;
+    virtual bool getString(const WCHAR_T* source, std::u16string& desct) override;
     virtual bool setStringValue(tVariant* pvarParamDefValue, const std::u16string& source) override;
 	virtual bool setBoolValue(tVariant* pvarParamDefValue, const bool flag) override;
-
-	virtual std::wstring getStringValue(const tVariant& var) override;
-	virtual long getLongValue(const tVariant& var) override;
-    virtual std::optional<bool> getBoolValue(const tVariant& var) override;
-	virtual bool isValueString(const tVariant& var) override;
-
 
 	// IAddInBase
     bool saveValue(const std::u16string& key, const std::u16string& value) override;
@@ -70,7 +64,7 @@ public:
     bool loadValue(const std::u16string& key, int& value) override;
     bool loadValue(const std::u16string& key, bool& value) override;
 
-    virtual LanguageCode getLanguageCode() const override;
+    LanguageCode getLanguageCode() override;
 
     IAddInDefBase* getAddInDefBase() const override;
     IMemoryManager* getMemoryManager() const override;

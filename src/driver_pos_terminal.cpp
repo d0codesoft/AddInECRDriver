@@ -32,12 +32,14 @@ DriverPOSTerminal::~DriverPOSTerminal()
 	if (m_licenseManager)
 		m_licenseManager.reset();
 
-    if (m_connection) {
-		if (m_connection->isConnected()) {
-			m_connection->disconnect();
+	if (m_connections.size() > 0) {
+		for (auto& connection : m_connections) {
+			if (connection.second->isConnected()) {
+                connection.second->disconnect();
+			}
 		}
-        m_connection.reset();
-    }
+	}
+	m_connections.clear();
 }
 
 void DriverPOSTerminal::InitDriver()
@@ -186,7 +188,12 @@ bool DriverPOSTerminal::SetParameter(tVariant* pvarRetValue, tVariant* paParams,
 {
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 2, u"SetParameter");
 
-	auto paramName = m_addInBase->getStringValue(paParams[0]);
+	auto optParam = VariantHelper::getStringValue(paParams[0]);
+    if (!optParam.has_value()) {
+		m_addInBase->setBoolValue(pvarRetValue, false);
+		return false;
+	}
+	std::wstring paramName = optParam.value();
 
     if (VariantHelper::isValueString(paParams[1])) {
         auto valStr = VariantHelper::getStringValue(paParams[1]);
@@ -698,7 +705,15 @@ bool DriverPOSTerminal::DoAdditionalAction(tVariant* pvarRetValue, tVariant* paP
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 1, u"DoAdditionalAction");
 
     auto actions = this->getActions();
-	auto actionName = str_utils::to_u16string(m_addInBase->getStringValue(paParams[0]));
+	auto optVal = VariantHelper::getStringValue(paParams[0]);
+	if (!optVal.has_value()) {
+		m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"DoAdditionalAction", u"Invalid type for ActionName", -1);
+		addErrorDriver(u"Invalid type for ActionName", L"DoAdditionalAction: Invalid type for ActionName");
+		m_addInBase->setBoolValue(pvarRetValue, false);
+		return false;
+	}
+
+	auto actionName = str_utils::to_u16string(optVal.value());
 	auto find_action = std::find_if(actions.begin(), actions.end(), [&](const ActionDriver& action) {
 		return actionName == action.name_en || actionName == action.name_ru;
 		});
@@ -817,7 +832,15 @@ bool DriverPOSTerminal::TerminalParameters(tVariant* pvarRetValue, tVariant* paP
     clearError();
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 2, u"TerminalParameters");
 
-	auto deviceId = m_addInBase->getStringValue(paParams[0]);
+	auto optDeviceId = VariantHelper::getStringValue(paParams[0]);
+	if (!optDeviceId.has_value()) {
+		m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"TerminalParameters", u"Invalid type for DeviceID", -1);
+		addErrorDriver(u"Invalid type for DeviceID", L"TerminalParameters: Invalid type for DeviceID");
+		m_addInBase->setBoolValue(pvarRetValue, false);
+		return false;
+	}
+
+	auto deviceId = optDeviceId.value();
     auto param = getTerminalConfig(deviceId);
 	if (!param.has_value()) {
 		m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"TerminalParameters", u"Invalid type for DeviceID", -1);
@@ -1681,11 +1704,6 @@ bool DriverPOSTerminal::PrintSlipOnTerminal(tVariant* pvarRetValue, tVariant* pa
     return false;
 }
 
-const std::u16string DriverPOSTerminal::getEquipmentId()
-{
-    return m_equipmentId;
-}
-
 void DriverPOSTerminal::AddActionDriver(const std::u16string& name_en, const std::u16string& name_ru, const std::u16string& caption_en, const std::u16string& caption_ru, CallAsFunc1C ptr_method)
 {
 	m_actions.push_back({ name_en, name_ru, caption_en, caption_ru, ptr_method });
@@ -1696,7 +1714,7 @@ std::span<const ActionDriver> DriverPOSTerminal::getActions()
 	return m_actions;
 }
 
-std::optional<TerminalConfig> DriverPOSTerminal::getTerminalConfig(std::wstring deviceID)
+std::optional<TerminalConfig> DriverPOSTerminal::getTerminalConfig(std::wstring& deviceID)
 {
 	auto it = m_configTerminals.find(deviceID);
 	if ( it != m_configTerminals.end()) {

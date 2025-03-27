@@ -5,7 +5,9 @@
 
 #include "AddInDefBase.h"
 #include "IMemoryManager.h"
+#include "common_types.h"
 #include <string>
+#include <optional>
 
 class IAddInBase {
 public:
@@ -22,22 +24,9 @@ public:
         const std::u16string& descriptor, long code) = 0;
 
     virtual bool getString1C(const std::u16string& source, WCHAR_T** value, uint32_t& length) = 0;
-	virtual bool getStringFromWchart(const WCHAR_T* source, std::u16string& desct) = 0;
+	virtual bool getString(const WCHAR_T* source, std::u16string& dest) = 0;
     virtual bool setStringValue(tVariant* pvarParamDefValue, const std::u16string& source) = 0;
     virtual bool setBoolValue(tVariant* pvarParamDefValue, const bool flag) = 0;
-
-    virtual std::wstring getStringValue(const tVariant& var) = 0;
-    virtual long getLongValue(const tVariant& var) = 0;
-    virtual std::optional<bool> getBoolValue(const tVariant& var) = 0;
-    virtual std::optional<int> getIntValue(const tVariant& var) = 0;
-    virtual bool isValueString(const tVariant& var) = 0;
-    virtual bool isValueInt(const tVariant& var) = 0;
-	virtual bool isValueBool(const tVariant& var) = 0;
-    virtual bool isValueInt(const tVariant& var) = 0;
-	virtual bool isValueDouble(const tVariant& var) = 0;
-	virtual bool isValueDate(const tVariant& var) = 0;
-	virtual bool isValueArray(const tVariant& var) = 0;
-    virtual bool isValueEmpty(const tVariant& var) = 0;
 
 	// Function to save and load value to storage 1C
 	virtual bool saveValue(const std::u16string& key, const std::u16string& value) = 0;
@@ -47,7 +36,7 @@ public:
 	virtual bool loadValue(const std::u16string& key, int& value) = 0;
 	virtual bool loadValue(const std::u16string& key, bool& value) = 0;
 
-	virtual LanguageCode getLanguageCode() const = 0;
+	virtual LanguageCode getLanguageCode() = 0;
 };
 
 // Function to check if the variant is a string

@@ -4,6 +4,7 @@
 #include <jsoncons/json.hpp>
 #include "str_utils.h"
 #include "common_types.h"
+#include "logger.h"
 #include <queue>
 
 #ifndef ICHANNELPROTOCOL_H
@@ -81,18 +82,29 @@ public:
 	bool connect(const std::string& address, std::optional<uint16_t> port = 2000) override {
 		// Step 1: Connect to IP, port
 		if (!connection_->connect(address, port)) {
+			LOG_ERROR_ADD(L"JsonChannel", L"Error connected address: " + str_utils::to_wstring(address) + L" port: " + portToWstring(port));
 			return false;
 		}
 
 		// Step 2: Send a handshake
 		jsonSendData handshake = { L"PingDevice", 0, {} };
 		if (!sendJson(handshake)) {
+			LOG_ERROR_ADD(L"JsonChannel", L"Error Send a handshake");
 			return false;
 		}
 
 		auto response = receiveJson();
-		if (!response || response->method != L"PingDevice" || response->params[L"code"] != L"00") {
-			return false;
+		if (!response || response->method != L"PingDevice" || response->error==true ) {
+			std::wstring errorResponseCode = {}, errorCode = {};
+			auto fp = response->params.find(L"responseCode");
+			if (fp != response->params.end()) {
+				errorResponseCode = std::get<std::wstring>(fp->second);
+			}
+			fp = response->params.find(L"code");
+			if (fp != response->params.end()) {
+				errorCode = std::get<std::wstring>(fp->second);
+			}
+			LOG_ERROR_ADD(L"JsonChannel", L"Failed to connect: " + response->errorDescription + L" Code: " + errorResponseCode);
 		}
 
 		// Step 3: Disconnect
@@ -100,16 +112,19 @@ public:
 
 		// Step 4: Send identification
 		if (!connection_->connect(address, port)) {
+			LOG_ERROR_ADD(L"JsonChannel", L"Error reconnect address: " + str_utils::to_wstring(address) + L" port: " + portToWstring(port));
 			return false;
 		}
 
 		jsonSendData identify = { L"ServiceMessage", 0, {{L"msgType", L"identify"}} };
 		if (!sendJson(identify)) {
+			LOG_ERROR_ADD(L"JsonChannel", L"Failed to send service message");
 			return false;
 		}
 
 		response = receiveJson();
-		if (!response || response->method != L"ServiceMessage" || response->params[L"msgType"] != L"identify") {
+		if (!response || response->method != L"ServiceMessage") {
+			LOG_ERROR_ADD(L"JsonChannel", L"Failed to receive service message");
 			return false;
 		}
 
@@ -118,6 +133,7 @@ public:
 
 		// Step 6: Open the connection, keep it open (keepalive) and listen to incoming data
 		if (!connection_->connect(address, port)) {
+			LOG_ERROR_ADD(L"JsonChannel", L"Failed to reconnect pos terminal");
 			return false;
 		}
 
@@ -126,11 +142,13 @@ public:
 			// Handle incoming data
 			processIncomingData(data);
 			});
+		LOG_INFO_ADD(L"JsonChannel", L"Star listening data from device");
 
 		return true;
 	}
 
 	void disconnect() override {
+		LOG_INFO_ADD(L"JsonChannel", L"Disconnect");
 		connection_->disconnect();
 	}
 
@@ -158,6 +176,7 @@ public:
 		}
 
 		std::string jsonString = json.to_string();
+		LOG_INFO_ADD(L"JsonChannel", L"Send json data: " + str_utils::to_wstring(jsonString));
 
 		// Convert JSON string to UTF-8
 		std::vector<uint8_t> data;
@@ -174,7 +193,7 @@ public:
 	std::optional<jsonResiveData> receiveJson(std::optional<uint32_t> timeoutMs = 15000) override {
 		std::vector<uint8_t> buffer;
 		while (true) {
-			auto responseData = connection_->receive(timeoutMs);
+			auto responseData = connection_->receive();
 			if (!responseData) {
 				return std::nullopt;
 			}
@@ -189,6 +208,8 @@ public:
 		}
 
 		std::string jsonString(buffer.begin(), buffer.end());
+		LOG_INFO_ADD(L"JsonChannel", L"Receive json data: " + str_utils::to_wstring(jsonString));
+
 		try {
 			auto json = jsoncons::json::parse(jsonString);
 
@@ -214,6 +235,7 @@ public:
 			return result;
 		}
 		catch (const std::exception& e) {
+			LOG_ERROR_ADD(L"JsonChannel", L"Failed to parse JSON: " + str_utils::to_wstring(e.what()));
 			return std::nullopt;
 		}
 	}

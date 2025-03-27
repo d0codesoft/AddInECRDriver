@@ -298,3 +298,16 @@ std::wstring generateGUID() {
     }
     return guidBuff;
 }
+
+std::wstring portToWstring(const std::optional<uint16_t>& port)
+{
+	if (port.has_value()) {
+		std::wstringstream wss;
+		wss << port.value();
+		return wss.str();
+	}
+	else {
+		return L"";
+	}
+
+}

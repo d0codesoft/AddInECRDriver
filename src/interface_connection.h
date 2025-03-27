@@ -14,6 +14,7 @@ enum class ConnectionType {
     COM,
     TCP,
     WebSocket,
+    USB,
 	Unknown
 };
 
@@ -119,10 +120,18 @@ public:
 
     void startListening(std::function<void(std::vector<uint8_t>)> callback) override;
 
+	void enableKeepAlive(bool enable) override {
+		keepAlive_ = enable;
+	}
+
+	void setReconnectDelay(std::chrono::milliseconds delay) override {
+		reconnectDelay_ = delay;
+	}
+
 private:
     boost::asio::io_context io_context_;
     boost::asio::ip::tcp::socket socket_;
-	std::atomic<bool> keepAlive_{ false };
+	std::atomic<bool> keepAlive_{ true };
 	std::chrono::milliseconds reconnectDelay_{ 5000 };
 	std::thread listeningThread_;
 	
@@ -141,7 +150,7 @@ public:
 
     bool send(const std::span<const uint8_t> data) override;
 
-    std::optional<std::vector<uint8_t>> receive(std::optional<uint32_t> timeoutMs) override;
+    std::optional<std::vector<uint8_t>> receive() override;
 
     void disconnect() override;
 
@@ -151,30 +160,65 @@ public:
         return ConnectionType::WebSocket;
     }
 
+	void enableKeepAlive(bool enable) override {
+		keepAlive_ = enable;
+	}
+
+	void setReconnectDelay(std::chrono::milliseconds delay) override {
+		reconnectDelay_ = delay;
+	}
+
+    void startListening(std::function<void(std::vector<uint8_t>)> callback) override {
+		// Not implemented
+		throw std::runtime_error("Not implemented");
+    }
 
 private:
     boost::asio::io_context ioc_;
     boost::asio::ip::tcp::resolver resolver_;
     boost::beast::websocket::stream<boost::asio::ip::tcp::socket> ws_;
     bool connected_ = false;
+	std::atomic<bool> keepAlive_{ true };
+	std::chrono::milliseconds reconnectDelay_{ 5000 };
 };
 
 class ComConnection : public IConnection {
 public:
 	ComConnection(const std::string& port, uint32_t baud_rate = 9600);
-	bool connect(const std::string& port, std::optional<uint16_t> baudRate) override;
-	void disconnect() override;
-	bool isConnected() const override;
-	bool send(const std::span<const uint8_t> data) override;
-	std::optional<std::vector<uint8_t>> receive(std::optional<uint32_t> timeoutMs) override;
+    bool connect(const std::string& port, std::optional<uint16_t> baudRate) override {
+		return false;
+    }
+    void disconnect() override {
+		// Not implemented
+		throw std::runtime_error("Not implemented");
+    }
+    bool isConnected() const override {
+		return false;
+    }
+    bool send(const std::span<const uint8_t> data) override {
+		throw std::runtime_error("Not implemented");
+    }
+	std::optional<std::vector<uint8_t>> receive() override {
+		throw std::runtime_error("Not implemented");
+	}
 
-	virtual ConnectionType getType() const override {
+	ConnectionType getType() const override {
 		return ConnectionType::COM;
+	}
+
+	void enableKeepAlive(bool enable) override {
+		keepAlive_ = enable;
+	}
+
+	void setReconnectDelay(std::chrono::milliseconds delay) override {
+		reconnectDelay_ = delay;
 	}
 
 private:
 	boost::asio::io_context io_context_;
 	boost::asio::serial_port serial_;
+	std::atomic<bool> keepAlive_{ true };
+	std::chrono::milliseconds reconnectDelay_{ 5000 };
 };
 
 class ConnectionFactory {

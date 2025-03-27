@@ -82,7 +82,6 @@ public:
     bool GetOperationByCards(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
     bool Settlement(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
 	bool PrintSlipOnTerminal(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
-    const std::u16string getEquipmentId();
 
 	void AddActionDriver(const std::u16string& name_en, const std::u16string& name_ru, const std::u16string& caption_en, const std::u16string& caption_ru, CallAsFunc1C ptr_method) override;
     std::span<const ActionDriver> getActions() override;
@@ -172,6 +171,8 @@ private:
     DriverDescription m_driverDescription;
     std::unique_ptr<LicenseManager> m_licenseManager;
 	std::vector<ActionDriver> m_actions = {};
+
+	LanguageCode m_languageCode = LanguageCode::RU;
 };
 
 #endif // DRIVERPOSTERMINAL_H

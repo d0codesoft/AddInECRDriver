@@ -8,8 +8,11 @@
 bool TcpConnection::connect(const std::string& host, std::optional<uint16_t> port)
 {
     try {
-		this->host_ = host;
-		this->port_ = port;
+		keepAlive_ = true;
+		host_ = host;
+		port_ = port;
+
+		LOG_INFO_ADD(L"TcpConnection", L"Start connection : " + str_utils::to_wstring(host) + L" port: " + portToWstring(port));
 
         boost::asio::ip::tcp::resolver resolver(io_context_);
 		auto port_ = port.value_or(2000);
@@ -21,7 +24,7 @@ bool TcpConnection::connect(const std::string& host, std::optional<uint16_t> por
         boost::asio::async_connect(socket_, endpoints,
             [this, &connect_promise](boost::system::error_code ec, boost::asio::ip::tcp::endpoint) {
                 if (ec) {
-                    auto text_error = L"Failed to connect: " + convertStringToWString(ec.message());
+                    auto text_error = L"Failed to connect: " + str_utils::to_wstring(ec.message());
                     notifyError(text_error);
                     LOG_ERROR_ADD(L"TcpConnection", text_error);
                 }
@@ -34,7 +37,7 @@ bool TcpConnection::connect(const std::string& host, std::optional<uint16_t> por
     }
     catch (const std::exception& e) {
         auto error = std::string(e.what());
-        auto text_error = L"Exception: " + convertStringToWString(error);
+        auto text_error = L"Exception: " + str_utils::to_wstring(error);
         notifyError(text_error);
 		LOG_ERROR_ADD(L"TcpConnection", text_error);
         return false;
@@ -48,7 +51,7 @@ bool TcpConnection::send(const std::span<const uint8_t> data)
 	}
 	catch (const std::exception& e) {
 		auto error = std::string(e.what());
-		auto text_error = L"Exception: " + convertStringToWString(error);
+		auto text_error = L"Exception: " + str_utils::to_wstring(error);
 		notifyError(text_error);
 		LOG_ERROR_ADD(L"TcpConnection", text_error);
 		return false;
@@ -93,7 +96,8 @@ void TcpConnection::disconnect()
 	socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
 	socket_.close(ec);
 	if (ec) {
-		notifyError(L"Failed to disconnect: " + std::wstring(ec.message().begin(), ec.message().end()));
+		notifyError(L"Failed to disconnect: " + str_utils::to_wstring(ec.message()));
+		LOG_ERROR_ADD(L"TcpConnection", L"Failed to disconnect: " + str_utils::to_wstring(ec.message()));
 	}
 }
 
@@ -123,7 +127,7 @@ void TcpConnection::startListening(std::function<void(std::vector<uint8_t>)> cal
 
 bool WebSocketConnection::connect(const std::string& host, std::optional<uint16_t> port) {
     try {
-        auto resolved = resolver_.resolve(host, port ? std::to_string(*port) : "80");
+        auto resolved = resolver_.resolve(host, port ? std::to_string(*port) : "2000");
         boost::asio::connect(ws_.next_layer(), resolved);
 
         ws_.handshake(host, "/");
@@ -131,7 +135,7 @@ bool WebSocketConnection::connect(const std::string& host, std::optional<uint16_
         return true;
     }
     catch (const std::exception& e) {
-        std::cerr << "WebSocket connection error: " << e.what() << std::endl;
+		LOG_ERROR_ADD(L"WebSocketConnection", L"Failed to connect: " + str_utils::to_wstring(e.what()));
         return false;
     }
 }
@@ -144,12 +148,12 @@ bool WebSocketConnection::send(const std::span<const uint8_t> data) {
         return true;
     }
     catch (const std::exception& e) {
-        std::cerr << "WebSocket send error: " << e.what() << std::endl;
+		LOG_ERROR_ADD(L"WebSocketConnection", L"Failed to send: " + str_utils::to_wstring(e.what()));
         return false;
     }
 }
 
-std::optional<std::vector<uint8_t>> WebSocketConnection::receive(std::optional<uint32_t> timeoutMs) {
+std::optional<std::vector<uint8_t>> WebSocketConnection::receive() {
     if (!connected_) return std::nullopt;
     try {
         std::string data;
@@ -159,7 +163,7 @@ std::optional<std::vector<uint8_t>> WebSocketConnection::receive(std::optional<u
         return result;
     }
     catch (const std::exception& e) {
-        std::cerr << "WebSocket receive error: " << e.what() << std::endl;
+		LOG_ERROR_ADD(L"WebSocketConnection", L"Failed to receive: " + str_utils::to_wstring(e.what()));
         return std::nullopt;
     }
 }

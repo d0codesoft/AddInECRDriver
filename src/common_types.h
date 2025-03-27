@@ -261,6 +261,7 @@ std::u16string toXmlApplication(const DriverDescription& driver);
 std::u16string toXMLTerminalConfig(const TerminalConfig& config);
 std::u16string toXMLActions(std::span<const ActionDriver> actions, const LanguageCode currentLang);
 std::wstring generateGUID();
+std::wstring portToWstring(const std::optional<uint16_t>& port);
 
 #define BOOL_TO_STRING(b) ((b) ? L"true" : L"false")
 
