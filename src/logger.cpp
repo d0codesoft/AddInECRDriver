@@ -14,6 +14,7 @@ std::wofstream Logger::_LogFile;
 size_t Logger::_maxFileSize;
 size_t Logger::_maxFileCount;
 bool Logger::isInitialized = false;
+const std::filesystem::path Logger::current_log_path = std::filesystem::path(_logDirectory) / _logNameTemplate;
 
 Logger::Logger(const std::wstring& channelName) : mChannelName(channelName) {
 }
@@ -41,8 +42,8 @@ bool Logger::initializeFileStream()
 
 	rotate_logs();
 
-    std::filesystem::path current_log_path = std::filesystem::path(_logDirectory) / _logNameTemplate;
-    _LogFile.open(current_log_path, std::ios::app);
+    //current_log_path = std::filesystem::path(_logDirectory) / _logNameTemplate;
+    _LogFile.open(Logger::current_log_path, std::ios::app);
 	if (_LogFile.is_open()) {
         isInitialized = true;
 	}
@@ -62,8 +63,8 @@ void Logger::rotate_logs()
     }
 
 	// Test current log file size
-    fs::path current_log_path = fs::path(_logDirectory) / (log_prefix + L".log");
-    if (!fs::exists(current_log_path) || (fs::exists(current_log_path) && fs::file_size(current_log_path) < _maxFileSize)) {
+    //fs::path current_log_path = fs::path(_logDirectory) / (log_prefix + L".log");
+    if (!fs::exists(Logger::current_log_path) || (fs::exists(Logger::current_log_path) && fs::file_size(Logger::current_log_path) < _maxFileSize)) {
         return;
     }
 
@@ -102,7 +103,7 @@ void Logger::rotate_logs()
     }
 
 	// Rename current log file
-    fs::rename(current_log_path, fs::path(_logDirectory) / (log_prefix + L".1"));
+    fs::rename(Logger::current_log_path, fs::path(_logDirectory) / (log_prefix + L".1"));
 }
 
 void Logger::logDebug(const std::wstring& level, const std::wstring& message, const std::wstring& file, int line)

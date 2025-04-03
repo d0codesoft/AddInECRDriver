@@ -14,8 +14,8 @@ const SettingSettings SettingDriverPos::m_settings = {
             {   // Group Connection parameters
                 L"Параметры подключения",
                 {
-                    {L"ConnectionType", L"Тип подключения", L"Выберите тип подключения.", L"String", L"", L"TCP", false,
-                     {{L"TCP", L"TCP"}, {L"COM", L"COM"}, {L"WebSocket", L"WebSocket"}}},
+                    {L"ConnectionType", L"Тип подключения", L"Выберите тип подключения.", L"Number", L"", L"0", false,
+                     {{L"0", L"TCP"}, {L"1", L"COM"}, {L"2", L"WebSocket"}}},
 
                     {L"Address", L"Адрес подключения", L"Введите адрес сервера.", L"String", L"", L"", false, {}},
 
@@ -27,7 +27,16 @@ const SettingSettings SettingDriverPos::m_settings = {
 			{   // Group payement parameters
 				L"Параметры оплаты",
 				{
+					{L"Facepay", L"Разрешить оплату через FacePay24", L"", L"Boolean", L"", L"false", false,{}},
 					{L"MerchantId", L"Код мерчанта", L"Введите код мерчанта", L"String", L"", L"", false,{}},
+				}
+			},
+			{   // Logging parameters
+				L"Логирование",
+				{
+					{L"LogFullPath", L"Текущий файл лога", L"", L"String", L"", L"", true, {}},
+					{L"LogLevel", L"Уроверь логирования", L"Выбирите уровень логирования", L"Number", L"", L"0", false,
+					 {{L"0", L"Ошибки"}, {L"1", L"Детальный"}}},
 				}
 			},
             {   // Group licensing
@@ -94,7 +103,7 @@ std::u16string SettingDriverPos::getSettingXML()
     return str_utils::to_u16string(oss.str());
 }
 
-std::u16string toXML(const SettingSettings& settings) {
+std::u16string toXML(const SettingSettings& settings, std::span<const DriverParameter> parameters) {
 	pugi::xml_document doc;
 	auto decl = doc.append_child(pugi::node_declaration);
 	decl.append_attribute(L"version") = L"1.0";
@@ -115,7 +124,20 @@ std::u16string toXML(const SettingSettings& settings) {
 				paramNode.append_attribute(L"Name") = param.Name;
 				paramNode.append_attribute(L"Caption") = param.Caption;
 				paramNode.append_attribute(L"TypeValue") = param.TypeValue;
-				if (!param.DefaultValue.empty()) {
+				paramNode.append_attribute(L"ReadOnly") = (param.ReadOnly) ? L"true" : L"false";
+				if (param.ReadOnly) {
+					auto valDefault = std::find_if(parameters.begin(), parameters.end(), [&](const DriverParameter& p) {
+						return p.name == param.Name;
+						});
+					if (valDefault != parameters.end()) {
+                        const std::wstring* strValue = std::get_if<std::wstring>(&valDefault->value);
+						paramNode.append_attribute(L"DefaultValue") = std::wstring(strValue->begin(), strValue->end());
+					}
+                    else {
+						paramNode.append_attribute(L"DefaultValue") = L"";
+                    }
+				}
+				else if (!param.DefaultValue.empty()) {
 					paramNode.append_attribute(L"DefaultValue") = param.DefaultValue;
 				}
 				if (!param.ChoiceList.empty()) {

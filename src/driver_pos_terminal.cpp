@@ -14,13 +14,17 @@
 
 #define CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, lValidCountParams, methodName) \
     if ((lSizeArray) != (lValidCountParams) || !(paParams)) { \
-        auto slValidCountParams = wstringToU16string(std::to_wstring(lValidCountParams)); \
+        auto slValidCountParams = str_utils::to_u16string(std::to_wstring(lValidCountParams)); \
         std::u16string msg = u"Method expects " + slValidCountParams + u" parameter(s)"; \
-        addErrorDriver(msg, u16stringToWstring(methodName) + L": Method expects " + std::to_wstring(lValidCountParams) + L" parameter(s)"); \
+        addErrorDriver(msg, str_utils::to_wstring(methodName) + L": Method expects " + std::to_wstring(lValidCountParams) + L" parameter(s)"); \
         m_addInBase->setBoolValue(pvarRetValue, false); \
         return false; \
     } \
 
+
+#define HANDLE_ERROR(addInBase, methodName, errorCode, errorMessage,) \
+        addInBase->addError(static_cast<int>(errorCode), str_utils::to_u16string(methodName), str_utils::to_u16string(errorMessage), -1); \
+        addErrorDriver(u##errorMessage, L##methodName L": " L##errorMessage); \
 
 DriverPOSTerminal::DriverPOSTerminal(IAddInBase * addInBase) : m_addInBase(addInBase)
 {
@@ -68,8 +72,12 @@ void DriverPOSTerminal::InitDriver()
         { L"ConnectionType", L"", TypeParameter::String },
 	    { L"Address", L"", TypeParameter::String },
 	    { L"Port", 2000, TypeParameter::Number },
-		{ L"Speed", 9600, TypeParameter::Number }
-    };
+		{ L"Speed", 9600, TypeParameter::Number },
+		{ L"LogLevel", L"0", TypeParameter::String },
+		{ L"MerchantId", L"", TypeParameter::String },
+		{ L"Facepay", false, TypeParameter::Bool },
+		{ L"LogFullPath", Logger::getLogFilePath(), TypeParameter::String }
+	};
 }
 
 const DriverDescription& DriverPOSTerminal::getDescriptionDriver()
@@ -87,8 +95,7 @@ bool DriverPOSTerminal::GetInterfaceRevision(tVariant* pvarRetValue, tVariant* p
 
     if (lSizeArray != 0)
     {
-		this->m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"GetInterfaceRevision", u"Method does not accept parameters", -1);
-		addErrorDriver(u"Method does not accept parameters", L"GetInterfaceRevision: Method does not accept parameters");
+		_handleError(L"GetInterfaceRevision", L"Method does not accept parameters");
         return false;
     }
 
@@ -163,7 +170,7 @@ bool DriverPOSTerminal::GetParameters(tVariant* pvarRetValue, tVariant* paParams
 {
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 1, u"GetParameters");
 
-	auto xmlParam = toXML(SettingDriverPos::getSettings());
+	auto xmlParam = toXML(SettingDriverPos::getSettings(), this->m_ParamConnection);
 	m_addInBase->setStringValue(paParams, xmlParam);
 	m_addInBase->setBoolValue(pvarRetValue, true);
 
@@ -245,8 +252,7 @@ bool DriverPOSTerminal::Open(tVariant* pvarRetValue, tVariant* paParams, const l
         m_addInBase->setStringValue(paParams, str_utils::to_u16string(deviceId));
     }
     else {
-        m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"Open", str_utils::to_u16string(error), -1);
-        addErrorDriver(u"Invalid connect", L"Open: " + error);
+		_handleError(L"Open", error);
         TV_VT(paParams) = VTYPE_EMPTY;
     }
 
@@ -270,34 +276,20 @@ bool DriverPOSTerminal::Close(tVariant* pvarRetValue, tVariant* paParams, const 
 {
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 1, u"Close");
 
-    std::wstring deviceID;
-    if (paParams->vt == VTYPE_PWSTR) {
-        deviceID = str_utils::to_wstring(paParams->pwstrVal);
-    }
-    else {
-        m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"Close", u"Invalid type for device ID", -1);
-        addErrorDriver(u"Invalid type device ID", L"Close: Invalid type for device ID");
+    std::wstring deviceId{};
+    auto _connect = getDeviceConnection(paParams, deviceId);
+	if (!_connect.has_value()) {
+		_handleError(L"Close", L"Invalid type for device ID");
         m_addInBase->setBoolValue(pvarRetValue, false);
         return false;
     }
-
-    auto findId = m_connections.find(deviceID);
-    if (findId == m_connections.end()) {
-        m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"Close", u"Invalid device ID", -1);
-        addErrorDriver(u"Invalid device ID", L"Close: Invalid device ID");
-        m_addInBase->setBoolValue(pvarRetValue, false);
-        return false;
-    }
-
-    if (findId->second != nullptr)
+    
+    if (_connect->get()->isConnected())
     {
-        if (findId->second.get()->isConnected())
-        {
-            findId->second.get()->disconnect();
-        }
-        findId->second.reset();
+        _connect->get()->disconnect();
     }
-    m_connections.erase(findId);
+    _connect->get().reset();
+    m_connections.erase(deviceId);
 
     m_addInBase->setBoolValue(pvarRetValue, true);
     return true;
@@ -363,8 +355,7 @@ bool DriverPOSTerminal::EquipmentParameters(tVariant* pvarRetValue, tVariant* pa
 
 	auto type = getEquipmentTypeInfoFromVariant(&paParams[0]);
 	if (!type.has_value() || type.value() != EquipmentTypeInfo::POSTerminal) {
-		m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"EquipmentParameters", u"Invalid type for EquipmentType", -1);
-		addErrorDriver(u"Invalid type for EquipmentType", L"EquipmentParameters: Invalid type for EquipmentType");
+		_handleError(L"ConnectEquipment", L"Invalid parameter EquipmentType");
 		m_addInBase->setBoolValue(pvarRetValue, false);
 		return false;
 	}
@@ -404,8 +395,7 @@ bool DriverPOSTerminal::ConnectEquipment(tVariant* pvarRetValue, tVariant* paPar
     // Get EquipmentType (STRING[IN])
     auto type = getEquipmentTypeInfoFromVariant(&paParams[0]);
     if (!type.has_value() || type.value() != EquipmentTypeInfo::POSTerminal) {
-        m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"EquipmentParameters", u"Invalid type for EquipmentType", -1);
-        addErrorDriver(u"Invalid type for EquipmentType", L"EquipmentParameters: Invalid type for EquipmentType");
+		_handleError(L"ConnectEquipment", L"Invalid parameter EquipmentType");
         m_addInBase->setBoolValue(pvarRetValue, false);
         return false;
     }
@@ -413,8 +403,7 @@ bool DriverPOSTerminal::ConnectEquipment(tVariant* pvarRetValue, tVariant* paPar
     // Get ConnectionParameters (STRING[IN])
 	auto paramConnect = VariantHelper::getStringValue(paParams[1]);
     if (!paramConnect.has_value()) {
-        m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"ConnectEquipment", u"Invalid type for ConnectionParameters", -1);
-        addErrorDriver(u"Invalid type for ConnectionParameters", L"ConnectEquipment: Invalid type for ConnectionParameters");
+		_handleError(L"ConnectEquipment", L"Invalid type for ConnectionParameters");
         m_addInBase->setBoolValue(pvarRetValue, false);
         return false;
     }
@@ -422,8 +411,7 @@ bool DriverPOSTerminal::ConnectEquipment(tVariant* pvarRetValue, tVariant* paPar
     // Parce xml parametrs
 	if (!ParseParametersFromXML(m_ParamConnection, paramConnect.value()))
 	{
-		m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"ConnectEquipment", u"Invalid ConnectionParameters", -1);
-        addErrorDriver(u"Invalid ConnectionParameters", L"ConnectEquipment: Invalid ConnectionParameters");
+		_handleError(L"ConnectEquipment", L"Invalid ConnectionParameters");
         m_addInBase->setBoolValue(pvarRetValue, false);
         return false;
 	}
@@ -436,8 +424,7 @@ bool DriverPOSTerminal::ConnectEquipment(tVariant* pvarRetValue, tVariant* paPar
         m_addInBase->setStringValue(&paParams[2], str_utils::to_u16string(deviceId));
 	}
     else {
-        m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"ConnectEquipment", str_utils::to_u16string(error), -1);
-        addErrorDriver(u"Invalid ConnectionParameters", L"ConnectEquipment: " + error);
+		_handleError(L"ConnectEquipment", error);
         TV_VT(&paParams[2]) = VTYPE_EMPTY;
     }
 
@@ -468,16 +455,14 @@ bool DriverPOSTerminal::DisconnectEquipment(tVariant* pvarRetValue, tVariant* pa
         deviceID = str_utils::to_wstring(paParams->pwstrVal);
 	}
 	else {
-		m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"DisconnectEquipment", u"Invalid type for device ID", -1);
-		addErrorDriver(u"Invalid type for device ID", L"DisconnectEquipment: Invalid type for device ID");
+		_handleError(L"DisconnectEquipment", L"Invalid type for device ID");
         m_addInBase->setBoolValue(pvarRetValue, false);
         return false;
 	}
 
 	auto findId = m_connections.find(deviceID);
 	if (findId == m_connections.end()) {
-		m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"DisconnectEquipment", u"Invalid device ID", -1);
-		addErrorDriver(u"Invalid device ID", L"DisconnectEquipment: Invalid device ID");
+		_handleError(L"DisconnectEquipment", L"Invalid device ID");
 		m_addInBase->setBoolValue(pvarRetValue, false);
 		return false;
 	}
@@ -530,8 +515,7 @@ bool DriverPOSTerminal::EquipmentTest(tVariant* pvarRetValue, tVariant* paParams
    // Get EquipmentType (STRING[IN])
     auto type = getEquipmentTypeInfoFromVariant(&paParams[0]);
     if (!type.has_value() || type.value() != EquipmentTypeInfo::POSTerminal) {
-        m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"EquipmentTest", u"Invalid type for EquipmentType", -1);
-        addErrorDriver(u"Invalid type for EquipmentType", L"EquipmentTest: Invalid type for EquipmentType");
+		_handleError(L"EquipmentTest", L"Invalid type for EquipmentType");
         m_addInBase->setBoolValue(pvarRetValue, false);
         return false;
     }
@@ -539,8 +523,7 @@ bool DriverPOSTerminal::EquipmentTest(tVariant* pvarRetValue, tVariant* paParams
 	// Get ConnectionParameters (STRING[IN])
 	auto connectionParameters = VariantHelper::getStringValue(paParams[1]);
     if (!connectionParameters.has_value()) {
-        m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"EquipmentTest", u"Invalid type for ConnectionParameters", -1);
-        addErrorDriver(u"Invalid type for ConnectionParameters", L"EquipmentTest: Invalid type for ConnectionParameters");
+		_handleError(L"EquipmentTest", L"Invalid type for ConnectionParameters");
         m_addInBase->setBoolValue(pvarRetValue, false);
         return false;
     }
@@ -548,8 +531,7 @@ bool DriverPOSTerminal::EquipmentTest(tVariant* pvarRetValue, tVariant* paParams
 	std::vector<DriverParameter> paramConnection;
     if (!ParseParametersFromXML(paramConnection, connectionParameters.value()))
     {
-        m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"EquipmentTest", u"Invalid ConnectionParameters", -1);
-        addErrorDriver(u"Invalid ConnectionParameters", L"EquipmentTest: Invalid ConnectionParameters");
+		_handleError(L"EquipmentTest", L"Invalid ConnectionParameters");
         m_addInBase->setBoolValue(pvarRetValue, false);
         return false;
     }
@@ -566,7 +548,7 @@ bool DriverPOSTerminal::EquipmentTest(tVariant* pvarRetValue, tVariant* paParams
     m_addInBase->setBoolValue(pvarRetValue, result);
 
 	if (!result) {
-        addErrorDriver(u"Invalid test connection", L"EquipmentTest: Error connection");
+		_handleError(L"EquipmentTest", L"Error connection");
     }
 
     return result;
@@ -707,8 +689,7 @@ bool DriverPOSTerminal::DoAdditionalAction(tVariant* pvarRetValue, tVariant* paP
     auto actions = this->getActions();
 	auto optVal = VariantHelper::getStringValue(paParams[0]);
 	if (!optVal.has_value()) {
-		m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"DoAdditionalAction", u"Invalid type for ActionName", -1);
-		addErrorDriver(u"Invalid type for ActionName", L"DoAdditionalAction: Invalid type for ActionName");
+		_handleError(L"DoAdditionalAction", L"Invalid type for ActionName");
 		m_addInBase->setBoolValue(pvarRetValue, false);
 		return false;
 	}
@@ -719,8 +700,7 @@ bool DriverPOSTerminal::DoAdditionalAction(tVariant* pvarRetValue, tVariant* paP
 		});
 
 	if (find_action == actions.end()) {
-		m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"DoAdditionalAction", u"Invalid type for ActionName", -1);
-		addErrorDriver(u"Invalid type for ActionName", L"DoAdditionalAction: Invalid type for ActionName");
+		_handleError(L"DoAdditionalAction", L"Invalid type for ActionName");
 		m_addInBase->setBoolValue(pvarRetValue, false);
 		return false;
 	}
@@ -834,8 +814,7 @@ bool DriverPOSTerminal::TerminalParameters(tVariant* pvarRetValue, tVariant* paP
 
 	auto optDeviceId = VariantHelper::getStringValue(paParams[0]);
 	if (!optDeviceId.has_value()) {
-		m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"TerminalParameters", u"Invalid type for DeviceID", -1);
-		addErrorDriver(u"Invalid type for DeviceID", L"TerminalParameters: Invalid type for DeviceID");
+		_handleError(L"TerminalParameters", L"Invalid type for DeviceID");
 		m_addInBase->setBoolValue(pvarRetValue, false);
 		return false;
 	}
@@ -843,8 +822,7 @@ bool DriverPOSTerminal::TerminalParameters(tVariant* pvarRetValue, tVariant* paP
 	auto deviceId = optDeviceId.value();
     auto param = getTerminalConfig(deviceId);
 	if (!param.has_value()) {
-		m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"TerminalParameters", u"Invalid type for DeviceID", -1);
-		addErrorDriver(u"Invalid type for DeviceID", L"TerminalParameters: Invalid type for DeviceID");
+		_handleError(L"TerminalParameters", L"Invalid type for DeviceID");
 		m_addInBase->setBoolValue(pvarRetValue, false);
 		return false;
 	}
@@ -883,6 +861,16 @@ bool DriverPOSTerminal::TerminalParameters(tVariant* pvarRetValue, tVariant* paP
 bool DriverPOSTerminal::Pay(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
     clearError();
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 4, u"Pay");
+    
+	std::wstring deviceId{};
+	auto _connect = getDeviceConnection(&paParams[0], deviceId);
+	if (!_connect.has_value()) {
+		_handleError(L"Pay", L"Invalid type for DeviceID");
+		m_addInBase->setBoolValue(pvarRetValue, false);
+		return false;
+	}
+
+	auto& connection = _connect.value();
 
 
 
@@ -925,32 +913,46 @@ bool DriverPOSTerminal::PayByPaymentCard(tVariant* pvarRetValue, tVariant* paPar
     clearError();
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 7, u"PayByPaymentCard");
 
-	auto optDeviceId = VariantHelper::getStringValue(paParams[0]);
-    if (!optDeviceId.has_value()) {
-        m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"PayByPaymentCard", u"Invalid type for DeviceID", -1);
-        addErrorDriver(u"Invalid type for DeviceID", L"PayByPaymentCard: Invalid type for DeviceID");
-        m_addInBase->setBoolValue(pvarRetValue, false);
-        return false;
-    }
+	std::wstring deviceId{};
+	auto _connect = getDeviceConnection(&paParams[0], deviceId);
+	if (!_connect.has_value()) {
+		_handleError(L"PayByPaymentCard", L"Invalid type for DeviceID");
+		m_addInBase->setBoolValue(pvarRetValue, false);
+		return false;
+	}
 
-	auto deviceId = optDeviceId.value();
-	auto it = m_connections.find(deviceId);
-    if (it == m_connections.end()) {
-        m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"PayByPaymentCard", u"Invalid type for DeviceID", -1);
-        addErrorDriver(u"Invalid type for DeviceID", L"PayByPaymentCard: Invalid type for DeviceID");
-        m_addInBase->setBoolValue(pvarRetValue, false);
-        return false;
-    }
+	auto& connection = _connect.value();
 
-    auto& connection = it->second;
+	if (!connection.get()->isConnected()) {
+		_handleError(L"PayByPaymentCard", L"Invalid type for DeviceID");
+		m_addInBase->setBoolValue(pvarRetValue, false);
+		return false;
+	}
+
+	auto ammount = VariantHelper::getStrDoubleValue(paParams[2]);
+	if (!ammount.has_value()) {
+		_handleError(L"PayByPaymentCard", L"Invalid type for Amount");
+		m_addInBase->setBoolValue(pvarRetValue, false);
+		return false;
+	}
+
+	auto paramMerchantId = findParameterValue<std::wstring>(m_ParamConnection, L"MerchantId");
+	if (paramMerchantId.has_value()) {
+		_handleError(L"PayByPaymentCard", L"Не заполнен параметр Merchant id");
+		m_addInBase->setBoolValue(pvarRetValue, false);
+		return false;
+	}
+
+
     Params paramPayement = { 
-        { L"amount" , L"" },
+        { L"amount" , ammount.value() },
 		{ L"discount" , L"" },
-		{ L"merchantId" , L"" },
+		{ L"merchantId" , paramMerchantId.value()},
 		{ L"facepay" , L"false" },
 		{ L"subMerchant" , L"" }
     };
-    jsonSendData dataPayement = { L"Purchase", 0, paramPayement };
+    sendData dataPayement = { L"Purchase", 0, paramPayement };
+
 
     return false;
 }
@@ -993,6 +995,17 @@ bool DriverPOSTerminal::ReturnPaymentByPaymentCard(tVariant* pvarRetValue, tVari
     clearError();
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 7, u"ReturnPaymentByPaymentCard");
 
+	std::wstring deviceId{};
+	auto _connect = getDeviceConnection(&paParams[0], deviceId);
+	if (!_connect.has_value()) {
+		m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"ReturnPaymentByPaymentCard", u"Invalid device ID", -1);
+		addErrorDriver(u"Invalid type device ID", L"ReturnPaymentByPaymentCard: Invalid device ID");
+		m_addInBase->setBoolValue(pvarRetValue, false);
+		return false;
+	}
+
+	auto& connection = _connect.value();
+
     return false;
 }
 
@@ -1024,6 +1037,18 @@ bool DriverPOSTerminal::ReturnPayment(tVariant* pvarRetValue, tVariant* paParams
     clearError();
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 4, u"ReturnPayment");
 
+	std::wstring deviceId{};
+	auto _connect = getDeviceConnection(&paParams[0], deviceId);
+	if (!_connect.has_value()) {
+		m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"ReturnPayment", u"Invalid device ID", -1);
+		addErrorDriver(u"Invalid type device ID", L"ReturnPayment: Invalid device ID");
+		m_addInBase->setBoolValue(pvarRetValue, false);
+		return false;
+	}
+
+	auto& connection = _connect.value();
+
+
     return false;
 }
 
@@ -1053,6 +1078,19 @@ bool DriverPOSTerminal::ReturnPayment(tVariant* pvarRetValue, tVariant* paParams
 bool DriverPOSTerminal::CancelPayment(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
     clearError();
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 4, u"CancelPayment");
+    
+	std::wstring deviceId{};
+	auto _connect = getDeviceConnection(&paParams[0], deviceId);
+	if (!_connect.has_value()) {
+		m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"CancelPayment", u"Invalid device ID", -1);
+		addErrorDriver(u"Invalid type device ID", L"CancelPayment: Invalid device ID");
+		m_addInBase->setBoolValue(pvarRetValue, false);
+		return false;
+	}
+
+	auto& connection = _connect.value();
+
+    
     return false;
 }
 
@@ -1093,6 +1131,17 @@ bool DriverPOSTerminal::CancelPaymentByPaymentCard(tVariant* pvarRetValue, tVari
 {
     clearError();
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 7, u"CancelPaymentByPaymentCard");
+
+	std::wstring deviceId{};
+	auto _connect = getDeviceConnection(&paParams[0], deviceId);
+	if (!_connect.has_value()) {
+		m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"CancelPaymentByPaymentCard", u"Invalid device ID", -1);
+		addErrorDriver(u"Invalid type device ID", L"CancelPaymentByPaymentCard: Invalid device ID");
+		m_addInBase->setBoolValue(pvarRetValue, false);
+		return false;
+	}
+
+	auto& connection = _connect.value();
 
     return false;
 }
@@ -1163,6 +1212,17 @@ bool DriverPOSTerminal::AuthorisationByPaymentCard(tVariant* pvarRetValue, tVari
     clearError();
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 7, u"AuthorisationByPaymentCard");
 
+	std::wstring deviceId{};
+	auto _connect = getDeviceConnection(&paParams[0], deviceId);
+	if (!_connect.has_value()) {
+		m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"AuthorisationByPaymentCard", u"Invalid device ID", -1);
+		addErrorDriver(u"Invalid type device ID", L"AuthorisationByPaymentCard: Invalid device ID");
+		m_addInBase->setBoolValue(pvarRetValue, false);
+		return false;
+	}
+
+	auto& connection = _connect.value();
+
     return false;
 }
 
@@ -1193,6 +1253,17 @@ bool DriverPOSTerminal::AuthConfirmation(tVariant* pvarRetValue, tVariant* paPar
     clearError();
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 4, u"AuthConfirmation");
 
+	std::wstring deviceId{};
+	auto _connect = getDeviceConnection(&paParams[0], deviceId);
+	if (!_connect.has_value()) {
+		m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"AuthConfirmation", u"Invalid device ID", -1);
+		addErrorDriver(u"Invalid type device ID", L"AuthConfirmation: Invalid device ID");
+		m_addInBase->setBoolValue(pvarRetValue, false);
+		return false;
+	}
+
+	auto& connection = _connect.value();
+
     return false;
 }
 
@@ -1210,6 +1281,17 @@ bool DriverPOSTerminal::AuthConfirmationByPaymentCard(tVariant* pvarRetValue, tV
 {
     clearError();
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 7, u"AuthConfirmationByPaymentCard");
+
+	std::wstring deviceId{};
+	auto _connect = getDeviceConnection(&paParams[0], deviceId);
+	if (!_connect.has_value()) {
+		m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"AuthConfirmationByPaymentCard", u"Invalid device ID", -1);
+		addErrorDriver(u"Invalid type device ID", L"AuthConfirmationByPaymentCard: Invalid device ID");
+		m_addInBase->setBoolValue(pvarRetValue, false);
+		return false;
+	}
+
+	auto& connection = _connect.value();
 
     return false;
 }
@@ -1240,6 +1322,18 @@ bool DriverPOSTerminal::AuthConfirmationByPaymentCard(tVariant* pvarRetValue, tV
 bool DriverPOSTerminal::CancelAuthorisation(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
     clearError();
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 4, u"CancelAuthorisation");
+
+	std::wstring deviceId{};
+	auto _connect = getDeviceConnection(&paParams[0], deviceId);
+	if (!_connect.has_value()) {
+		m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"CancelAuthorisation", u"Invalid device ID", -1);
+		addErrorDriver(u"Invalid type device ID", L"CancelAuthorisation: Invalid device ID");
+		m_addInBase->setBoolValue(pvarRetValue, false);
+		return false;
+	}
+
+	auto& connection = _connect.value();
+
 
     return false;
 }
@@ -1280,6 +1374,17 @@ bool DriverPOSTerminal::CancelAuthorisationByPaymentCard(tVariant* pvarRetValue,
     clearError();
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 7, u"CancelAuthorisationByPaymentCard");
 
+	std::wstring deviceId{};
+	auto _connect = getDeviceConnection(&paParams[0], deviceId);
+	if (!_connect.has_value()) {
+		m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"CancelAuthorisationByPaymentCard", u"Invalid device ID", -1);
+		addErrorDriver(u"Invalid type device ID", L"CancelAuthorisationByPaymentCard: Invalid device ID");
+		m_addInBase->setBoolValue(pvarRetValue, false);
+		return false;
+	}
+
+	auto& connection = _connect.value();
+
     return false;
 }
 
@@ -1309,6 +1414,17 @@ bool DriverPOSTerminal::CancelAuthorisationByPaymentCard(tVariant* pvarRetValue,
 bool DriverPOSTerminal::PayWithCashWithdrawal(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
     clearError();
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 4, u"PayWithCashWithdrawal");
+
+	std::wstring deviceId{};
+	auto _connect = getDeviceConnection(&paParams[0], deviceId);
+	if (!_connect.has_value()) {
+		m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"PayWithCashWithdrawal", u"Invalid device ID", -1);
+		addErrorDriver(u"Invalid type device ID", L"PayWithCashWithdrawal: Invalid device ID");
+		m_addInBase->setBoolValue(pvarRetValue, false);
+		return false;
+	}
+
+	auto& connection = _connect.value();
 
     return false;
 }
@@ -1359,6 +1475,17 @@ bool DriverPOSTerminal::PayByPaymentCardWithCashWithdrawal(tVariant* pvarRetValu
     clearError();
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 10, u"PayByPaymentCardWithCashWithdrawal");
 
+	std::wstring deviceId{};
+	auto _connect = getDeviceConnection(&paParams[0], deviceId);
+	if (!_connect.has_value()) {
+		m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"PayByPaymentCardWithCashWithdrawal", u"Invalid device ID", -1);
+		addErrorDriver(u"Invalid type device ID", L"PayByPaymentCardWithCashWithdrawal: Invalid device ID");
+		m_addInBase->setBoolValue(pvarRetValue, false);
+		return false;
+	}
+
+	auto& connection = _connect.value();
+
     return false;
 }
 
@@ -1388,50 +1515,16 @@ bool DriverPOSTerminal::PurchaseWithEnrollment(tVariant* pvarRetValue, tVariant*
     clearError();
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 3, u"PurchaseWithEnrollment");
 
-    return false;
-}
+	std::wstring deviceId{};
+	auto _connect = getDeviceConnection(&paParams[0], deviceId);
+	if (!_connect.has_value()) {
+		m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"PurchaseWithEnrollment", u"Invalid device ID", -1);
+		addErrorDriver(u"Invalid type device ID", L"PurchaseWithEnrollment: Invalid device ID");
+		m_addInBase->setBoolValue(pvarRetValue, false);
+		return false;
+	}
 
-// Метод: ПолучитьПараметрыКарты (GetCardParametrs)
-// Описание: 
-// Выполняет получение параметров карты. В зависимости от параметра `ОтПоследнейОперации` 
-// либо считывает карту через эквайринговый терминал, либо возвращает параметры последней операции.
-//
-// Параметры:
-// 0. STRING ИДУстройства (DeviceID) [IN]  
-//    Идентификатор устройства.
-//
-// 1. STRING РеквизитыКартыQR (ConsumerPresentedQR) [IN]  
-//    Отсканированный QR-код с мобильного устройства держателя карты, содержащий EMV-реквизиты карты или токена.
-//
-// 2. BOOLEAN ОтПоследнейОперации (FromLastOperation) [IN]  
-//    Определяет метод получения параметров карты:  
-//    - `false`: терминал запрашивает чтение карты.  
-//    - `true`: возвращаются параметры последней произведенной операции.
-//
-// 3. STRING НомерКарты (CardNumber) [OUT]  
-//    Номер карты или данные карты.
-//
-// 4. STRING ХешНомерКарты (CardNumberHash) [OUT]  
-//    PAN карты в хешированном виде по алгоритму SHA256.
-//
-// 5. STRING СсылкаНаПлатежныйСчет (PaymentAccountReference) [OUT]  
-//    PAR (Payment Account Reference) — ссылка на платежный счет.
-//
-// 6. STRING ТипКарты (CardType) [OUT]  
-//    Название платежной системы карты (например, Visa).
-//
-// 7. LONG СвояКарта (IsOwnCard) [OUT]  
-//    Указывает принадлежность карты банку эквайрера:  
-//    - `0`: Неопределенно  
-//    - `1`: Карта принадлежит банку эквайрера  
-//    - `2`: Карта НЕ принадлежит банку эквайрера
-//
-// Возвращаемое значение:
-// BOOL  
-// Возвращает `true`, если параметры карты успешно получены, иначе `false`.
-bool DriverPOSTerminal::GetCardParameters(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
-    clearError();
-    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 8, u"GetCardParameters");
+	auto& connection = _connect.value();
 
     return false;
 }
@@ -1479,6 +1572,17 @@ bool DriverPOSTerminal::GetCardParametrs(tVariant* pvarRetValue, tVariant* paPar
     clearError();
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 8, u"GetCardParametrs");
 
+	std::wstring deviceId{};
+	auto _connect = getDeviceConnection(&paParams[0], deviceId);
+	if (!_connect.has_value()) {
+		m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"GetCardParametrs", u"Invalid device ID", -1);
+		addErrorDriver(u"Invalid type device ID", L"GetCardParametrs: Invalid device ID");
+		m_addInBase->setBoolValue(pvarRetValue, false);
+		return false;
+	}
+
+	auto& connection = _connect.value();
+
     return false;
 }
 
@@ -1508,62 +1612,16 @@ bool DriverPOSTerminal::PayCertificate(tVariant* pvarRetValue, tVariant* paParam
     clearError();
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 4, u"PayCertificate");
 
+	std::wstring deviceId{};
+	auto _connect = getDeviceConnection(&paParams[0], deviceId);
+	if (!_connect.has_value()) {
+		m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"PayCertificate", u"Invalid device ID", -1);
+		addErrorDriver(u"Invalid type device ID", L"PayCertificate: Invalid device ID");
+		m_addInBase->setBoolValue(pvarRetValue, false);
+		return false;
+	}
 
-    return false;
-}
-
-// Метод: ОплатитьЭлектроннымСертификатом (PayElectronicCertificate)
-// Описание: 
-// Выполняет оплату с применением электронного сертификата ФЭС НСПК.  
-// В случае отказа по операции возвращается текст квитанции отказа.
-//
-// Параметры:
-// 0. STRING ИДУстройства (DeviceID) [IN]  
-//    Идентификатор устройства.
-//
-// 1. LONG НомерМерчанта (MerchantNumber) [IN]  
-//    Номер мерчанта, доступного для данного эквайрингового терминала.
-//
-// 2. STRING РеквизитыКартыQR (ConsumerPresentedQR) [IN]  
-//    Отсканированный QR-код с мобильного устройства держателя карты, содержащий EMV-реквизиты карты или токена.
-//
-// 3. STRING ИдентификаторКорзины (BasketID) [IN/OUT]  
-//    Уникальный идентификатор операции в ФЭС НСПК.
-//
-// 4. DOUBLE СуммаЭлектроногоСертификата (ElectronicCertificateAmount) [IN]  
-//    Сумма операции, покрываемая электронными сертификатами.
-//
-// 5. DOUBLE СуммаСобственныхСредств (OwnFundsAmount) [IN]  
-//    Сумма операции, оплачиваемая личными средствами по карте.
-//
-// 6. STRING НомерКарты (CardNumber) [OUT]  
-//    Маскированный номер карты или данные карты.
-//
-// 7. STRING НомерЧека (ReceiptNumber) [OUT]  
-//    Номер чека.
-//
-// 8. STRING КодRRN (RRNCode) [OUT]  
-//    Уникальный код транзакции RRN.
-//
-// 9. STRING КодАвторизации (AuthorizationCode) [OUT]  
-//    Код авторизации транзакции.
-//
-// 10. LONG СтатусОперации (OperationStatus) [OUT]  
-//     Статус выполнения операции:  
-//     - `0`: Операция выполнена полностью  
-//     - `1`: Оплата личными средствами по карте не выполнена
-//
-// 11. STRING ТекстКвитанции (Slip) [OUT]  
-//     Текст квитанции по операции, сформированный эквайринговым ПО.  
-//     В случае отказа операции содержит текст квитанции отказа.
-//
-// Возвращаемое значение:
-// BOOL  
-// Возвращает `true`, если операция успешно выполнена, иначе `false`.
-bool DriverPOSTerminal::PayElectronicCertificate(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray)
-{
-    clearError();
-    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 12, u"PayElectronicCertificate");
+	auto& connection = _connect.value();
 
     return false;
 }
@@ -1594,66 +1652,16 @@ bool DriverPOSTerminal::ReturnCertificate(tVariant* pvarRetValue, tVariant* paPa
     clearError();
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 4, u"ReturnCertificate");
 
+	std::wstring deviceId{};
+	auto _connect = getDeviceConnection(&paParams[0], deviceId);
+	if (!_connect.has_value()) {
+		m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"ReturnCertificate", u"Invalid device ID", -1);
+		addErrorDriver(u"Invalid type device ID", L"ReturnCertificate: Invalid device ID");
+		m_addInBase->setBoolValue(pvarRetValue, false);
+		return false;
+	}
 
-    return false;
-}
-
-// Метод: ВернутьЭлектроннымСертификатом (ReturnElectronicCertificate)
-// Описание: 
-// Выполняет возврат оплаты с применением электронного сертификата ФЭС НСПК.  
-// В случае отказа по операции возвращается текст квитанции отказа.
-//
-// Параметры:
-// 0. STRING ИДУстройства (DeviceID) [IN]  
-//    Идентификатор устройства.
-//
-// 1. LONG НомерМерчанта (MerchantNumber) [IN]  
-//    Номер мерчанта, доступного для данного эквайрингового терминала.
-//
-// 2. STRING РеквизитыКартыQR (ConsumerPresentedQR) [IN]  
-//    Отсканированный QR-код с мобильного устройства держателя карты, содержащий EMV-реквизиты карты или токена.
-//
-// 3. STRING ИдентификаторКорзины (BasketID) [IN/OUT]  
-//    Уникальный идентификатор операции в ФЭС НСПК.  
-//    Может быть передан BasketID оригинальной операции оплаты, в таком случае возврат выполняется без требования банковской карты.
-//
-// 4. DOUBLE СуммаЭлектроногоСертификата (ElectronicCertificateAmount) [IN]  
-//    Сумма возврата, покрываемая электронными сертификатами.
-//
-// 5. DOUBLE СуммаСобственныхСредств (OwnFundsAmount) [IN]  
-//    Сумма возврата, покрываемая личными средствами по карте.
-//
-// 6. STRING НомерКарты (CardNumber) [IN/OUT]  
-//    Входной параметр — данные карты или номер карты.  
-//    Выходной параметр — маскированный номер карты.
-//
-// 7. STRING НомерЧека (ReceiptNumber) [IN/OUT]  
-//    Входной параметр — номер чека оригинальной транзакции.  
-//    Выходной параметр — может измениться после обработки возврата.
-//
-// 8. STRING КодRRN (RRNCode) [IN/OUT]  
-//    Уникальный код транзакции RRN.  
-//    Может быть передан для идентификации оригинальной операции.
-//
-// 9. STRING КодАвторизации (AuthorizationCode) [OUT]  
-//    Код авторизации транзакции возврата.
-//
-// 10. LONG СтатусОперации (OperationStatus) [OUT]  
-//     Статус выполнения операции:  
-//     - `0`: Операция выполнена полностью  
-//     - `1`: Возврат личных средств по карте не выполнен
-//
-// 11. STRING ТекстКвитанции (Slip) [OUT]  
-//     Текст квитанции по операции, сформированный эквайринговым ПО.  
-//     В случае отказа операции содержит текст квитанции отказа.
-//
-// Возвращаемое значение:
-// BOOL  
-// Возвращает `true`, если операция успешно выполнена, иначе `false`.
-bool DriverPOSTerminal::ReturnElectronicCertificate(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray)
-{
-    clearError();
-    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 12, u"ReturnElectronicCertificate");
+	auto& connection = _connect.value();
 
     return false;
 }
@@ -1672,6 +1680,17 @@ bool DriverPOSTerminal::ReturnElectronicCertificate(tVariant* pvarRetValue, tVar
 bool DriverPOSTerminal::EmergencyReversal(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
     clearError();
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 1, u"EmergencyReversal");
+
+	std::wstring deviceId{};
+	auto _connect = getDeviceConnection(paParams, deviceId);
+	if (!_connect.has_value()) {
+		m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"EmergencyReversal", u"Invalid device ID", -1);
+		addErrorDriver(u"Invalid type device ID", L"EmergencyReversal: Invalid device ID");
+		m_addInBase->setBoolValue(pvarRetValue, false);
+		return false;
+	}
+
+	auto& connection = _connect.value();
 
     return false;
 }
@@ -1693,6 +1712,17 @@ bool DriverPOSTerminal::EmergencyReversal(tVariant* pvarRetValue, tVariant* paPa
 bool DriverPOSTerminal::GetOperationByCards(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
     clearError();
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 2, u"GetOperationByCards");
+
+	std::wstring deviceId{};
+	auto _connect = getDeviceConnection(&paParams[0], deviceId);
+	if (!_connect.has_value()) {
+		m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"GetOperationByCards", u"Invalid device ID", -1);
+		addErrorDriver(u"Invalid type device ID", L"GetOperationByCards: Invalid device ID");
+		m_addInBase->setBoolValue(pvarRetValue, false);
+		return false;
+	}
+
+	auto& connection = _connect.value();
 
     return false;
 }
@@ -1719,13 +1749,35 @@ bool DriverPOSTerminal::Settlement(tVariant* pvarRetValue, tVariant* paParams, c
     clearError();
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 2, u"Settlement");
 
+	std::wstring deviceId{};
+	auto _connect = getDeviceConnection(&paParams[0], deviceId);
+	if (!_connect.has_value()) {
+		m_addInBase->addError(ADDIN_E_VERY_IMPORTANT, u"Settlement", u"Invalid device ID", -1);
+		addErrorDriver(u"Invalid type device ID", L"Settlement: Invalid device ID");
+		m_addInBase->setBoolValue(pvarRetValue, false);
+		return false;
+	}
+
+	auto& connection = _connect.value();
+
     return false;
 }
 
+// Метод: ПечатьКвитанцийНаТерминале (PrintSlipOnTerminal)
+// Описание: 
+// Возвращает будетли терминал самостоятельно печатать квитанции на своем принтере для операций
+//
+// Параметры: Нет
+//		
+// Возвращаемое значение:
+// BOOL  
+// Возвращает `true`, если операция выполнена успешно, иначе `false`.
 bool DriverPOSTerminal::PrintSlipOnTerminal(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray)
 {
     clearError();
-    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 0, u"Settlement");
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 0, u"PrintSlipOnTerminal");
+
+	m_addInBase->setBoolValue(pvarRetValue, true);
 
     return false;
 }
@@ -1829,20 +1881,22 @@ bool DriverPOSTerminal::testConnection(std::vector<DriverParameter>& paramConnec
     }
 
     auto connectionType = connType.value();
-    std::unique_ptr<IConnection> connection = ConnectionFactory::create(connectionType);
-    auto host = str_utils::to_string(paramHost.value());
-    auto port = paramPort.value();
+	auto connection = ConnectionFactory::create(connectionType);
+	auto protocolChanel = ChannelProtocolFactory::create(m_protocolTerminal, std::move(connection));
 
-    if (!connection.get()->connect(host, port)) {
-        addErrorDriver(u"Failed to connect", L"InitConnection: Failed to connect");
-        return false;
-    }
+	auto host = str_utils::to_string(paramHost.value());
+	auto port = paramPort.value();
 
-    bool result = connection->isConnected();
+	if (!protocolChanel.get()->connect(host, port)) {
+		addErrorDriver(u"Failed to connect", L"InitConnection: Failed to connect");
+		return false;
+	}
+
+    bool result = protocolChanel->isConnected();
     if (result) {
-        connection->disconnect();
+        protocolChanel->disconnect();
     }
-	connection.reset();
+    protocolChanel.reset();
 
     return result;
 }
@@ -1892,4 +1946,30 @@ std::optional<EquipmentTypeInfo> DriverPOSTerminal::getEquipmentTypeInfoFromVari
 	}
 
 	return type;
+}
+
+std::optional<std::reference_wrapper<std::unique_ptr<IChannelProtocol>>> DriverPOSTerminal::getDeviceConnection(tVariant* paramDeviceID, std::wstring& deviceId)
+{
+	deviceId = L"";
+	if (VariantHelper::isValueString(*paramDeviceID)) {
+		auto opVal = VariantHelper::getStringValue(*paramDeviceID);
+		if (opVal.has_value()) {
+            deviceId = opVal.value();
+			auto findId = m_connections.find(deviceId);
+			if (findId != m_connections.end() && findId->second != nullptr) {
+				return std::optional<std::reference_wrapper<std::unique_ptr<IChannelProtocol>>>(findId->second);
+			}
+		}
+	}
+	return std::nullopt;
+}
+
+void DriverPOSTerminal::_handleError(const std::wstring& methodName, const std::wstring& messageError, const bool driverErrorNotify, const AddinErrorCode errorCode)
+{
+	auto error_ = str_utils::to_u16string(messageError);
+	if (driverErrorNotify) {
+		m_addInBase->addError(static_cast<int>(errorCode), str_utils::to_u16string(methodName), error_, -1);
+	}
+	auto log_error = methodName + L": " + messageError;
+	addErrorDriver(error_, log_error);
 }

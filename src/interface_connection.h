@@ -120,23 +120,33 @@ public:
 
     void startListening(std::function<void(std::vector<uint8_t>)> callback) override;
 
-	void enableKeepAlive(bool enable) override {
-		keepAlive_ = enable;
-	}
+	/// <summary>
+	/// Enable or disable the keep-alive feature
+	/// </summary>
+	/// <param name="enable"></param>
+	void enableKeepAlive(bool enable);
 
-	void setReconnectDelay(std::chrono::milliseconds delay) override {
-		reconnectDelay_ = delay;
-	}
+	/// <summary>
+	/// Set the delay before reconnecting
+	/// </summary>
+	/// <param name="delay"></param>
+	void setReconnectDelay(std::chrono::milliseconds delay);
 
 private:
-    boost::asio::io_context io_context_;
-    boost::asio::ip::tcp::socket socket_;
-	std::atomic<bool> keepAlive_{ true };
-	std::chrono::milliseconds reconnectDelay_{ 5000 };
-	std::thread listeningThread_;
-	
-    std::string host_;
-	std::optional<uint16_t> port_;
+
+	boost::asio::io_context io_context_; ///< Boost.Asio I/O context
+	boost::asio::ip::tcp::socket socket_; ///< Boost.Asio TCP socket
+
+	std::atomic<bool> readingThread_{ false }; ///< On thread reading data
+	std::atomic<bool> keepAlive_{ true }; ///< Flag to keep the connection alive
+	std::atomic<bool> stopListening_{ false }; ///< Flag to stop listening
+	std::chrono::milliseconds reconnectDelay_{ 5000 }; ///< Delay before reconnecting
+	std::thread listeningThread_; ///< Thread for listening to incoming data
+
+	std::string host_; ///< Host to connect to
+	std::optional<uint16_t> port_; ///< Port to connect to
+
+	std::vector<IErrorObserver*> observers_; ///< Observers for error notifications
 };
 
 // 🌐 WebSocket
@@ -240,7 +250,10 @@ inline std::optional<ConnectionType> wstringToConnectionType(const std::wstring&
     static const std::unordered_map<std::wstring, ConnectionType> typeMap = {
         {L"COM", ConnectionType::COM},
         {L"TCP", ConnectionType::TCP},
-        {L"WebSocket", ConnectionType::WebSocket}
+        {L"WebSocket", ConnectionType::WebSocket},
+		{ L"0", ConnectionType::COM },
+		{L"1", ConnectionType::TCP},
+		{L"2", ConnectionType::WebSocket}
     };
 
     auto it = typeMap.find(type);
@@ -255,7 +268,10 @@ inline std::optional<ConnectionType> u16stringToConnectionType(const std::u16str
     static const std::unordered_map<std::u16string, ConnectionType> typeMap = {
         {u"COM", ConnectionType::COM},
         {u"TCP", ConnectionType::TCP},
-        {u"WebSocket", ConnectionType::WebSocket}
+        {u"WebSocket", ConnectionType::WebSocket},
+		{u"0", ConnectionType::COM },
+		{u"1", ConnectionType::TCP},
+		{u"2", ConnectionType::WebSocket}
     };
 
     auto it = typeMap.find(type);

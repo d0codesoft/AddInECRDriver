@@ -58,15 +58,13 @@ public:
     virtual bool PayByPaymentCardWithCashWithdrawal(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) = 0;
 
 //#if DRIVER_REQUIREMENTS_VERSION >= DRIVER_REQUIREMENTS_VERSION_4_1
-    virtual bool GetCardParameters(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) = 0;
+    //virtual bool GetCardParameters(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) = 0;
 //#if DRIVER_REQUIREMENTS_VERSION < DRIVER_REQUIREMENTS_VERSION_4_2
     virtual bool GetCardParametrs(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) = 0;
 
     virtual bool PayCertificate(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) = 0;
-	virtual bool PayElectronicCertificate(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) = 0;
 
     virtual bool ReturnCertificate(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) = 0;
-    virtual bool ReturnElectronicCertificate(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) = 0;
     
     virtual bool EmergencyReversal(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) = 0;
     virtual bool GetOperationByCards(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) = 0;

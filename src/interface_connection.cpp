@@ -86,6 +86,10 @@ std::optional<std::vector<uint8_t>> TcpConnection::receive() {
 
 void TcpConnection::disconnect()
 {
+	// Canceled all operations in threading context
+	readingThread_ = false;
+    socket_.cancel();
+
 	// Stop the listening thread
 	keepAlive_ = false;
 	if (listeningThread_.joinable()) {
@@ -108,21 +112,32 @@ bool TcpConnection::isConnected() const
 
 void TcpConnection::startListening(std::function<void(std::vector<uint8_t>)> callback)
 {
+    readingThread_ = true;
 	listeningThread_ = std::thread([this, callback]() {
-		while (keepAlive_) {
+		while (readingThread_) {
 			if (!isConnected()) {
-				std::this_thread::sleep_for(reconnectDelay_);
-				connect(host_, port_);
+				LOG_INFO_ADD(L"TcpConnection", L"Reconnecting...");
+				std::this_thread::sleep_for(this->reconnectDelay_);
+				connect(this->host_, this->port_);
 			}
 			else {
-				auto data = receive();
+				auto data = this->receive();
 				if (data) {
 					callback(data.value());
 				}
 			}
 		}
 		});
-	listeningThread_.detach();
+}
+
+void TcpConnection::enableKeepAlive(bool enable)
+{
+	keepAlive_ = enable;
+}
+
+void TcpConnection::setReconnectDelay(std::chrono::milliseconds delay)
+{
+	reconnectDelay_ = delay;
 }
 
 bool WebSocketConnection::connect(const std::string& host, std::optional<uint16_t> port) {

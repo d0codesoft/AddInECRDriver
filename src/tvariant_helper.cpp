@@ -101,6 +101,19 @@ std::optional<double> VariantHelper::getDoubleValue(const tVariant& var)
     return std::nullopt;
 }
 
+std::optional<std::wstring> VariantHelper::getStrDoubleValue(const tVariant& var)
+{
+	if (VariantHelper::isValueDouble(var)) {
+		auto amount = VariantHelper::getDoubleValue(var);
+		if (amount.has_value()) {
+			std::wostringstream oss;
+			oss << std::fixed << std::setprecision(2) << amount.value();
+			return oss.str();
+		}
+	}
+	return std::nullopt;
+}
+
 bool VariantHelper::isValueString(const tVariant& var) {
     return TV_VT(&var) == VTYPE_PWSTR || TV_VT(&var) == VTYPE_PSTR;
 }

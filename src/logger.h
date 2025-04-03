@@ -27,6 +27,10 @@ public:
 		removeInstance(mChannelName);
     }
 
+	static std::wstring getLogFilePath() {
+		return Logger::current_log_path;
+	}
+
 #ifdef NDEBUG
     void info(const std::wstring& message, const std::wstring& file = L"", int line = 0) {
         log(L"INFO", message, file, line);
@@ -71,6 +75,7 @@ private:
     static size_t _maxFileCount;
     static std::wofstream _LogFile;
 	static bool isInitialized;
+	static const std::filesystem::path current_log_path;
 };
 
 #ifdef NDEBUG

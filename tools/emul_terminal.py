@@ -6,7 +6,6 @@ def json_to_bytes(data: dict, null_terminated=True) -> bytes:
     json_bytes = json.dumps(data, ensure_ascii=False).encode('utf-8')
     return json_bytes + b'\x00' if null_terminated else json_bytes
 
-
 def bytes_to_json(data: bytes) -> dict:
     """Декодирует байты в JSON, убирая NULL-терминатор."""
     try:
@@ -45,28 +44,37 @@ def start_server(host='127.0.0.1', port=2000):
         server.listen(1)
         print(f"Сервер запущен на {host}:{port}")
 
-        conn, addr = server.accept()
-        with conn:
-            print(f"Подключение от {addr}")
-            buffer = b''
+        while True:
+            try:
+                conn, addr = server.accept()
+                print(f"Подключение от {addr}")
 
-            while True:
-                chunk = conn.recv(1024)
-                if not chunk:
-                    break
-
-                buffer += chunk
-                if buffer.endswith(b'\x00'):
-                    request = bytes_to_json(buffer)
-                    print(f"Получен запрос: {request}")
-
-                    response = handle_request(request)
-                    response_bytes = json_to_bytes(response)
-                    print(f"Отправка ответа: {response}")
-
-                    conn.sendall(response_bytes)
+                with conn:
                     buffer = b''
 
+                    while True:
+                        try:
+                            chunk = conn.recv(1024)
+                            if not chunk:
+                                print(f"Клиент {addr} отключился.")
+                                break  # Выход из внутреннего цикла, но сервер продолжит работу
+
+                            buffer += chunk
+                            if buffer.endswith(b'\x00'):
+                                request = bytes_to_json(buffer)
+                                print(f"Получен запрос: {request}")
+
+                                response = handle_request(request)
+                                response_bytes = json_to_bytes(response)
+                                print(f"Отправка ответа: {response}")
+
+                                conn.sendall(response_bytes)
+                                buffer = b''
+                        except ConnectionResetError:
+                            print(f"Клиент {addr} разорвал соединение.")
+                            break  # Выход из внутреннего цикла, ожидание нового клиента
+            except Exception as e:
+                print(f"Ошибка: {e}")
 
 if __name__ == "__main__":
     start_server()

@@ -19,6 +19,7 @@ public:
     static std::optional<int> getIntValue(const tVariant& var);
     static std::optional<DateTime> getDateTimeValue(const tVariant& var);
     static std::optional<double> getDoubleValue(const tVariant& var);
+	static std::optional<std::wstring> getStrDoubleValue(const tVariant& var);
     static bool isValueString(const tVariant& var);
     static bool isValueInt(const tVariant& var);
     static bool isValueLong(const tVariant& var);

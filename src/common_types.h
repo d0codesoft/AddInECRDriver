@@ -186,8 +186,18 @@ typename std::enable_if<
     return true;
 }
 
-
-#include <string>
+enum class AddinErrorCode : int {
+	None = 1000,
+	Ordinary = 1001,
+	Attention = 1002,
+	Important = 1003,
+	VeryImportant = 1004,
+	Info = 1005,
+	Fail = 1006,
+	MsgBoxAttention = 1007,
+	MsgBoxInfo = 1008,
+	MsgBoxFail = 1009
+};
 
 /**
  * @brief Структура, описывающая параметры терминала.
