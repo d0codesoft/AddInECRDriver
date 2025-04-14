@@ -91,18 +91,23 @@
 ```ini
 # Название теста
 [Test]
-Name = "Тест вызова методов AddIn"
+Name = "Тестирование подключения POS Terminal Privat JSON"
 
+# Вызовы
+# Формат: CallAsFunc <ИмяФункции> | <Количество параметров> | <Параметр0> | <Параметр1> | ... | <ПеременнаяРезультата>, Возможны пустые параметры | |
+# Формат: CallAsProc <ИмяПроцедуры> | <Количество параметров> | <Параметр0> | <Параметр1> | ... Возможны пустые параметры | |
 [Execute]
-# Вызовы процедур
-# Формат: <ИмяПроцедуры> | <Количество параметров> | <Параметр0> | <Параметр1> | ... Возможны пустые параметры | |
-CallAsProc = "Init" | 1 | param1 | | 42
-# Вызовы функций
-# Формат: <ИмяФункции> | <Количество параметров> | <Параметр0> | <Параметр1> | ... | <ПеременнаяРезультата>, Возможны пустые параметры | |
-CallAsFunc = "Compute" | 10 | 5 | 10 | result1
-CallAsProc = "ProcessData" | 2 | data1 | data2 | 3.14
-CallAsProc = "Finalize" | 3
-CallAsFunc = "GetStatus" | 11 | "session1" | statusVar
+CallAsFunc = ПолучитьРевизиюИнтерфейса | 0 | result1
+CallAsFunc = ПолучитьОписание | 1 |  | result2
+CallAsFunc = ПолучитьПараметры | 1 |  | result3
+CallAsFunc = УстановитьПараметр | 2 | Address | "127.0.0.1" | result4
+CallAsFunc = УстановитьПараметр | 2 | Port | 2000 | result5
+CallAsFunc = УстановитьПараметр | 2 | ConnectionType | 0 | result6
+CallAsFunc = УстановитьПараметр | 2 | LogLevel | 1 | result7
+CallAsFunc = УстановитьПараметр | 2 | Facepay | false | result8
+CallAsFunc = Подключить | 1 |  | statusConnect
+CallAsFunc = Отключить | 1 | statusConnect[0] | statusDisconnect
+
 
 ```
 
