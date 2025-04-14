@@ -4,47 +4,63 @@
 #include <sstream>
 #include "string_conversion.h"
 #include "str_utils.h"
-
+#include "logger.h"
+#include "connection_types.h"
 
 const SettingSettings SettingDriverPos::m_settings = {
 {
     {
-        L"Параметры", // PageCaption
+        L"Параметри", // PageCaption
         {
             {   // Group Connection parameters
-                L"Параметры подключения",
+                L"Параметри підключення",
                 {
-                    {L"ConnectionType", L"Тип подключения", L"Выберите тип подключения.", L"Number", L"", L"0", false,
-                     {{L"0", L"TCP"}, {L"1", L"COM"}, {L"2", L"WebSocket"}}},
-
-                    {L"Address", L"Адрес подключения", L"Введите адрес сервера.", L"String", L"", L"", false, {}},
-
-                    {L"Port", L"Порт", L"Введите номер порта.", L"Number", L"", L"2000", false, {}}
-
+                    { OptionDriverNames.at(DriverOption::ConnectionType), 
+                        L"Тип підключення", L"Виберіть тип підключення", L"Number", L"", L"0", false,
+                     { 
+                         { getConnectionTypeIndex(ConnectionType::TCP), getConnectionTypeName(ConnectionType::TCP) }, 
+                         { getConnectionTypeIndex(ConnectionType::COM), getConnectionTypeName(ConnectionType::COM) }, 
+                         { getConnectionTypeIndex(ConnectionType::WebSocket), getConnectionTypeName(ConnectionType::WebSocket) }
+                      }
+                    },
+                    { OptionDriverNames.at(DriverOption::Address), 
+                        L"Адреса підключення", L"Введіть адресу сервера", L"String", L"", L"", false, {}
+                    },
+                    { OptionDriverNames.at(DriverOption::Port), 
+                        L"Порт", L"Введіть номер порту", L"Number", L"", L"2000", false, {}
+                    }
                     //{L"Speed", L"Скорость подключения", L"Укажите скорость соединения.", L"Number", L"", L"9600", false, {}}
                 }
             },
 			{   // Group payement parameters
-				L"Параметры оплаты",
+				L"Параметри оплати",
 				{
-					{L"Facepay", L"Разрешить оплату через FacePay24", L"", L"Boolean", L"", L"false", false,{}},
-					{L"MerchantId", L"Код мерчанта", L"Введите код мерчанта", L"String", L"", L"", false,{}},
+					{ OptionDriverNames.at(DriverOption::Facepay), 
+                        L"Дозволити оплату через FacePay24", L"", L"Boolean", L"", L"false", false,{}}
+					//{ DriverOption::MerchantId, L"Код мерчанта", L"Введите код мерчанта", L"String", L"", L"", false,{}},
 				}
 			},
 			{   // Logging parameters
-				L"Логирование",
+				L"Логування",
 				{
-					{L"LogFullPath", L"Текущий файл лога", L"", L"String", L"", L"", true, {}},
-					{L"LogLevel", L"Уроверь логирования", L"Выбирите уровень логирования", L"Number", L"", L"0", false,
-					 {{L"0", L"Ошибки"}, {L"1", L"Детальный"}}},
+					{ OptionDriverNames.at(DriverOption::LogFullPath), 
+                        L"Поточний файл лога", L"", L"String", L"", L"", true, {}
+                    },
+					{ OptionDriverNames.at(DriverOption::LogLevel), 
+                        L"Рівень логування", L"Виберіть рівень логування", L"Number", L"", L"0", false,
+					    {
+                         { getLogLevelIndex(LogLevel::Error), getLogLevelName(LogLevel::Error) },
+                         { getLogLevelIndex(LogLevel::Error), getLogLevelName(LogLevel::Debug) }
+                        }
+                    },
 				}
 			},
             {   // Group licensing
-                L"Лицензирование",
+                L"Ліцензування",
                 {
-                    {L"DriverVersion", L"Версия драйвера", L"", L"String", L"", L"1.0.0", true, {}},
-                    {L"LicenseStatus", L"Статус лицензии", L"", L"String", L"", L"Не активирована", true, {}},
-                    { L"LicenseKey", L"Ключ лицензии", L"Введите ключ лицензии.", L"String", L"", L"", false, {} }
+                    {L"DriverVersion", L"Версія драйвера", L"", L"String", L"", L"1.0.0", true, {}},
+                    {L"LicenseStatus", L"Статус ліцензії", L"", L"String", L"", L"Не активована", true, {}},
+                    {L"LicenseKey", L"Ключ ліцензії", L"Введіть ключ ліцензії", L"String", L"", L"", false, {} }
                 }
             }
         }

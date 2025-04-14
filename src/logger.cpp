@@ -4,6 +4,7 @@
 #include <mutex>
 #include <filesystem>
 #include <regex>
+#include "str_utils.h"
 
 
 std::unordered_map<std::wstring, Logger*> Logger::InstancesLog;
@@ -17,6 +18,11 @@ bool Logger::isInitialized = false;
 const std::filesystem::path Logger::current_log_path = std::filesystem::path(_logDirectory) / _logNameTemplate;
 
 Logger::Logger(const std::wstring& channelName) : mChannelName(channelName) {
+}
+
+std::wstring Logger::getLogFilePath()
+{
+	return Logger::current_log_path;
 }
 
 void Logger::removeInstance(const std::wstring& channelName)
@@ -184,6 +190,7 @@ bool Logger::initialize(const std::wstring& logNameTemplate, const std::wstring&
             _initialized = std::filesystem::create_directories(logDirectory);
         }
         catch (const std::filesystem::filesystem_error& e) {
+			throw std::runtime_error(e.what());
             _initialized = false;
         }
     }

@@ -176,6 +176,7 @@
     <ClInclude Include="addin_driver.h" />
     <ClInclude Include="common_main.h" />
     <ClInclude Include="common_types.h" />
+    <ClInclude Include="connection_types.h" />
     <ClInclude Include="define_driver.h" />
     <ClInclude Include="driver_pos_terminal.h" />
     <ClInclude Include="framework.h" />
@@ -199,6 +200,7 @@
     <ClCompile Include="addin_driver.cpp" />
     <ClCompile Include="common_main.cpp" />
     <ClCompile Include="common_types.cpp" />
+    <ClCompile Include="connection_types.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="driver_pos_terminal.cpp" />
     <ClCompile Include="interface_connection.cpp" />
@@ -219,6 +221,12 @@
     <ClCompile Include="sys_utils.cpp" />
     <ClCompile Include="tvariant_helper.cpp" />
     <ClCompile Include="сhannel_protocol.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="test_connect.testscript">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+    </CopyFileToFolders>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -118,6 +118,29 @@ enum class TypeParameter {
 	Bool
 };
 
+enum class DriverOption {
+    ConnectionType,
+    Address,
+    Port,
+    Speed,
+    LogLevel,
+    MerchantId,
+    Facepay,
+    LogFullPath,
+    other
+};
+
+const std::unordered_map<DriverOption, std::wstring> OptionDriverNames = {
+    { DriverOption::ConnectionType, L"ConnectionType" },
+    { DriverOption::Address, L"Address" },
+    { DriverOption::Port, L"Port" },
+    { DriverOption::Speed, L"Speed" },
+    { DriverOption::LogLevel, L"LogLevel" },
+    { DriverOption::MerchantId, L"MerchantId" },
+    { DriverOption::Facepay, L"Facepay" },
+    { DriverOption::LogFullPath, L"LogFullPath" }
+};
+
 struct DriverParameter {
     std::wstring name;
     std::variant<std::wstring,int,bool> value;
@@ -131,6 +154,50 @@ struct ActionDriver {
 	std::u16string caption_ru;
 	CallAsFunc1C action;
 };
+
+
+enum class LogLevel {
+    Error = 0,
+    Debug
+};
+
+
+const std::unordered_map<LogLevel, std::wstring> LogLevelNames = {
+		{ LogLevel::Error, L"Error" },
+		{ LogLevel::Debug, L"Debug" }
+};
+
+std::wstring getLogLevelIndex(LogLevel level);
+std::wstring getLogLevelName(LogLevel level);
+
+
+template <typename T>
+bool toFacepayValue(const T& value) {
+	if constexpr (std::is_same<T, std::wstring>::value) {
+		return value == L"true" || value == L"1";
+	}
+	else if constexpr (std::is_same<T, int>::value) {
+		return value == 1;
+	}
+	else if constexpr (std::is_same<T, bool>::value) {
+		return value;
+	}
+    return false;
+}
+
+template <typename T>
+int toLogLevel(const T& value) {
+	if constexpr (std::is_same<T, std::wstring>::value) {
+		return value == L"1" ? LogLevel::Debug : LogLevel::Error;
+	}
+	else if constexpr  (std::is_same<T, int>::value) {
+		return value == 1 ? LogLevel::Debug : LogLevel::Error;
+	}
+	else if constexpr (std::is_same<T, bool>::value) {
+		return value ? LogLevel::Debug : LogLevel::Error;
+	}
+	return LogLevel::Error;
+}
 
 std::vector<DriverParameter> ParseParameters(const std::wstring& xmlPath);
 
@@ -149,6 +216,20 @@ std::optional<T> findParameterValue(const std::vector<DriverParameter>& params, 
 }
 
 template <typename T>
+std::optional<T> findParameterValue(const std::vector<DriverParameter>& params, DriverOption paramType) {
+    // Retrieve the parameter name from OptionDriverNames
+    auto it = OptionDriverNames.find(paramType);
+    if (it == OptionDriverNames.end()) {
+        return std::nullopt; // Parameter type not found
+    }
+
+    const std::wstring& paramName = it->second;
+
+    // Use the existing findParameterValue function to find the parameter by name
+    return findParameterValue<T>(params, paramName);
+}
+
+template <typename T>
 typename std::enable_if<
     std::is_same<T, std::wstring>::value ||
     std::is_same<T, int>::value ||
@@ -156,14 +237,34 @@ typename std::enable_if<
     setParameterValue(std::vector<DriverParameter>& params, const std::wstring& paramName, const T& value) {
     for (auto& param : params) {
         if (param.name == paramName) {
-            param.value = value;
+			if (param.name == OptionDriverNames.at(DriverOption::ConnectionType)) {
+				param.value = toConnectionTypeValue<T>(value);
+                param.type = TypeParameter::String;
+			}
+            else if (param.name == OptionDriverNames.at(DriverOption::Facepay)) {
+				param.value = toFacepayValue<T>(value);
+				param.type = TypeParameter::Bool;
+            }
+			else if constexpr (std::is_same<T, std::wstring>::value) {
+				param.value = value;
+				param.type = TypeParameter::String;
+			}
+			else if constexpr (std::is_same<T, int>::value) {
+				param.value = value;
+				param.type = TypeParameter::Number;
+			}
+			else
+
             if constexpr (std::is_same<T, std::wstring>::value) {
+                param.value = value;
                 param.type = TypeParameter::String;
             }
             else if constexpr (std::is_same<T, int>::value) {
+                param.value = value;
                 param.type = TypeParameter::Number;
             }
             else if constexpr (std::is_same<T, bool>::value) {
+                param.value = value;
                 param.type = TypeParameter::Bool;
             }
             return true;
@@ -272,6 +373,8 @@ std::u16string toXMLTerminalConfig(const TerminalConfig& config);
 std::u16string toXMLActions(std::span<const ActionDriver> actions, const LanguageCode currentLang);
 std::wstring generateGUID();
 std::wstring portToWstring(const std::optional<uint16_t>& port);
+std::wstring doubleToAmountString(double value);
+long stringToLong(const std::wstring& str);
 
 #define BOOL_TO_STRING(b) ((b) ? L"true" : L"false")
 

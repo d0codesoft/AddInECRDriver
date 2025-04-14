@@ -9,7 +9,7 @@
 #include <openssl/err.h>
 #include <vector>
 #include <pugixml.hpp>
-#include "string_conversion.h"
+#include "str_utils.h"
 #include "logger.h"
 
 // Helper function to convert a byte vector to a base64 string
@@ -39,7 +39,7 @@ std::string Base64Decode(const std::string& base64Str) {
     BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL); // Do not add newlines
 
     std::vector<unsigned char> buffer(base64Str.size());
-    int decodedLength = BIO_read(bio, buffer.data(), buffer.size());
+    int decodedLength = BIO_read(bio, buffer.data(), static_cast<int>(buffer.size()));
     BIO_free_all(bio);
 
     if (decodedLength < 0) {
@@ -81,7 +81,7 @@ std::wstring LicenseManager::getOpenSSLErrorString() const {
     std::string errorString(bufferPtr->data, bufferPtr->length);
     BIO_free(bio);
 
-    return convertStringToWString(errorString);
+    return str_utils::to_wstring(errorString);
 }
 
 // 📌 Loading the public key
@@ -127,8 +127,8 @@ bool LicenseManager::VerifyLicenseData(const std::wstring& signedData, const std
     EVP_PKEY* pkey = LoadPublicKey();
     if (!pkey) return false;
 
-    auto data_sign = Base64Decode(convertWStringToString(signedData));
-    auto origin_data = convertWStringToString(originalData);
+    auto data_sign = Base64Decode(str_utils::to_string(signedData));
+    auto origin_data = str_utils::to_string(originalData);
 
     EVP_MD_CTX* ctx = EVP_MD_CTX_new();
     if (!ctx) {
@@ -171,7 +171,7 @@ bool LicenseManager::SetLicense(const std::wstring& licenseKey) {
 
     try {
         // Convert std::wstring to std::string (jsoncons expects UTF-8)
-        std::string utf8Data = convertWStringToString(decryptedData);
+        std::string utf8Data = str_utils::to_string(decryptedData);
 
         // Parse JSON using jsoncons
         jsoncons::wjson json = jsoncons::wjson::parse(decryptedData);
@@ -193,7 +193,7 @@ bool LicenseManager::SetLicense(const std::wstring& licenseKey) {
         }
     }
     catch (const std::exception& e) {
-        LOG_ERROR_ADD(L"LicenseManager", L"Error set license");
+        LOG_ERROR_ADD(L"LicenseManager", L"Error set license " + str_utils::to_wstring(e.what()));
     }
 
     return false;

@@ -427,6 +427,22 @@ bool CAddInECRDriver::setStringValue(tVariant* pvarParamDefValue, const std::u16
     if (!pvarParamDefValue) {
         return false;
     }
+
+	if (pvarParamDefValue->vt == VTYPE_PWSTR && pvarParamDefValue->pwstrVal) {
+		if (m_iMemory) {
+            m_iMemory->FreeMemory(reinterpret_cast<void**>(&pvarParamDefValue->pwstrVal));
+			pvarParamDefValue->pwstrVal = nullptr;
+			pvarParamDefValue->wstrLen = 0;
+		}
+	}
+	else if (pvarParamDefValue->vt == VTYPE_PSTR && pvarParamDefValue->pstrVal) {
+		if (m_iMemory) {
+			m_iMemory->FreeMemory(reinterpret_cast<void**>(&pvarParamDefValue->pstrVal));
+			pvarParamDefValue->pstrVal = nullptr;
+			pvarParamDefValue->strLen = 0;
+		}
+	}
+
     TV_VT(pvarParamDefValue) = VTYPE_PWSTR;
     if (!getString1C(source, &pvarParamDefValue->pwstrVal, pvarParamDefValue->wstrLen)) {
         TV_VT(pvarParamDefValue) = VTYPE_EMPTY;

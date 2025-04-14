@@ -78,7 +78,7 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 	if (!std::filesystem::exists(libName) || std::filesystem::is_directory(libName)) {
-		wconsole << L"File AddIn library not found!" << std::endl;
+		wconsole << L"File AddIn library " << libName << " not found! Current folder: " << std::filesystem::current_path() << std::endl;
 		return 1;
 	}
 	if (std::filesystem::path(libName).extension() != LIB_EXTENSION) {

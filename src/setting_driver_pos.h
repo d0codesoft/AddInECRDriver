@@ -1,5 +1,8 @@
 #pragma once
 
+#include <span>
+#include "common_types.h"
+
 #ifndef SETTINGDRIVERPOS_H
 #define SETTINGDRIVERPOS_H
 

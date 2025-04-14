@@ -21,11 +21,7 @@
         return false; \
     } \
 
-
-#define HANDLE_ERROR(addInBase, methodName, errorCode, errorMessage,) \
-        addInBase->addError(static_cast<int>(errorCode), str_utils::to_u16string(methodName), str_utils::to_u16string(errorMessage), -1); \
-        addErrorDriver(u##errorMessage, L##methodName L": " L##errorMessage); \
-
+//---------------------------------------------------------------------------//
 DriverPOSTerminal::DriverPOSTerminal(IAddInBase * addInBase) : m_addInBase(addInBase)
 {
 	m_licenseManager = std::make_unique<LicenseManager>();
@@ -68,15 +64,17 @@ void DriverPOSTerminal::InitDriver()
         LoadStringResource(L"IDS_DRIVER_NAME_ADDIN")
     };
 
+	//OptionDriverNames
+	//L"ConnectionType"
     m_ParamConnection = {
-        { L"ConnectionType", L"", TypeParameter::String },
-	    { L"Address", L"", TypeParameter::String },
-	    { L"Port", 2000, TypeParameter::Number },
-		{ L"Speed", 9600, TypeParameter::Number },
-		{ L"LogLevel", L"0", TypeParameter::String },
-		{ L"MerchantId", L"", TypeParameter::String },
-		{ L"Facepay", false, TypeParameter::Bool },
-		{ L"LogFullPath", Logger::getLogFilePath(), TypeParameter::String }
+        { OptionDriverNames.at(DriverOption::ConnectionType), static_cast<int>(ConnectionType::TCP), TypeParameter::String},
+	    { OptionDriverNames.at(DriverOption::Address), L"", TypeParameter::String },
+	    { OptionDriverNames.at(DriverOption::Port), 2000, TypeParameter::Number },
+		{ OptionDriverNames.at(DriverOption::Speed), 9600, TypeParameter::Number },
+		{ OptionDriverNames.at(DriverOption::LogLevel), static_cast<int>(LogLevel::Debug), TypeParameter::String },
+		{ OptionDriverNames.at(DriverOption::MerchantId), L"", TypeParameter::String },
+		{ OptionDriverNames.at(DriverOption::Facepay), false, TypeParameter::Bool },
+		{ OptionDriverNames.at(DriverOption::LogFullPath), Logger::getLogFilePath(), TypeParameter::String }
 	};
 }
 
@@ -148,11 +146,11 @@ bool DriverPOSTerminal::GetDescription(tVariant* pvarRetValue, tVariant* paParam
 // Возвращает код последней ошибки.
 bool DriverPOSTerminal::GetLastError(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
 
-    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 1, u"GetDescription");
+    CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 1, u"GetLastError");
 
-    m_addInBase->setBoolValue(pvarRetValue, true);
     m_addInBase->setStringValue(paParams, m_lastError);
-    return true;
+	m_addInBase->setBoolValue(pvarRetValue, true);
+	return true;
 }
 
 // Метод: ПолучитьПараметры (GetParameters)
@@ -168,6 +166,7 @@ bool DriverPOSTerminal::GetLastError(tVariant* pvarRetValue, tVariant* paParams,
 // Возвращает `true`, если список параметров успешно получен, иначе `false`.
 bool DriverPOSTerminal::GetParameters(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray)
 {
+	clearError();
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 1, u"GetParameters");
 
 	auto xmlParam = toXML(SettingDriverPos::getSettings(), this->m_ParamConnection);
@@ -193,6 +192,7 @@ bool DriverPOSTerminal::GetParameters(tVariant* pvarRetValue, tVariant* paParams
 // Возвращает `true`, если значение параметра успешно установлено, иначе `false`.
 bool DriverPOSTerminal::SetParameter(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray)
 {
+	clearError();
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 2, u"SetParameter");
 
 	auto optParam = VariantHelper::getStringValue(paParams[0]);
@@ -243,6 +243,7 @@ bool DriverPOSTerminal::SetParameter(tVariant* pvarRetValue, tVariant* paParams,
 // Возвращает `true`, если подключение выполнено успешно, иначе `false`.
 bool DriverPOSTerminal::Open(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray)
 {
+	clearError();
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 1, u"Open");
 
     std::wstring error = {}, deviceId = {};
@@ -274,6 +275,7 @@ bool DriverPOSTerminal::Open(tVariant* pvarRetValue, tVariant* paParams, const l
 // Возвращает `true`, если оборудование успешно отключено, иначе `false`.
 bool DriverPOSTerminal::Close(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray)
 {
+	clearError();
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 1, u"Close");
 
     std::wstring deviceId{};
@@ -315,6 +317,7 @@ bool DriverPOSTerminal::Close(tVariant* pvarRetValue, tVariant* paParams, const 
 // Возвращает `true`, если устройство успешно прошло тестирование, иначе `false`.
 bool DriverPOSTerminal::DeviceTest(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray)
 {
+	clearError();
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 2, u"DeviceTest");
 
 	// Test connection
@@ -781,12 +784,10 @@ bool DriverPOSTerminal::SetLocalization(tVariant* pvarRetValue, tVariant* paPara
 }
 
 const std::vector<MethodName>& DriverPOSTerminal::GetMethods() {
-    clearError();
     return m_MethodNames;
 }
 
 const std::vector<PropName>& DriverPOSTerminal::GetProperties() {
-    clearError();
     return m_PropNames;
 }
 
@@ -929,32 +930,58 @@ bool DriverPOSTerminal::PayByPaymentCard(tVariant* pvarRetValue, tVariant* paPar
 		return false;
 	}
 
-	auto ammount = VariantHelper::getStrDoubleValue(paParams[2]);
+	auto ammount = VariantHelper::getDoubleValue(paParams[2]);
 	if (!ammount.has_value()) {
 		_handleError(L"PayByPaymentCard", L"Invalid type for Amount");
 		m_addInBase->setBoolValue(pvarRetValue, false);
 		return false;
 	}
 
-	auto paramMerchantId = findParameterValue<std::wstring>(m_ParamConnection, L"MerchantId");
-	if (paramMerchantId.has_value()) {
-		_handleError(L"PayByPaymentCard", L"Не заполнен параметр Merchant id");
+	auto paramMerchantId = findParameterValue<std::wstring>(m_ParamConnection, DriverOption::MerchantId);
+	if (!paramMerchantId.has_value()) {
+		_handleError(L"PayByPaymentCard", L"Merchant id parameter is not filled");
 		m_addInBase->setBoolValue(pvarRetValue, false);
 		return false;
 	}
 
+	bool _facePay = false;
+	auto paramFacepay = findParameterValue<bool>(m_ParamConnection, DriverOption::Facepay);
+	if (paramFacepay.has_value()) {
+		_facePay = paramFacepay.value();
+	}
 
-    Params paramPayement = { 
-        { L"amount" , ammount.value() },
-		{ L"discount" , L"" },
-		{ L"merchantId" , paramMerchantId.value()},
-		{ L"facepay" , L"false" },
-		{ L"subMerchant" , L"" }
-    };
-    sendData dataPayement = { L"Purchase", 0, paramPayement };
+	auto CardNumber = VariantHelper::getStringValue(paParams[1]);
+	auto ReceiptNumber = VariantHelper::getStringValue(paParams[3]);
 
+	PaymentParameters paramPayement(
+		ammount.value(),
+		paramMerchantId.value(),
+		CardNumber.has_value() ? &CardNumber.value() : nullptr,
+		ReceiptNumber.has_value() ? &ReceiptNumber.value() : nullptr,
+		0, nullptr, _facePay);
 
-    return false;
+	if (!paramPayement.isValid()) {
+		_handleError(L"PayByPaymentCard", L"Invalid parameters for payment");
+		m_addInBase->setBoolValue(pvarRetValue, false);
+		return false;
+	}
+
+	DataPayResult _result; std::wstring _errorCode{};
+	auto resultPay = connection.get()->Pay(paramPayement, _result, _errorCode);
+	if (!resultPay) {
+		_handleError(L"PayByPaymentCard", _errorCode);
+		m_addInBase->setBoolValue(pvarRetValue, false);
+		return false;
+	}
+
+	m_addInBase->setStringValue(&paParams[1], str_utils::to_u16string(_result.cardNumber));
+	m_addInBase->setStringValue(&paParams[3], str_utils::to_u16string(_result.receiptNumber));
+	m_addInBase->setStringValue(&paParams[4], str_utils::to_u16string(_result.rrnCode));
+	m_addInBase->setStringValue(&paParams[5], str_utils::to_u16string(_result.authorizationCode));
+	m_addInBase->setStringValue(&paParams[6], str_utils::to_u16string(_result.slip));
+	m_addInBase->setBoolValue(pvarRetValue, true);
+
+    return true;
 }
 
 // Метод: ВернутьПлатежПоПлатежнойКарте (ReturnPaymentByPaymentCard)
@@ -1333,7 +1360,6 @@ bool DriverPOSTerminal::CancelAuthorisation(tVariant* pvarRetValue, tVariant* pa
 	}
 
 	auto& connection = _connect.value();
-
 
     return false;
 }
@@ -1804,25 +1830,25 @@ std::optional<TerminalConfig> DriverPOSTerminal::getTerminalConfig(std::wstring&
 bool DriverPOSTerminal::InitConnection(std::wstring& deviceID, std::wstring &error)
 {
 	auto newDeviceID = generateGUID();
-	auto paramTypeConnection = findParameterValue<std::wstring>(m_ParamConnection, L"ConnectionType");
-    if (paramTypeConnection.has_value()) {
+	auto paramTypeConnection = findParameterValue<int>(m_ParamConnection, DriverOption::ConnectionType);
+    if (!paramTypeConnection.has_value()) {
 		error = L"Invalid connection type";
         return false;
     }
 
-	auto paramHost = findParameterValue<std::wstring>(m_ParamConnection, L"Host");
-	if (paramHost.has_value()) {
+	auto paramHost = findParameterValue<std::wstring>(m_ParamConnection, DriverOption::Address);
+	if (!paramHost.has_value()) {
 		error = L"Invalid host";
 		return false;
 	}
 
-	auto paramPort = findParameterValue<int>(m_ParamConnection, L"Port");
-	if (paramPort.has_value()) {
+	auto paramPort = findParameterValue<int>(m_ParamConnection, DriverOption::Port);
+	if (!paramPort.has_value()) {
 		error = L"Invalid port";
 		return false;
 	}
 
-    auto connType = wstringToConnectionType(paramTypeConnection.value());
+    auto connType = toConnectionType(paramTypeConnection.value());
 	if (!connType.has_value()) {
 		error = L"Invalid connection type";
 		return false;
@@ -1874,7 +1900,7 @@ bool DriverPOSTerminal::testConnection(std::vector<DriverParameter>& paramConnec
         return false;
     }
 
-    auto connType = wstringToConnectionType(paramTypeConnection.value());
+    auto connType = toConnectionType(paramTypeConnection.value());
     if (!connType.has_value()) {
         addErrorDriver(u"Invalid connection type", L"InitConnection: Invalid connection type");
         return false;

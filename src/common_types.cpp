@@ -17,6 +17,7 @@
 #else
 #include <uuid/uuid.h>
 #endif
+#include <iomanip>
 
 bool isValidEquipmentType(const std::u16string& input) {
     return std::any_of(EquipmentTypes.begin(), EquipmentTypes.end(), [&](const EquipmentType& eq) {
@@ -59,6 +60,20 @@ std::optional<EquipmentTypeInfo> getEquipmentTypeInfo(const std::u16string& inpu
         }
     }
     return std::nullopt;
+}
+
+std::wstring getLogLevelIndex(LogLevel level)
+{
+	return std::to_wstring(static_cast<int>(level));
+}
+
+std::wstring getLogLevelName(LogLevel level)
+{
+    auto it = LogLevelNames.find(level);
+    if (it != LogLevelNames.end()) {
+        return it->second;
+    }
+    return L"";
 }
 
 // 📝 XML file parsing function
@@ -314,4 +329,25 @@ std::wstring portToWstring(const std::optional<uint16_t>& port)
 		return L"";
 	}
 
+}
+
+std::wstring doubleToAmountString(double value) {
+    std::wostringstream woss;
+    woss << std::fixed << std::setprecision(2) << value;
+    return woss.str();
+}
+
+long stringToLong(const std::wstring& str) {
+	try {
+		// Use std::stoul to convert wstring to unsigned long
+		unsigned long value = std::stol(str);
+		// Cast to unsigned int if necessary
+		return static_cast<unsigned int>(value);
+	}
+    catch (const std::invalid_argument& e) {
+        // Handle invalid argument exception
+        LOG_ERROR_ADD(L"CommonTypes", L"Invalid convert argument: " + str + L" to long: " + str_utils::to_wstring(e.what()));
+    }
+
+    return 0;
 }

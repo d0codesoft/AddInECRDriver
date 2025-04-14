@@ -1,5 +1,7 @@
 import socket
 import json
+import random
+import datetime
 
 def json_to_bytes(data: dict, null_terminated=True) -> bytes:
     """Преобразует JSON в байты с UTF-8 кодировкой и добавляет NULL-терминатор."""
@@ -34,8 +36,73 @@ def handle_request(data: dict) -> dict:
             "error": False,
             "errorDescription": ""
         }
-    return {"error": True, "errorDescription": "Unknown method"}
+    elif method == "Purchase":
+        current_year = datetime.datetime.now().year
+        current_date = datetime.datetime.now().strftime("%d.%m.%Y")
+        trn_status = random.choice([1, 2, 3, 4])  # Random transaction status
+        response_code = None
+        error_description = ""
 
+        error_mapping = {
+            2: [
+                "1002 – EMV Decline",
+                "1003 – Transaction log is full. Need close batch",
+                "1004 – No connection with host"
+            ],
+            3: [
+                "1001 – Transaction canceled by user",
+                "1007 – Card reader is not connected"
+            ],
+            4: [
+                "1005 – No paper in printer",
+                "1006 – Error Crypto keys",
+                "1008 – Transaction is already complete"
+            ]
+        }
+
+        if trn_status in [2, 3, 4]:  # Declined, Reversed, or Canceled
+            response_code = f"{random.randint(1, 1008):04}"
+            error_description = random.choice(error_mapping[trn_status])
+
+        return {
+            "method": "Purchase",
+            "step": 0,
+            "params": {
+                "amount": f"{random.uniform(0.01, 1000.00):.2f}",
+                "approvalCode": f"{random.randint(100000, 999999)}",
+                "captureReference": "",
+                "cardExpiryDate": f"{random.randint(current_year, current_year + 10)}",
+                "cardHolderName": f"USER{random.randint(1000, 9999)}",
+                "date": current_date,
+                "discount": "0.00",
+                "hstFld63Sf89": "",
+                "invoiceNumber": f"{random.randint(100000, 999999)}",
+                "issuerName": "VISA ПРИВАТ",
+                "merchant": "TSTTTTTT",
+                "pan": "4731XXXXXXXX9838",
+                "posConditionCode": "00",
+                "posEntryMode": "022",
+                "processingCode": "000000",
+                "receipt": "text-of-receipt",
+                "responseCode": response_code if response_code else "0000",
+                "rrn": f"{random.randint(1000000000000, 9999999999999)}",
+                "rrnExt": f"{random.randint(1000000000000, 9999999999999)}",
+                "terminalId": "TSTSALE1",
+                "time": datetime.datetime.now().strftime("%H:%M:%S"),
+                "track1": "",
+                "signVerif": "0",
+                "txnType": "1",
+                "trnStatus": str(trn_status),
+                "adv": "ПриватБанк",
+                "adv2p": "Беремо і робимо!",
+                "bankAcquirer": "ПриватБанк",
+                "paymentSystem": "VISA",
+                "subMerchant": ""
+            },
+            "error": response_code if True else False,
+            "errorDescription": error_description
+        }
+    return {"error": True, "errorDescription": "Unknown method"}
 
 def start_server(host='127.0.0.1', port=2000):
     """Запускает TCP-сервер на указанном порту."""

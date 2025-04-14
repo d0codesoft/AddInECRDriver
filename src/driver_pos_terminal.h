@@ -12,6 +12,7 @@
 #include "setting_driver_pos.h"
 #include "license_manager.h"
 #include "сhannel_protocol.h"
+#include "connection_types.h"
 
 const std::wstring DRIVER_VERSION = L"1.0.0"; // Объявление константы версии драйвера
 //using ParameterMap = std::unordered_map<std::wstring, std::variant<std::wstring, int, bool>>;
@@ -159,7 +160,7 @@ private:
 
         IDriver1CUniBase::createMethod(12, u"SetLocalization", u"УстановитьЛокализацию",
             u"Устанавливает для драйвера код языка для текущего пользователя и шаблон локализации для текущего пользователя",
-			true, 1, std::bind(&DriverPOSTerminal::SetLocalization, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
+			true, 2, std::bind(&DriverPOSTerminal::SetLocalization, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
         IDriver1CUniBase::createMethod(13, u"GetParameters", u"ПолучитьПараметры",
 			u"Возвращает список параметров настройки драйвера и их типы, значения по умолчанию и возможные значения",
@@ -167,7 +168,7 @@ private:
 
 		IDriver1CUniBase::createMethod(14, u"SetParameter", u"УстановитьПараметр",
 			u"Установка значения параметра по имени",
-			true, 1, std::bind(&DriverPOSTerminal::SetParameter, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
+			true, 2, std::bind(&DriverPOSTerminal::SetParameter, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
         IDriver1CUniBase::createMethod(15, u"Open", u"Подключить",
 			u"Подключает оборудование с текущими значениями параметров, установленных функцией «УстановитьПараметр». Возвращает идентификатор подключенного экземпляра устройства",
@@ -179,99 +180,99 @@ private:
 
         IDriver1CUniBase::createMethod(17, u"DeviceTest", u"ТестУстройства",
 			u"Выполняет пробное подключение и опрос устройства с текущими значениями параметров, установленными функцией «УстановитьПараметр». При успешном выполнении подключения в описании возвращается информация об устройстве",
-			true, 1, std::bind(&DriverPOSTerminal::DeviceTest, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
+			true, 2, std::bind(&DriverPOSTerminal::DeviceTest, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
 		IDriver1CUniBase::createMethod(18, u"TerminalParameters", u"ПараметрыТерминала",
 			u"Возвращает параметры работы терминала",
-			true, 1, std::bind(&DriverPOSTerminal::TerminalParameters, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
+			true, 2, std::bind(&DriverPOSTerminal::TerminalParameters, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
 		IDriver1CUniBase::createMethod(19, u"Pay", u"Оплатить",
 			u"Метод осуществляет оплату",
-			true, 1, std::bind(&DriverPOSTerminal::Pay, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
+			true, 4, std::bind(&DriverPOSTerminal::Pay, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
 		IDriver1CUniBase::createMethod(20, u"PayByPaymentCard", u"ОплатитьПлатежнойКартой",
 			u"Метод осуществляет авторизацию оплаты по карте",
-			true, 1, std::bind(&DriverPOSTerminal::PayByPaymentCard, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
+			true, 7, std::bind(&DriverPOSTerminal::PayByPaymentCard, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
         IDriver1CUniBase::createMethod(21, u"ReturnPaymentByPaymentCard", u"ВернутьПлатежПоПлатежнойКарте",
 			u"Метод осуществляет возврат платежа по карте",
-			true, 1, std::bind(&DriverPOSTerminal::ReturnPaymentByPaymentCard, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
+			true, 7, std::bind(&DriverPOSTerminal::ReturnPaymentByPaymentCard, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
 		IDriver1CUniBase::createMethod(22, u"ReturnPayment", u"ВернутьПлатеж",
 			u"Метод осуществляет возврат платежа",
-			true, 1, std::bind(&DriverPOSTerminal::ReturnPayment, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
+			true, 4, std::bind(&DriverPOSTerminal::ReturnPayment, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
 		IDriver1CUniBase::createMethod(23, u"CancelPayment", u"ОтменитьПлатеж",
 			u"Метод осуществляет отмену. Допускается частичная отмена, на сумму меньшую оригинальной операции, если терминал поддерживает данную операцию",
-			true, 1, std::bind(&DriverPOSTerminal::CancelPayment, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
+			true, 4, std::bind(&DriverPOSTerminal::CancelPayment, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
 		IDriver1CUniBase::createMethod(24, u"CancelPaymentByPaymentCard", u"ОтменитьПлатежПоПлатежнойКарте",
 			u"Метод осуществляет отмену платежа по карте",
-			true, 1, std::bind(&DriverPOSTerminal::CancelPaymentByPaymentCard, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
+			true, 7, std::bind(&DriverPOSTerminal::CancelPaymentByPaymentCard, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
 		IDriver1CUniBase::createMethod(25, u"Authorisation", u"Преавторизация",
 			u"Метод осуществляет преавторизацию – блокирование суммы на счете",
-			true, 1, std::bind(&DriverPOSTerminal::Authorisation, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
+			true, 4, std::bind(&DriverPOSTerminal::Authorisation, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
 		IDriver1CUniBase::createMethod(26, u"AuthorisationByPaymentCard", u"ПреавторизацияПоПлатежнойКарте",
 			u"Метод осуществляет пре-авторизацию – блокирование суммы на счете карты",
-			true, 1, std::bind(&DriverPOSTerminal::AuthorisationByPaymentCard, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
+			true, 7, std::bind(&DriverPOSTerminal::AuthorisationByPaymentCard, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
 		IDriver1CUniBase::createMethod(27, u"AuthConfirmation", u"ЗавершитьПреавторизацию",
 			u"Метод завершает преавторизацию – списывает сумму со счета",
-			true, 1, std::bind(&DriverPOSTerminal::AuthConfirmation, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
+			true, 4, std::bind(&DriverPOSTerminal::AuthConfirmation, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
 		IDriver1CUniBase::createMethod(28, u"AuthConfirmationByPaymentCard", u"ЗавершитьПреавторизациюПоПлатежнойКарте",
-				u"Метод завершает пре-авторизацию – списывает сумму со счета карты",
-				true, 1, std::bind(&DriverPOSTerminal::AuthConfirmationByPaymentCard, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
+			u"Метод завершает пре-авторизацию – списывает сумму со счета карты",
+			true, 7, std::bind(&DriverPOSTerminal::AuthConfirmationByPaymentCard, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
 		IDriver1CUniBase::createMethod(29, u"CancelAuthorisation", u"ОтменитьПреавторизацию",
-				u"Метод отменяет преавторизацию – разблокирует сумму на счете",
-				true, 1, std::bind(&DriverPOSTerminal::CancelAuthorisation, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
+			u"Метод отменяет преавторизацию – разблокирует сумму на счете",
+			true, 4, std::bind(&DriverPOSTerminal::CancelAuthorisation, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
-		IDriver1CUniBase::createMethod(30, u"CancelAuthorisationByPaymentCard", u"ЗавершитьПреавторизациюПоПлатежнойКарте",
-				u"Метод завершает пре-авторизацию – списывает сумму со счета карты",
-				true, 1, std::bind(&DriverPOSTerminal::CancelAuthorisationByPaymentCard, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
+		IDriver1CUniBase::createMethod(30, u"CancelAuthorisationByPaymentCard", u"ОтменитьПреавторизациюПоПлатежнойКарте",
+			u"Метод завершает пре-авторизацию – списывает сумму со счета карты",
+			true, 7, std::bind(&DriverPOSTerminal::CancelAuthorisationByPaymentCard, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
 		IDriver1CUniBase::createMethod(31, u"PayWithCashWithdrawal", u"ОплатаCВыдачейНаличных",
-        		u"Метод осуществляет операцию оплаты с выдачей наличных денежных средств. Операция выдачи наличных не является самостоятельной операцией и сопровождается обязательной оплатой по карте.",
-				true, 1, std::bind(&DriverPOSTerminal::PayWithCashWithdrawal, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
+        	u"Метод осуществляет операцию оплаты с выдачей наличных денежных средств. Операция выдачи наличных не является самостоятельной операцией и сопровождается обязательной оплатой по карте.",
+			true, 4, std::bind(&DriverPOSTerminal::PayWithCashWithdrawal, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
         IDriver1CUniBase::createMethod(32, u"PayByPaymentCardWithCashWithdrawal", u"ОплатаКартойCВыдачейНаличных",
 				u"Метод завершает пре-авторизацию – списывает сумму со счета карты",
-				true, 1, std::bind(&DriverPOSTerminal::PayByPaymentCardWithCashWithdrawal, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
+				true, 4, std::bind(&DriverPOSTerminal::PayByPaymentCardWithCashWithdrawal, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
 		IDriver1CUniBase::createMethod(33, u"PurchaseWithEnrollment", u"ПокупкаСЗачислением",
-				u"Метод осуществляет покупки с зачислением денежных средств на карту клиента",
-				true, 1, std::bind(&DriverPOSTerminal::PurchaseWithEnrollment, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
+			u"Метод осуществляет покупки с зачислением денежных средств на карту клиента",
+			true, 4, std::bind(&DriverPOSTerminal::PurchaseWithEnrollment, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
 		IDriver1CUniBase::createMethod(34, u"GetCardParametrs", u"ПолучитьПараметрыКарты",
-				u"Получает параметры карты",
-				true, 1, std::bind(&DriverPOSTerminal::GetCardParametrs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
+			u"Получает параметры карты",
+			true, 8, std::bind(&DriverPOSTerminal::GetCardParametrs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
 		IDriver1CUniBase::createMethod(35, u"PayCertificate", u"ОплатитьСертификатом",
-				u"Метод осуществляет оплату с применением электронного сертификата ФЭС НСПК",
-				true, 1, std::bind(&DriverPOSTerminal::PayCertificate, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
+			u"Метод осуществляет оплату с применением электронного сертификата ФЭС НСПК",
+			true, 4, std::bind(&DriverPOSTerminal::PayCertificate, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
 		IDriver1CUniBase::createMethod(36, u"ReturnCertificate", u"ВернутьСертификатом",
-					u"Метод осуществляет возврат оплаты с применением электронного сертификата ФЭС НСПК",
-					true, 1, std::bind(&DriverPOSTerminal::ReturnCertificate, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
+			u"Метод осуществляет возврат оплаты с применением электронного сертификата ФЭС НСПК",
+			true, 4, std::bind(&DriverPOSTerminal::ReturnCertificate, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
 		IDriver1CUniBase::createMethod(37, u"EmergencyReversal", u"АварийнаяОтменаОперации",
-				u"Метод отменяет последнюю транзакцию",
-				true, 1, std::bind(&DriverPOSTerminal::EmergencyReversal, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
+			u"Метод отменяет последнюю транзакцию",
+			true, 1, std::bind(&DriverPOSTerminal::EmergencyReversal, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
 		IDriver1CUniBase::createMethod(38, u"GetOperationByCards", u"ПолучитьОперацииПоКартам",
-				u"Получение отчета содержащего операции по картам за день",
-				true, 1, std::bind(&DriverPOSTerminal::GetOperationByCards, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
+			u"Получение отчета содержащего операции по картам за день",
+			true, 2, std::bind(&DriverPOSTerminal::GetOperationByCards, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
 		IDriver1CUniBase::createMethod(39, u"Settlement", u"ИтогиДняПоКартам",
-				u"Производится сверка итогов дня",
-				true, 1, std::bind(&DriverPOSTerminal::Settlement, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
+			u"Производится сверка итогов дня",
+			true, 2, std::bind(&DriverPOSTerminal::Settlement, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
 		IDriver1CUniBase::createMethod(40, u"PrintSlipOnTerminal", u"ПечатьКвитанцийНаТерминале",
-				u"Возвращает будет ли терминал самостоятельно печатать квитанции нас воем принтере для операций",
-				true, 1, std::bind(&DriverPOSTerminal::PrintSlipOnTerminal, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
+			u"Возвращает будет ли терминал самостоятельно печатать квитанции нас воем принтере для операций",
+			true, 0, std::bind(&DriverPOSTerminal::PrintSlipOnTerminal, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
     };
 
     std::vector<PropName> m_PropNames = {};

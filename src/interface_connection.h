@@ -6,17 +6,10 @@
 #include <boost/asio.hpp>
 #include <boost/beast.hpp>
 #include <boost/beast/websocket.hpp>
+#include "connection_types.h"
 
 #ifndef INTERFACECONNECTION_H
 #define INTERFACECONNECTION_H
-
-enum class ConnectionType {
-    COM,
-    TCP,
-    WebSocket,
-    USB,
-	Unknown
-};
 
 // Observer interface for error notifications
 class IErrorObserver {
@@ -64,9 +57,7 @@ public:
         observers_.erase(std::remove(observers_.begin(), observers_.end(), observer), observers_.end());
     }
 
-	virtual ConnectionType getType() const {
-		return ConnectionType::Unknown;
-	}
+	virtual ConnectionType getType() = 0;
 
 	/// <summary>
 	/// включает/выключает режим поддержания соединения.
@@ -114,7 +105,7 @@ public:
 
     bool isConnected() const override;
 
-    ConnectionType getType() const override {
+    ConnectionType getType() override {
         return ConnectionType::TCP;
     }
 
@@ -166,7 +157,7 @@ public:
 
     bool isConnected() const override;
 
-    virtual ConnectionType getType() const override {
+    ConnectionType getType() override {
         return ConnectionType::WebSocket;
     }
 
@@ -212,7 +203,7 @@ public:
 		throw std::runtime_error("Not implemented");
 	}
 
-	ConnectionType getType() const override {
+	ConnectionType getType() override {
 		return ConnectionType::COM;
 	}
 
@@ -244,43 +235,5 @@ public:
         }
     }
 };
-
-// Utility function to convert wstring to ConnectionType
-inline std::optional<ConnectionType> wstringToConnectionType(const std::wstring& type) {
-    static const std::unordered_map<std::wstring, ConnectionType> typeMap = {
-        {L"COM", ConnectionType::COM},
-        {L"TCP", ConnectionType::TCP},
-        {L"WebSocket", ConnectionType::WebSocket},
-		{ L"0", ConnectionType::COM },
-		{L"1", ConnectionType::TCP},
-		{L"2", ConnectionType::WebSocket}
-    };
-
-    auto it = typeMap.find(type);
-    if (it != typeMap.end()) {
-        return it->second;
-    }
-    return std::nullopt;
-}
-
-// Utility function to convert wstring to ConnectionType
-inline std::optional<ConnectionType> u16stringToConnectionType(const std::u16string& type) {
-    static const std::unordered_map<std::u16string, ConnectionType> typeMap = {
-        {u"COM", ConnectionType::COM},
-        {u"TCP", ConnectionType::TCP},
-        {u"WebSocket", ConnectionType::WebSocket},
-		{u"0", ConnectionType::COM },
-		{u"1", ConnectionType::TCP},
-		{u"2", ConnectionType::WebSocket}
-    };
-
-    auto it = typeMap.find(type);
-    if (it != typeMap.end()) {
-        return it->second;
-    }
-    return std::nullopt;
-}
-
-
 
 #endif // INTERFACECONNECTION_H

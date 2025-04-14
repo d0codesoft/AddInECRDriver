@@ -1,14 +1,33 @@
 #include "pch.h"
 #include "ñhannel_protocol.h"
+#include "str_utils.h"
+
+enum class JsonErrorCode {
+	GeneralError = 1000,
+	TransactionCanceledByUser = 1001,
+	EMVDecline = 1002,
+	TransactionLogFull = 1003,
+	NoConnectionWithHost = 1004,
+	NoPaperInPrinter = 1005,
+	ErrorCryptoKeys = 1006,
+	CardReaderNotConnected = 1007,
+	TransactionAlreadyComplete = 1008
+};
 
 bool JsonChannel::connect(const std::string& address, std::optional<uint16_t> port /*= 2000*/)
 {
+#ifdef _DEBUG
+	std::wcout << L"Start connection on " << str_utils::to_wstring(address) << std::endl;
+#endif
 	// Step 1: Connect to IP, port
 	if (!_connect(address, port)) {
 		LOG_ERROR_ADD(L"JsonChannel", L"Error connected, address: " + str_utils::to_wstring(address) + L" port: " + portToWstring(port));
 		return false;
 	}
 
+#ifdef _DEBUG
+	std::wcout << L"	Step 2: Send a handshake " << std::endl;
+#endif
 	// Step 2: Send a handshake
 	sendData handshake = { L"PingDevice", 0, {} };
 	if (!sendJson(handshake)) {
@@ -17,7 +36,7 @@ bool JsonChannel::connect(const std::string& address, std::optional<uint16_t> po
 	}
 
 	auto response = receiveJson();
-	if (!response || response->method != L"PingDevice" || response->error == true) {
+	if (response.has_value() && (response->method != L"PingDevice" || response->error == true)) {
 		std::wstring errorResponseCode = {}, errorCode = {};
 		auto fp = response->params.find(L"responseCode");
 		if (fp != response->params.end()) {
@@ -29,27 +48,44 @@ bool JsonChannel::connect(const std::string& address, std::optional<uint16_t> po
 		}
 		LOG_ERROR_ADD(L"JsonChannel", L"Failed to connect: " + response->errorDescription + L" Code: " + errorResponseCode);
 	}
+#ifdef _DEBUG
+	std::wcout << L"	RESULT: " << response.value() << std::endl;
+#endif
 
+
+#ifdef _DEBUG
+	std::wcout << L"	Disconnect " << std::endl;
+#endif
 	// Step 3: Disconnect
 	disconnect();
 
+#ifdef _DEBUG
+	std::wcout << L"	Reconnect " << std::endl;
+#endif
 	// Step 4: Send identification
 	if (!_connect(address, port)) {
 		LOG_ERROR_ADD(L"JsonChannel", L"Error reconnect address: " + str_utils::to_wstring(address) + L" port: " + portToWstring(port));
 		return false;
 	}
 
+#ifdef _DEBUG
+	std::wcout << L"	Step 4: Send identification " << std::endl;
+#endif
 	sendData identify = { L"ServiceMessage", 0, {{L"msgType", L"identify"}} };
 	if (!sendJson(identify)) {
 		LOG_ERROR_ADD(L"JsonChannel", L"Failed to send service message");
 		return false;
 	}
 
+
 	response = receiveJson();
 	if (!response || response->method != L"ServiceMessage") {
 		LOG_ERROR_ADD(L"JsonChannel", L"Failed to receive service message");
 		return false;
 	}
+#ifdef _DEBUG
+	std::wcout << L"	RESULT: " << response.value() << std::endl;
+#endif
 
 	// Step 5: Disconnect
 	disconnect();
@@ -89,8 +125,8 @@ bool JsonChannel::sendJson(const sendData& jsonData)
 		if (std::holds_alternative<std::wstring>(value)) {
 			json[jsoncons::json::string_view_type(str_key)] = str_utils::to_string(std::get<std::wstring>(value));
 		}
-		else if (std::holds_alternative<int>(value)) {
-			json[jsoncons::json::string_view_type(str_key)] = std::get<int>(value);
+		else if (std::holds_alternative<long>(value)) {
+			json[jsoncons::json::string_view_type(str_key)] = std::get<long>(value);
 		}
 		else if (std::holds_alternative<bool>(value)) {
 			json[jsoncons::json::string_view_type(str_key)] = std::get<bool>(value);
@@ -103,7 +139,7 @@ bool JsonChannel::sendJson(const sendData& jsonData)
 	// Convert JSON string to UTF-8
 	std::vector<uint8_t> data;
 	if (jsonData.method == L"PingDevice") {
-		data.push_back(0x00); // Add 0x00 at the beginning for PingDevice
+		//data.push_back(0x00); // Add 0x00 at the beginning for PingDevice
 	}
 	data.insert(data.end(), jsonString.begin(), jsonString.end());
 	data.push_back(0x00); // Add 0x00 at the end
@@ -141,6 +177,90 @@ std::optional<receiveData> JsonChannel::receiveJson(std::optional<uint32_t> time
 	}
 }
 
+bool JsonChannel::Pay(const PaymentParameters paramPayement, DataPayResult& outDataResult, std::wstring& outError)
+{
+	if (!paramPayement.isValid()) {
+		outError = L"Invalid parameters for payment";
+		LOG_ERROR_ADD(L"JsonChannel", L"Invalid parameters for payment");
+		return false;
+	}
+	std::wstring _discount = L"";
+	if (paramPayement.discount > 0) {
+		_discount = doubleToAmountString(paramPayement.discount);
+	}
+
+	Params _paramPayement = {
+		{ L"amount" , doubleToAmountString(paramPayement.amount) },
+		{ L"discount" , _discount },
+		{ L"merchantId" , L"0" },
+		{ L"facepay" , paramPayement.facepay ? L"true" : L"false" },
+		{ L"subMerchant" , paramPayement.subMerchant ? paramPayement.subMerchant.value() : L"" }
+	};
+	sendData dataPayement = { L"Purchase", 0, _paramPayement };
+	
+	_clearAllMessages();
+
+	if (!sendJson(dataPayement)) {
+		outError = L"Failed to send payment data";
+		LOG_ERROR_ADD(L"JsonChannel", L"Failed to send payment data");
+		return false;
+	}
+
+	auto response = receiveJson();
+	if (!response || response->method != L"Purchase") {
+		outError = L"Failed to send payment data";
+		LOG_ERROR_ADD(L"JsonChannel", L"Failed to receive payment response");
+		return false;
+	}
+	
+	for (auto& item : response->params) {
+		if (item.first == L"cardNumber") {
+			auto _ws = std::get_if<std::wstring>(&item.second);
+			if (_ws) {
+				outDataResult.cardNumber = *_ws;
+			}
+		}
+		else if (item.first == L"receiptNumber") {
+			auto _ws = std::get_if<std::wstring>(&item.second);
+			if (_ws) {
+				outDataResult.receiptNumber = *_ws;
+			}
+		}
+		else if (item.first == L"rrnCode") {
+			auto _ws = std::get_if<std::wstring>(&item.second);
+			if (_ws) {
+				outDataResult.rrnCode = *_ws;
+			}
+		}
+		else if (item.first == L"authorizationCode") {
+			auto _ws = std::get_if<std::wstring>(&item.second);
+			if (_ws) {
+				outDataResult.authorizationCode = *_ws;
+			}
+		}
+		else if (item.first == L"slip") {
+			auto _ws = std::get_if<std::wstring>(&item.second);
+			if (_ws) {
+				outDataResult.slip = *_ws;
+			}
+		}
+		else if (item.first == L"merchantId") {
+			auto _ws = std::get_if<std::wstring>(&item.second);
+			if (_ws) {
+				outDataResult.merchantId = *_ws;
+			}
+		}
+	}
+
+	if (response->error) {
+		outError = response->errorDescription;
+		LOG_ERROR_ADD(L"JsonChannel", L"Error in payment response: " + response->errorDescription);
+		return false;
+	}
+	
+	return true;
+}
+
 bool JsonChannel::_connect(const std::string& address, std::optional<uint16_t> port)
 {
 	if (connection_->isConnected()) {
@@ -155,8 +275,6 @@ bool JsonChannel::_connect(const std::string& address, std::optional<uint16_t> p
 	}
 
 	connection_->startListening([this](std::vector<uint8_t> data) {
-		// Handle incoming data
-		std::cout << "Data sending: " << std::endl;
 		this->_processIncomingData(data);
 		});
 
@@ -211,4 +329,9 @@ void JsonChannel::_handleParsedJson(const jsoncons::json& json)
 		std::lock_guard<std::mutex> lock(this->queueMutex);
 		this->dataQueue.push(data);
 	}
+	LOG_INFO_ADD(L"JsonChannel", L"Retrieve packet from terminal " + data.toString());
+#ifdef _DEBUG
+	std::wcout << L"	Retrieve packet from terminal " << data << std::endl;
+#endif
+	cv.notify_all();
 }

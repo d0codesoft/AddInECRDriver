@@ -14,6 +14,7 @@ const std::wstring log_extension = L".log";
 const std::wstring log_name_default = log_prefix + log_extension;
 
 
+
 class Logger
 {
 public:
@@ -27,9 +28,7 @@ public:
 		removeInstance(mChannelName);
     }
 
-	static std::wstring getLogFilePath() {
-		return Logger::current_log_path;
-	}
+	static std::wstring getLogFilePath();
 
 #ifdef NDEBUG
     void info(const std::wstring& message, const std::wstring& file = L"", int line = 0) {

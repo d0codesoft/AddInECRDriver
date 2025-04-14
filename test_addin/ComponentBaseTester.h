@@ -360,9 +360,10 @@ public:
         bool resultTest = true;
         wconsole << L"Start testing AddIn Driver base function... " << std::endl;
 
-        resultTest = resultTest && testGetInterfaceRevision();
-		resultTest = resultTest && testGetDescription();
-		resultTest = resultTest && testGetParameters();
+        resultTest = resultTest && _testGetInterfaceRevision();
+		resultTest = resultTest && _testGetDescription();
+		resultTest = resultTest && _testGetParameters();
+		resultTest = resultTest && _testGetAdditionalActions();
 		wconsole << L"End testing AddIn Driver base function... " << std::endl;
 
 		return resultTest;
@@ -375,7 +376,7 @@ private:
     std::wstring equipmentType_;
     std::wstring versionDriver_;
 
-	bool testGetInterfaceRevision() {
+	bool _testGetInterfaceRevision() {
 
 		bool result = false;
         interfaceRevision_ = 0;
@@ -420,7 +421,7 @@ private:
 		return result;
     }
 
-	bool parseDescription() {
+	bool _parseDescription() {
 
 		if (descriptionDriver_.empty()) {
 			wconsole << L"  Fail parse, description driver is empty" << std::endl;
@@ -448,7 +449,7 @@ private:
 		return false;
 	}
 
-    bool testGetDescription() {
+    bool _testGetDescription() {
 
 		bool result = false;
 
@@ -486,7 +487,7 @@ private:
                 else if (methodGetVersion.value().countParams == 1 ) {
 					descriptionDriver_ = getStringValue(params[0]);
 					FREE_TVARIANT_MEMORY(*extTest_->getMemoryManager(), params[0]);
-					result = parseDescription();
+					result = _parseDescription();
 				}
 			}
 		}
@@ -497,7 +498,7 @@ private:
 		return result;
     }
 
-    bool testGetParameters() {
+    bool _testGetParameters() {
         bool result = false;
         tVariant retValue;
 
@@ -549,6 +550,66 @@ private:
                 return false;
             }
         }
+        return result;
+    }
+
+    bool _testGetAdditionalActions() {
+        bool result = false;
+        tVariant retValue;
+
+        wconsole << L"Testing GetAdditionalActions... " << std::endl;
+
+        // Find the method information for "GetAdditionalActions"
+        auto methodInfo = this->extTest_->getMethodsInfo()->findMethodByName(u"GetAdditionalActions");
+        if (!methodInfo.has_value()) {
+            wconsole << L"  Fail, method GetAdditionalActions not found" << std::endl;
+            return false;
+        }
+
+        // Initialize parameters for the method
+        INIT_TVARIANT_VECTOR(params, methodInfo.value().countParams);
+
+        try {
+            // Call the method
+            extTest_->testCallAsFunc(u"GetAdditionalActions", params, retValue);
+
+            // Check the return value
+            if (TV_VT(&retValue) == VTYPE_BOOL) {
+                result = TV_BOOL(&retValue);
+            }
+
+            if (result) {
+                // Extract the XML table of actions
+                if (methodInfo.value().countParams == 1 && TV_VT(&params[0]) == VTYPE_PWSTR) {
+                    std::wstring actionsXml = getStringValue(params[0]);
+                    wconsole << L"  Actions XML: " << actionsXml << std::endl;
+
+                    // Example validation: Check if the XML contains the expected structure
+                    if (actionsXml.find(L"<Actions>") != std::wstring::npos) {
+                        wconsole << L"  Success, valid XML structure found" << std::endl;
+                    }
+                    else {
+                        wconsole << L"  Fail, invalid XML structure" << std::endl;
+                        result = false;
+                    }
+
+                    // Free memory for the parameter
+                    FREE_TVARIANT_MEMORY(*extTest_->getMemoryManager(), params[0]);
+                }
+                else {
+                    wconsole << L"  Fail, unexpected parameter type or count" << std::endl;
+                    result = false;
+                }
+            }
+            else {
+                wconsole << L"  Fail, method returned false" << std::endl;
+            }
+        }
+        catch (const std::exception& e) {
+            wconsole << L"  Error executing GetAdditionalActions: " << e.what() << std::endl;
+            return false;
+        }
+
         return result;
     }
 

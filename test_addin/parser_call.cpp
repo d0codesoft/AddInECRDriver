@@ -1,4 +1,16 @@
 #include "parser_call.h"
+#include <ranges>
+
+std::string trim(const std::string& input) {
+	auto is_not_space = [](unsigned char ch) { return !std::isspace(ch); };
+
+	auto front = std::ranges::find_if(input, is_not_space);
+	auto back = std::ranges::find_if(input | std::views::reverse, is_not_space);
+
+	if (front == input.end()) return ""; // строка только из пробелов
+
+	return std::string(front, back.base());
+}
 
 std::optional<CallType> getCallTypeFromString(const std::string& str)
 {
@@ -25,6 +37,7 @@ std::optional<ParsedCall> parseCallString(const std::string& input)
 		return result;
 	}
 
+	token = trim(token);
 	auto callType = getCallTypeFromString(token);
 	if (!callType.has_value()) {
 		return result;

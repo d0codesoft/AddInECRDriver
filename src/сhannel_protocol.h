@@ -4,6 +4,7 @@
 #include <jsoncons/json.hpp>
 #include "str_utils.h"
 #include "common_types.h"
+#include "connection_types.h"
 #include "logger.h"
 #include <queue>
 
@@ -13,7 +14,66 @@
 /// All non-ASCII characters, including Cyrillic characters, 
 /// are transmitted as the value of a JSON field in utf-8 encoding.
 
-using Params = std::unordered_map<std::wstring, std::variant<std::wstring, int, bool>>;
+using Params = std::unordered_map<std::wstring, std::variant<std::wstring, long, double, bool>>;
+
+using DataResult = std::unordered_map<std::wstring, std::variant<std::wstring, long, double, bool>>;
+
+struct DataPayResult {
+	std::wstring cardNumber;
+	std::wstring receiptNumber;
+	std::wstring rrnCode;
+	std::wstring authorizationCode;
+	std::wstring slip;
+	std::wstring merchantId;
+};
+
+struct PaymentParameters {
+	double amount;                              // The payment amount
+	std::wstring merchantId;                   // Merchant ID
+	std::optional<std::wstring> cardNumber;    // Optional card number
+	std::optional<std::wstring> receiptNumber; // Optional receipt number
+	double discount = 0;                       // Discount amount (default: 0)
+	std::optional<std::wstring> subMerchant;   // Sub-merchant ID (default: empty string)
+	bool facepay = false;                      // Facepay flag (default: false)
+
+	// Constructor for easy initialization
+	PaymentParameters(
+		double amount,
+		const std::wstring& merchantId,
+		const std::wstring* cardNumber = nullptr,
+		const std::wstring* receiptNumber = nullptr,
+		double discount = 0,
+		const std::wstring* subMerchant = nullptr,
+		bool facepay = false
+	)
+		: amount(amount),
+		merchantId(merchantId),
+		cardNumber(cardNumber ? std::optional<std::wstring>(*cardNumber) : std::nullopt),
+		receiptNumber(receiptNumber ? std::optional<std::wstring>(*receiptNumber) : std::nullopt),
+		discount(discount),
+		subMerchant(subMerchant ? std::optional<std::wstring>(*subMerchant) : std::nullopt),
+		facepay(facepay) {
+	}
+
+	bool isValid() const {
+		// Validate amount (must be greater than 0)
+		if (amount <= 0) {
+			return false;
+		}
+
+		// Validate merchantId (must not be empty)
+		if (merchantId.empty()) {
+			return false;
+		}
+
+		// Validate discount (must not be negative)
+		if (discount < 0) {
+			return false;
+		}
+		// All validations passed
+		return true;
+	}
+};
 
 struct receiveData {
 	std::wstring method;
@@ -22,10 +82,16 @@ struct receiveData {
 	bool error;
 	std::wstring errorDescription;
 
+	std::wstring toString() const {
+		std::wstringstream ss;
+		ss << this;
+		return ss.str();
+	}
+
 	// Overload the << operator for receiveData
 	friend std::wostream& operator<<(std::wostream& os, const receiveData& data) {
 		os << L"Method: " << data.method << L" Step: " << data.step << L" Error: " << (data.error ? "true" : "false");
-		os << L"Error Description: " << data.errorDescription;
+		os << L" Error Description: " << data.errorDescription;
 		if (data.params.empty()) {
 			os << L"Params: none\n";
 			return os;
@@ -37,8 +103,11 @@ struct receiveData {
 				if (std::holds_alternative<std::wstring>(value)) {
 					os << std::get<std::wstring>(value);
 				}
-				else if (std::holds_alternative<int>(value)) {
-					os << std::get<int>(value);
+				else if (std::holds_alternative<long>(value)) {
+					os << std::get<long>(value);
+				}
+				else if (std::holds_alternative<double>(value)) {
+					os << std::get<double>(value);
 				}
 				else if (std::holds_alternative<bool>(value)) {
 					os << (std::get<bool>(value) ? L"true" : L"false");
@@ -70,8 +139,11 @@ struct sendData {
 				if (std::holds_alternative<std::wstring>(value)) {
 					os << std::get<std::wstring>(value);
 				}
-				else if (std::holds_alternative<int>(value)) {
-					os << std::get<int>(value);
+				else if (std::holds_alternative<long>(value)) {
+					os << std::get<long>(value);
+				}
+				else if (std::holds_alternative<double>(value)) {
+					os << std::get<double>(value);
 				}
 				else if (std::holds_alternative<bool>(value)) {
 					os << (std::get<bool>(value) ? L"true" : L"false");
@@ -120,6 +192,9 @@ public:
 	/// @return true, if the connection is active.
 	virtual bool isConnected() const = 0;
 
+
+	virtual bool Pay(const PaymentParameters paramPayement, DataPayResult& outDataResult, std::wstring& outError) = 0;
+
 protected:
 	std::unique_ptr<IConnection> connection_;
 };
@@ -141,6 +216,8 @@ public:
 
 	std::optional<receiveData> receiveJson(std::optional<uint32_t> timeoutMs = 15000) override;
 
+	bool Pay(const PaymentParameters paramPayement, DataPayResult& outDataResult, std::wstring& outError) override;
+
 private:
 	
 	bool _connect(const std::string& address, std::optional<uint16_t> port = 2000);
@@ -149,8 +226,36 @@ private:
 
 	void _handleParsedJson(const jsoncons::json& json);
 
+	void _clearAllMessages() {
+		std::unique_lock<std::mutex> lock(queueMutex);
+		while (!dataQueue.empty()) {
+			dataQueue.pop();
+		}
+		lock.unlock();
+		cv.notify_all();
+	}
+
 	void _handleError(const std::string& error) {
 		
+	}
+
+	bool _isValidResponse(const receiveData& recvData) {
+		
+		if (recvData.error) {
+			return false;
+		}
+
+		// Check if the method is valid
+		// Message methodNotImplemented - a message generated by the terminal in response to a request for an unsupported method.
+		auto it = recvData.params.find(L"msgType");
+		if (it != recvData.params.end() && std::holds_alternative<std::wstring>(it->second)) {
+			const auto& value = std::get<std::wstring>(it->second);
+			if (value == L"methodNotImplemented") {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	std::queue<receiveData> dataQueue = {};
@@ -186,6 +291,11 @@ public:
 	std::optional<receiveData> receiveJson(std::optional<uint32_t> timeoutMs = 15000) override {
 		// Implement the BaseECR specific receive logic here
 		return std::nullopt;
+	}
+
+	bool Pay(const PaymentParameters paramPayement, DataPayResult& outDataResult, std::wstring& outError) override {
+		// Implement the BaseECR specific payment logic here
+		return false;
 	}
 };
 

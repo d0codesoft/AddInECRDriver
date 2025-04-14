@@ -78,6 +78,9 @@
     <ClInclude Include="tvariant_helper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="connection_types.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -134,5 +137,11 @@
     <ClCompile Include="tvariant_helper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="connection_types.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="test_connect.testscript" />
   </ItemGroup>
 </Project>
