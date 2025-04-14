@@ -88,12 +88,14 @@ private:
 
         std::u16string execName = str_utils::to_u16string(parsedCall.methodName);
         int countParam = parsedCall.paramCount;
-		std::vector<tVariant> params = parseParams(countParam, std::span<const std::string>(parsedCall.params));
+        std::vector<tVariant> params{};
+        if (countParam > 0) {
+            params = parseParams(countParam, std::span<const std::string>(parsedCall.params));
+        }
 
         std::string resultNameValue{};
-        int indexResultName = countParam + 1;
-		if (parsedCall.params.size() >= indexResultName) {
-            resultNameValue = parsedCall.params[indexResultName];
+		if (call_param->resultVar.has_value()) {
+            resultNameValue = call_param->resultVar.value();
 		}
 
         if (!execName.empty()) {
@@ -159,30 +161,25 @@ private:
 
         if (str.find("[") != std::string::npos && str.find("]") != std::string::npos) {
 			// Если строка содержит квадратные скобки, интерпретируем как переменную хранящую данные предыдущих вызовов
-			std::string nameContent = str.substr(0, str.find("[") - 1); // Удаляем квадратные скобки
+			std::string nameContent = str.substr(0, str.find("[")); // Удаляем квадратные скобки
 			std::string content = str.substr(str.find("[") + 1, str.find("]") - str.find("[") - 1); // Удаляем квадратные скобки
 			auto it = paramsExecute.find(str_utils::to_wstring(nameContent));
 			if (it != paramsExecute.end()) {
-				if (it->second.empty()) {
-					var.vt = VTYPE_EMPTY;
-					wconsole << L"  Error: Set variant value Empty variable: " << str_utils::to_wstring(nameContent) << std::endl;
-					return false;
-				}
-				if (it->second.size() > 1) {
-                    var.vt = VTYPE_EMPTY;
-                    wconsole << L"  Error: Set variant value Invalid count of parameters: " << str_utils::to_wstring(nameContent) << std::endl;
-					return false;
-				}
-
                 int indexValue = -1;
                 try {
-					indexValue = std::stoi(content);
+                    indexValue = std::stoi(content);
                 }
                 catch (...) {
                     var.vt = VTYPE_EMPTY;
                     wconsole << L"  Error: Set variant value Invalid convert index value: " << str_utils::to_wstring(nameContent) << L" index: " << str_utils::to_wstring(content) << std::endl;
                     return false;
                 }
+                
+                if (it->second.empty() && it->second.size()<indexValue) {
+					var.vt = VTYPE_EMPTY;
+					wconsole << L"  Error: index variable: " << str_utils::to_wstring(nameContent) << std::endl;
+					return false;
+				}
 
 				auto _val = it->second[indexValue];
 				if (std::holds_alternative<std::wstring>(_val)) {
@@ -190,7 +187,7 @@ private:
 					var.vt = VTYPE_PWSTR;
 					this->extTest_->getMemoryManager()->AllocMemory(
 						reinterpret_cast<void**>(&var.pwstrVal),
-						(value.size() + 1) * sizeof(char16_t)
+						(static_cast<const long>(value.size()) + 1) * sizeof(char16_t)
 					);
 					std::copy(value.begin(), value.end(), reinterpret_cast<char16_t*>(var.pwstrVal));
 					var.pwstrVal[value.size()] = u'\0';
@@ -224,7 +221,7 @@ private:
             var.vt = VTYPE_PWSTR;
             this->extTest_->getMemoryManager()->AllocMemory(
                 reinterpret_cast<void**>(&var.pwstrVal),
-                (val.size() + 1) * sizeof(char16_t)
+                (static_cast<const long>(val.size()) + 1) * sizeof(char16_t)
             );
             std::copy(val.begin(), val.end(), reinterpret_cast<char16_t*>(var.pwstrVal));
             var.pwstrVal[val.size()] = u'\0';
@@ -257,7 +254,7 @@ private:
         var.vt = VTYPE_PWSTR;
         this->extTest_->getMemoryManager()->AllocMemory(
             reinterpret_cast<void**>(&var.pwstrVal),
-            (val.size() + 1) * sizeof(char16_t)
+            (static_cast<const long>(val.size()) + 1) * sizeof(char16_t)
         );
         std::copy(val.begin(), val.end(), reinterpret_cast<char16_t*>(var.pwstrVal));
         var.pwstrVal[val.size()] = u'\0';
@@ -334,43 +331,53 @@ private:
     void _saveResultValues(std::string nameResultValue, std::vector<tVariant>& params, tVariant& result) {
 		std::wstring _name = str_utils::to_wstring(nameResultValue);
 		paramsExecute[_name].clear();
+        int iCount = 0;
         for (const auto& param : params) {
             if (param.vt == VTYPE_PWSTR || param.vt == VTYPE_PSTR) {
                 std::wstring value = getStringValue(param);
                 paramsExecute[_name].emplace_back(value);
+				wconsole << L"  " << _name << L"[" << iCount << L"]" << L" = " << value << std::endl;
             }
             else if (param.vt == VTYPE_I4) {
                 paramsExecute[_name].emplace_back(param.intVal);
+                wconsole << L"  " << _name << L"[" << iCount << L"]" << L" = " << param.intVal << std::endl;
             }
             else if (param.vt == VTYPE_R8) {
                 paramsExecute[_name].emplace_back(param.dblVal);
+                wconsole << L"  " << _name << L"[" << iCount << L"]" << L" = " << param.dblVal << std::endl;
             }
             else if (param.vt == VTYPE_BOOL) {
                 paramsExecute[_name].emplace_back(param.bVal);
+                wconsole << L"  " << _name << L"[" << iCount << L"]" << L" = " << param.bVal << std::endl;
             }
             else {
                 paramsExecute[_name].emplace_back(std::monostate{});
-                wconsole << L"  Error: Unsupported type for parameter: " << _name << std::endl;
+                wconsole << L"  " << _name << L"[" << iCount << L"]" << L" = Error: Unsupported type for parameter " << std::endl;
             }
+            iCount++;
         }
 
         //result 
         if (result.vt == VTYPE_PWSTR || result.vt == VTYPE_PSTR) {
             std::wstring value = getStringValue(result);
             paramsExecute[_name].emplace_back(value);
+            wconsole << L"  R " << _name << L"[" << iCount << L"]" << L" = " << value << std::endl;
         }
         else if (result.vt == VTYPE_I4) {
             paramsExecute[_name].emplace_back(result.intVal);
+            wconsole << L"  R " << _name << L"[" << iCount << L"]" << L" = " << result.dblVal << std::endl;
         }
         else if (result.vt == VTYPE_R8) {
             paramsExecute[_name].emplace_back(result.dblVal);
+            wconsole << L"  R " << _name << L"[" << iCount << L"]" << L" = " << result.dblVal << std::endl;
         }
         else if (result.vt == VTYPE_BOOL) {
             paramsExecute[_name].emplace_back(result.bVal);
+            wconsole << L"  R " << _name << L"[" << iCount << L"]" << L" = " << result.bVal << std::endl;
         }
         else {
             paramsExecute[_name].emplace_back(std::monostate{});
-            wconsole << L"  Error: Unsupported type for parameter result : " << _name << std::endl;
+            wconsole << L"  R " << _name << L"[" << iCount << L"]" << L" = Error: Unsupported type for parameter " << std::endl;
         }
     }
 

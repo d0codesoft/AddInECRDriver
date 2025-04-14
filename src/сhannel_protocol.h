@@ -77,9 +77,9 @@ struct PaymentParameters {
 
 struct receiveData {
 	std::wstring method;
-	int step;
+	int step = 0;
 	Params params;
-	bool error;
+	bool error = false;
 	std::wstring errorDescription;
 
 	std::wstring toString() const {
@@ -121,7 +121,7 @@ struct receiveData {
 
 struct sendData {
 	std::wstring method;
-	int step;
+	int step = 0;
 	Params params;
 
 	// Overload the << operator for sendData
@@ -161,7 +161,8 @@ public:
 	explicit IChannelProtocol(std::unique_ptr<IConnection> connection)
 		: connection_(std::move(connection)) {
 	}
-	virtual ~IChannelProtocol() = default;
+	virtual ~IChannelProtocol() {
+	}
 
 	virtual const IConnection* getConnection() const {
 		return connection_.get();
@@ -203,6 +204,12 @@ class JsonChannel : public IChannelProtocol {
 public:
 	explicit JsonChannel(std::unique_ptr<IConnection> connection)
 		: IChannelProtocol(std::move(connection)) {
+	}
+	
+	~JsonChannel() override {
+		if (connection_ && connection_->isConnected()) {
+			disconnect();  // безопасно, ты всё ещё в производном классе
+		}
 	}
 
 	// Implementing connection
@@ -275,13 +282,9 @@ public:
 		return connection_->connect(address, port);
 	}
 
-	void disconnect() override {
-		connection_->disconnect();
-	}
+	void disconnect() override;
 
-	bool isConnected() const override {
-		return connection_->isConnected();
-	}
+	bool isConnected() const override;
 
 	bool sendJson(const sendData& jsonData) override {
 		// Implement the BaseECR specific send logic here

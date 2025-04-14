@@ -259,7 +259,7 @@ bool DriverPOSTerminal::Open(tVariant* pvarRetValue, tVariant* paParams, const l
 
     m_addInBase->setBoolValue(pvarRetValue, result);
 
-    return false;
+    return result;
 }
 
 // Метод: Отключить (Close)

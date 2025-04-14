@@ -14,6 +14,8 @@ bool TcpConnection::connect(const std::string& host, std::optional<uint16_t> por
 
 		LOG_INFO_ADD(L"TcpConnection", L"Start connection : " + str_utils::to_wstring(host) + L" port: " + portToWstring(port));
 
+        io_context_.restart();
+
         boost::asio::ip::tcp::resolver resolver(io_context_);
 		auto port_ = port.value_or(2000);
         boost::asio::ip::tcp::resolver::results_type endpoints = resolver.resolve(host, std::to_string(port_));

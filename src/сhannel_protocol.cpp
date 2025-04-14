@@ -47,11 +47,10 @@ bool JsonChannel::connect(const std::string& address, std::optional<uint16_t> po
 			errorCode = std::get<std::wstring>(fp->second);
 		}
 		LOG_ERROR_ADD(L"JsonChannel", L"Failed to connect: " + response->errorDescription + L" Code: " + errorResponseCode);
-	}
 #ifdef _DEBUG
-	std::wcout << L"	RESULT: " << response.value() << std::endl;
+		std::wcout << L"	RESULT: " << response.value() << std::endl;
 #endif
-
+	}
 
 #ifdef _DEBUG
 	std::wcout << L"	Disconnect " << std::endl;
@@ -71,7 +70,7 @@ bool JsonChannel::connect(const std::string& address, std::optional<uint16_t> po
 #ifdef _DEBUG
 	std::wcout << L"	Step 4: Send identification " << std::endl;
 #endif
-	sendData identify = { L"ServiceMessage", 0, {{L"msgType", L"identify"}} };
+	sendData identify = { L"ServiceMessage", 0, { {L"msgType", L"identify"} } };
 	if (!sendJson(identify)) {
 		LOG_ERROR_ADD(L"JsonChannel", L"Failed to send service message");
 		return false;
@@ -120,18 +119,24 @@ bool JsonChannel::sendJson(const sendData& jsonData)
 	json["method"] = str_utils::to_string(jsonData.method);
 	json["step"] = jsonData.step;
 
+	// Вложенный объект "params"
+	jsoncons::json params_json;
+
 	for (const auto& [key, value] : jsonData.params) {
 		auto str_key = str_utils::to_string(key);
 		if (std::holds_alternative<std::wstring>(value)) {
-			json[jsoncons::json::string_view_type(str_key)] = str_utils::to_string(std::get<std::wstring>(value));
+			params_json[str_key] = str_utils::to_string(std::get<std::wstring>(value));
 		}
 		else if (std::holds_alternative<long>(value)) {
-			json[jsoncons::json::string_view_type(str_key)] = std::get<long>(value);
+			params_json[str_key] = std::get<long>(value);
 		}
 		else if (std::holds_alternative<bool>(value)) {
-			json[jsoncons::json::string_view_type(str_key)] = std::get<bool>(value);
+			params_json[str_key] = std::get<bool>(value);
 		}
 	}
+
+	// Вставляем "params" как объект в основной JSON
+	json["params"] = params_json;
 
 	std::string jsonString = json.to_string();
 	LOG_INFO_ADD(L"JsonChannel", L"Send json data: " + str_utils::to_wstring(jsonString));
@@ -334,4 +339,14 @@ void JsonChannel::_handleParsedJson(const jsoncons::json& json)
 	std::wcout << L"	Retrieve packet from terminal " << data << std::endl;
 #endif
 	cv.notify_all();
+}
+
+void BaseECRChannel::disconnect()
+{
+	connection_->disconnect();
+}
+
+bool BaseECRChannel::isConnected() const
+{
+	return connection_->isConnected();
 }

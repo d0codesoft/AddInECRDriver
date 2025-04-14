@@ -153,20 +153,20 @@ private:
     void testInit() {
         wconsole << L"Testing Init... ";
         if (component_->Init(&addInDefBase_)) {
-            wconsole << L"Success" << std::endl;
+            wconsole << L"Testing Init - Success" << std::endl;
         }
         else {
-            wconsole << L"Failed" << std::endl;
+            wconsole << L"Testing Init - Failed" << std::endl;
         }
     }
 
     void testSetMemManager() {
         wconsole << L"Testing setMemManager... ";
         if (component_->setMemManager(&memoryManager_)) {
-            wconsole << L"Success" << std::endl;
+            wconsole << L"Testing setMemManager - Success" << std::endl;
         }
         else {
-            wconsole << L"Failed" << std::endl;
+            wconsole << L"Testing setMemManager - Failed" << std::endl;
         }
     }
 
@@ -186,11 +186,11 @@ private:
         wconsole << L"Testing RegisterExtensionAs... ";
         WCHAR_T* extensionName = nullptr;
         if (component_->RegisterExtensionAs(&extensionName)) {
-            wconsole << L"Success, Extension Name: " << str_utils::to_wstring(extensionName) << std::endl;
+            wconsole << L"Testing RegisterExtensionAs - Success, Extension Name: " << str_utils::to_wstring(extensionName) << std::endl;
 			memoryManager_.FreeMemory(reinterpret_cast<void**>(&extensionName));
         }
         else {
-            wconsole << L"Failed" << std::endl;
+            wconsole << L"Testing RegisterExtensionAs - Failed" << std::endl;
         }
     }
 
@@ -290,11 +290,11 @@ public:
         auto nameMethodEn = component_->GetMethodName(numProc, 0);
         auto nameMethodRu = component_->GetMethodName(numProc, 1);
         wconsole << L"Testing CallAsProc... " << str_utils::to_wstring(nameMethodEn) << L" / " << str_utils::to_wstring(nameMethodRu);
-        if (component_->CallAsProc(numProc, params.data(), params.size())) {
-            wconsole << L"Success" << std::endl;
+        if (component_->CallAsProc(numProc, params.data(), static_cast<const long>(params.size()))) {
+            wconsole << L"CallAsProc - Success" << std::endl;
         }
         else {
-            wconsole << L"Failed" << std::endl;
+            wconsole << L"CallAsProc - Failed" << std::endl;
         }
     }
 
@@ -313,7 +313,7 @@ public:
         auto nameMethodEn = component_->GetMethodName(numFunc, 0);
         auto nameMethodRu = component_->GetMethodName(numFunc, 1);
         wconsole << L"Testing CallAsFunc... " << str_utils::to_wstring(nameMethodEn) << " / " << str_utils::to_wstring(nameMethodRu) << std::endl;
-        if (component_->CallAsFunc(numFunc, &retValue, params.data(), params.size())) {
+        if (component_->CallAsFunc(numFunc, &retValue, params.data(), static_cast<const long>(params.size()))) {
 			wconsole << L"Success result : " << getVariantValue(retValue) << std::endl;
             for (size_t index = 0; index < params.size(); ++index) {
                 tVariant& var = params[index];
@@ -322,7 +322,7 @@ public:
 
         }
         else {
-            wconsole << L"Failed" << std::endl;
+            wconsole << L"Testing CallAsFunc - Failed" << std::endl;
         }
     }
 
