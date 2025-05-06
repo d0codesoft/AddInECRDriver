@@ -143,24 +143,22 @@ const std::unordered_map<DriverOption, std::wstring> OptionDriverNames = {
 
 struct DriverParameter {
     std::wstring name;
-    std::variant<std::wstring,int,bool> value;
+    std::variant<std::wstring,long,bool> value;
 	TypeParameter type;
 };
 
 struct ActionDriver {
-	std::u16string name_en;
-	std::u16string name_ru;
-	std::u16string caption_en;
-	std::u16string caption_ru;
+	std::wstring name_en;
+	std::wstring name_ru;
+	std::wstring caption_en;
+	std::wstring caption_ru;
 	CallAsFunc1C action;
 };
-
 
 enum class LogLevel {
     Error = 0,
     Debug
 };
-
 
 const std::unordered_map<LogLevel, std::wstring> LogLevelNames = {
 		{ LogLevel::Error, L"Error" },
@@ -170,13 +168,12 @@ const std::unordered_map<LogLevel, std::wstring> LogLevelNames = {
 std::wstring getLogLevelIndex(LogLevel level);
 std::wstring getLogLevelName(LogLevel level);
 
-
 template <typename T>
 bool toFacepayValue(const T& value) {
 	if constexpr (std::is_same<T, std::wstring>::value) {
 		return value == L"true" || value == L"1";
 	}
-	else if constexpr (std::is_same<T, int>::value) {
+	else if constexpr (std::is_same<T, long>::value) {
 		return value == 1;
 	}
 	else if constexpr (std::is_same<T, bool>::value) {
@@ -190,7 +187,7 @@ int toLogLevel(const T& value) {
 	if constexpr (std::is_same<T, std::wstring>::value) {
 		return value == L"1" ? LogLevel::Debug : LogLevel::Error;
 	}
-	else if constexpr  (std::is_same<T, int>::value) {
+	else if constexpr  (std::is_same<T, long>::value) {
 		return value == 1 ? LogLevel::Debug : LogLevel::Error;
 	}
 	else if constexpr (std::is_same<T, bool>::value) {
@@ -232,7 +229,7 @@ std::optional<T> findParameterValue(const std::vector<DriverParameter>& params, 
 template <typename T>
 typename std::enable_if<
     std::is_same<T, std::wstring>::value ||
-    std::is_same<T, int>::value ||
+    std::is_same<T, long>::value ||
     std::is_same<T, bool>::value, bool>::type
     setParameterValue(std::vector<DriverParameter>& params, const std::wstring& paramName, const T& value) {
     for (auto& param : params) {
@@ -249,7 +246,7 @@ typename std::enable_if<
 				param.value = value;
 				param.type = TypeParameter::String;
 			}
-			else if constexpr (std::is_same<T, int>::value) {
+			else if constexpr (std::is_same<T, long>::value) {
 				param.value = value;
 				param.type = TypeParameter::Number;
 			}
@@ -259,7 +256,7 @@ typename std::enable_if<
                 param.value = value;
                 param.type = TypeParameter::String;
             }
-            else if constexpr (std::is_same<T, int>::value) {
+            else if constexpr (std::is_same<T, long>::value) {
                 param.value = value;
                 param.type = TypeParameter::Number;
             }
@@ -275,7 +272,7 @@ typename std::enable_if<
     if constexpr (std::is_same<T, std::wstring>::value) {
         type = TypeParameter::String;
     }
-    else if constexpr (std::is_same<T, int>::value) {
+    else if constexpr (std::is_same<T, long>::value) {
         type = TypeParameter::Number;
     }
     else if constexpr (std::is_same<T, bool>::value) {
@@ -303,7 +300,7 @@ enum class AddinErrorCode : int {
 /**
  * @brief Структура, описывающая параметры терминала.
  */
-struct TerminalConfig {
+struct POSTerminalConfig {
     /**
      * @brief Идентификатор терминала или другого технического средства,
      * предназначенного для совершения операций с использованием платежных карт.
@@ -362,14 +359,108 @@ struct TerminalConfig {
     bool PurchaseWithEnrollment = false;
 };
 
-enum class ProtocolTerminal {
+enum class POSTerminalProtocol {
 	JSON,
 	BaseECR
 };
 
+// Перечисление для типов операций
+enum class POSTerminalOperationType {
+	Pay = 0,
+	ReturnPayment,
+	CancelPayment,
+	Authorisation,
+	AuthConfirmation,
+	CancelAuthorisation,
+	PayWithCashWithdrawal,
+	PayElectronicCertificate,
+	ReturnElectronicCertificate,
+    NoSet
+};
+
+// Массив с представлением типов операций
+static const std::unordered_map<POSTerminalOperationType, std::wstring> OperationTypeNames = {
+	{ POSTerminalOperationType::Pay, L"Pay" },
+	{ POSTerminalOperationType::ReturnPayment, L"ReturnPayment" },
+	{ POSTerminalOperationType::CancelPayment, L"CancelPayment" },
+	{ POSTerminalOperationType::Authorisation, L"Authorisation" },
+	{ POSTerminalOperationType::AuthConfirmation, L"AuthConfirmation" },
+	{ POSTerminalOperationType::CancelAuthorisation, L"CancelAuthorisation" },
+	{ POSTerminalOperationType::PayWithCashWithdrawal, L"PayWithCashWithdrawal" },
+	{ POSTerminalOperationType::PayElectronicCertificate, L"PayElectronicCertificate" },
+	{ POSTerminalOperationType::ReturnElectronicCertificate, L"ReturnElectronicCertificate" }
+};
+
+// Enum for Indicator Statuses
+enum class POSTerminalIndicatorStatus {
+	NotSet = 0,          // Статусы не установлены
+	Success = 1,         // Операция выполнена успешно
+	Failure = 2          // Операция не выполнена
+};
+
+// Пример структуры локалей (можно хранить отдельно или грузить из ресурсов)
+static const std::unordered_map<std::wstring, std::unordered_map<POSTerminalIndicatorStatus, std::wstring>> IndicatorStatusLocales = {
+	{
+		L"ru", {
+			{ POSTerminalIndicatorStatus::NotSet, L"Статусы не установлены" },
+			{ POSTerminalIndicatorStatus::Success, L"Операция выполнена успешно" },
+			{ POSTerminalIndicatorStatus::Failure, L"Операция не выполнена" }
+		}
+	},
+	{
+		L"ua", {
+			{ POSTerminalIndicatorStatus::NotSet, L"Статуси не встановлені" },
+			{ POSTerminalIndicatorStatus::Success, L"Операцію виконано успішно" },
+			{ POSTerminalIndicatorStatus::Failure, L"Операцію не виконано" }
+		}
+	},
+	{
+		L"en", {
+			{ POSTerminalIndicatorStatus::NotSet, L"Status not set" },
+			{ POSTerminalIndicatorStatus::Success, L"Operation successful" },
+			{ POSTerminalIndicatorStatus::Failure, L"Operation failed" }
+		}
+	}
+};
+
+struct POSTerminalOperationParameters {
+    POSTerminalOperationType OperationType = POSTerminalOperationType::NoSet;   // Тип операции
+    std::optional<long> MerchantNumber;       // Номер мерчанта
+    std::optional<long> SubMerchant;		  // Номер субмерчанта (если он есть)
+	std::wstring ConsumerPresentedQR;         // QR-код, представленный пользователем
+    std::optional<long> UseBiometrics;                  // Использование биометрии (0 или 1)
+    std::optional<double> Amount;                       // Сумма операции
+    std::optional<double> AmountOriginalTransaction;    // Сумма оригинальной транзакции
+    std::optional<double> AmountCash;                   // Сумма наличных
+	std::optional<double> Discount; 			        // Сумма скидки
+	std::wstring BasketID;                              // Идентификатор корзины
+    std::optional<double> ElectronicCertificateAmount;  // Сумма электронного сертификата
+    std::optional<double> OwnFundsAmount;               // Сумма собственных средств
+    POSTerminalIndicatorStatus OperationStatus = POSTerminalIndicatorStatus::NotSet;   // Статус операции
+    std::optional<long> AuthorizationType;    // Тип авторизации
+	std::wstring CardNumber;                  // Номер карты
+	std::wstring ReceiptNumber;               // Номер чека
+	std::wstring RRNCode;                     // Код RRN
+	std::wstring AuthorizationCode;           // Код авторизации
+	std::wstring Slip;                        // Текст квитанции
+
+	bool isFacepay() const {
+		return UseBiometrics.has_value() && UseBiometrics.value() == 1;
+	}
+
+	void FacePay(bool useFacePay) {
+		UseBiometrics = useFacePay ? 1 : 0;
+	}
+};
+
+bool isValidPOSTerminalOperationParameters(const POSTerminalOperationParameters& op, const POSTerminalOperationType opType);
+bool isValidPOSTerminalOperationParameters(const POSTerminalOperationParameters& op);
+bool readPOSTerminalOperationParametersFromXml(const std::wstring& xmlContent, POSTerminalOperationParameters& outParams);
+bool writePOSTerminalOperationParametersToXml(const POSTerminalOperationParameters& params, std::wstring& outXml);
+
 std::u16string toXml(const DriverDescription& driver);
 std::u16string toXmlApplication(const DriverDescription& driver);
-std::u16string toXMLTerminalConfig(const TerminalConfig& config);
+std::u16string toXMLTerminalConfig(const POSTerminalConfig& config);
 std::u16string toXMLActions(std::span<const ActionDriver> actions, const LanguageCode currentLang);
 std::wstring generateGUID();
 std::wstring portToWstring(const std::optional<uint16_t>& port);

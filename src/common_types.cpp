@@ -157,9 +157,9 @@ bool ParseParametersFromXML(std::vector<DriverParameter>& parameters, const std:
 
 std::u16string toXmlApplication(const DriverDescription& driver) {
     pugi::xml_document doc;
-    auto decl = doc.append_child(pugi::node_declaration);
-    decl.append_attribute(L"version") = "1.0";
-    decl.append_attribute(L"encoding") = "UTF-8";
+	//auto decl = doc.append_child(pugi::node_declaration);
+	//decl.append_attribute(L"version") = L"1.0";
+	//decl.append_attribute(L"encoding") = L"UTF-8";
 
     auto root = doc.append_child(L"ApplicationSettings");
     root.append_attribute(L"ApplicationName") = driver.Name.c_str();
@@ -172,12 +172,12 @@ std::u16string toXmlApplication(const DriverDescription& driver) {
     return str_utils::to_u16string(xml_str);
 }
 
-std::u16string toXMLTerminalConfig(const TerminalConfig& config)
+std::u16string toXMLTerminalConfig(const POSTerminalConfig& config)
 {
 	pugi::xml_document doc;
-	auto decl = doc.append_child(pugi::node_declaration);
-	decl.append_attribute(L"version") = "1.0";
-	decl.append_attribute(L"encoding") = "UTF-8";
+	//auto decl = doc.append_child(pugi::node_declaration);
+	//decl.append_attribute(L"version") = L"1.0";
+	//decl.append_attribute(L"encoding") = L"UTF-8";
 
 	auto root = doc.append_child(L"TerminalParameters");
 	root.append_attribute(L"TerminalID") = config.TerminalID.c_str();
@@ -198,12 +198,67 @@ std::u16string toXMLTerminalConfig(const TerminalConfig& config)
 	return str_utils::to_u16string(xml_str);
 }
 
+bool isValidPOSTerminalOperationParameters(const POSTerminalOperationParameters& op, const POSTerminalOperationType opType)
+{
+	switch (opType)
+	{
+	case POSTerminalOperationType::Pay:
+		// Validate parameters for "Pay" operation
+		return op.MerchantNumber.has_value() && op.Amount.has_value();
+
+	case POSTerminalOperationType::ReturnPayment:
+		// Validate parameters for "ReturnPayment" operation
+		return op.Amount.has_value() && op.AmountOriginalTransaction.has_value() && !op.ReceiptNumber.empty() && !op.RRNCode.empty();
+
+	case POSTerminalOperationType::CancelPayment:
+		// Validate parameters for "CancelPayment" operation
+		return !op.ReceiptNumber.empty();
+
+	case POSTerminalOperationType::Authorisation:
+		// Validate parameters for "Authorisation" operation
+		return op.Amount > 0 && !op.CardNumber.empty();
+
+	case POSTerminalOperationType::AuthConfirmation:
+		// Validate parameters for "AuthConfirmation" operation
+		return op.Amount > 0 && !op.AuthorizationCode.empty();
+
+	case POSTerminalOperationType::CancelAuthorisation:
+		// Validate parameters for "CancelAuthorisation" operation
+		return !op.AuthorizationCode.empty();
+
+	case POSTerminalOperationType::PayWithCashWithdrawal:
+		// Validate parameters for "PayWithCashWithdrawal" operation
+		return op.Amount > 0 && op.AmountCash > 0 && !op.CardNumber.empty();
+
+	case POSTerminalOperationType::PayElectronicCertificate:
+		// Validate parameters for "PayElectronicCertificate" operation
+		return op.ElectronicCertificateAmount > 0 && !op.BasketID.empty();
+
+	case POSTerminalOperationType::ReturnElectronicCertificate:
+		// Validate parameters for "ReturnElectronicCertificate" operation
+		return op.ElectronicCertificateAmount > 0 && !op.BasketID.empty();
+
+	default:
+		// Unknown operation type
+		break;
+	}
+    return false;
+}
+
+bool isValidPOSTerminalOperationParameters(const POSTerminalOperationParameters& op)
+{
+	if (op.OperationType == POSTerminalOperationType::NoSet) {
+		return false;
+	}
+    return isValidPOSTerminalOperationParameters(op, op.OperationType);
+}
+
 std::u16string toXml(const DriverDescription& driver)
 {
     pugi::xml_document doc;
-    auto decl = doc.append_child(pugi::node_declaration);
-    decl.append_attribute(L"version") = "1.0";
-    decl.append_attribute(L"encoding") = "UTF-8";
+    //auto decl = doc.append_child(pugi::node_declaration);
+    //decl.append_attribute(L"version") = L"1.0";
+    //decl.append_attribute(L"encoding") = L"UTF-8";
 
     auto root = doc.append_child(L"DriverDescription");
     root.append_attribute(L"Name") = driver.Name.c_str();
@@ -231,9 +286,9 @@ std::u16string toXml(const DriverDescription& driver)
 
 std::u16string toXMLActions(std::span<const ActionDriver> actions, const LanguageCode currentLang) {
     pugi::xml_document doc;
-    auto decl = doc.append_child(pugi::node_declaration);
-    decl.append_attribute(L"version") = "1.0";
-    decl.append_attribute(L"encoding") = "UTF-8";
+    //auto decl = doc.append_child(pugi::node_declaration);
+    //decl.append_attribute(L"version") = "1.0";
+    //decl.append_attribute(L"encoding") = "UTF-8";
 
     auto root = doc.append_child(L"Actions");
 
@@ -350,4 +405,131 @@ long stringToLong(const std::wstring& str) {
     }
 
     return 0;
+}
+
+std::optional<long> get_long_attr(const pugi::xml_node& node, const std::wstring& name) {
+    if (!node.attribute(name).empty()) {
+        return node.attribute(name).as_llong(0);
+    }
+	return std::nullopt;
+}
+
+std::optional<double> get_double_attr(const pugi::xml_node& node, const std::wstring& name) {
+    if (!node.attribute(name).empty()) {
+        return node.attribute(name).as_double(0.0);
+    }
+	return std::nullopt;
+}
+
+std::wstring get_wstring_attr(const pugi::xml_node& node, const std::wstring& name) {
+    if (!node.attribute(name).empty()) {
+        return node.attribute(name).as_string();
+    }
+	return L"";
+}
+
+bool readPOSTerminalOperationParametersFromXml(const std::wstring& xmlContent, POSTerminalOperationParameters& outParams) {
+	pugi::xml_document doc;
+	pugi::xml_parse_result result = doc.load_string(xmlContent.c_str());
+
+	if (!result) {
+		return false;
+	}
+
+	pugi::xml_node root = doc.child(L"OperationParameters");
+	if (!root) {
+		return false;
+	}
+
+	outParams.MerchantNumber = get_long_attr(root, L"MerchantNumber");
+	outParams.UseBiometrics = get_long_attr(root, L"UseBiometrics");
+	outParams.Amount = get_double_attr(root, L"Amount");
+	outParams.AmountOriginalTransaction = get_double_attr(root, L"AmountOriginalTransaction");
+	outParams.AmountCash = get_double_attr(root, L"AmountCash");
+	outParams.Discount = get_double_attr(root, L"Discount");
+	outParams.ElectronicCertificateAmount = get_double_attr(root, L"ElectronicCertificateAmount");
+	outParams.OwnFundsAmount = get_double_attr(root, L"OwnFundsAmount");
+	outParams.AuthorizationType = get_long_attr(root, L"AuthorizationType");
+
+	// Optional fields
+	outParams.ConsumerPresentedQR = get_wstring_attr(root, L"ConsumerPresentedQR");
+	outParams.BasketID = get_wstring_attr(root, L"BasketID");
+	auto _op = get_long_attr(root, L"OperationStatus");
+	if (_op.has_value()) {
+		outParams.OperationStatus = static_cast<POSTerminalIndicatorStatus>(_op.value());
+	}
+	outParams.CardNumber = get_wstring_attr(root, L"CardNumber");
+	outParams.ReceiptNumber = get_wstring_attr(root, L"ReceiptNumber");
+	outParams.RRNCode = get_wstring_attr(root, L"RRNCode");
+	outParams.AuthorizationCode = get_wstring_attr(root, L"AuthorizationCode");
+
+	return true;
+}
+
+bool writePOSTerminalOperationParametersToXml(const POSTerminalOperationParameters& params, std::wstring& outXml)
+{
+	pugi::xml_document doc;
+
+	// Create the root node
+	auto root = doc.append_child(L"OperationParameters");
+
+	// Add attributes to the root node
+	if (params.MerchantNumber.has_value()) {
+		root.append_attribute(L"MerchantNumber") = params.MerchantNumber.value();
+	}
+	if (params.SubMerchant.has_value()) {
+		root.append_attribute(L"SubMerchant") = params.SubMerchant.value();
+	}
+	if (!params.ConsumerPresentedQR.empty()) {
+		root.append_attribute(L"ConsumerPresentedQR") = params.ConsumerPresentedQR.c_str();
+	}
+	if (params.UseBiometrics.has_value()) {
+		root.append_attribute(L"UseBiometrics") = params.UseBiometrics.value();
+	}
+	if (params.Amount.has_value()) {
+		root.append_attribute(L"Amount") = params.Amount.value();
+	}
+	if (params.OperationType == POSTerminalOperationType::CancelPayment && params.AmountOriginalTransaction.has_value()) {
+		root.append_attribute(L"AmountOriginalTransaction") = params.AmountOriginalTransaction.value();
+	}
+	if (params.OperationType == POSTerminalOperationType::PayWithCashWithdrawal && params.AmountCash.has_value()) {
+		root.append_attribute(L"AmountCash") = params.AmountCash.value();
+	}
+	if (params.Discount.has_value()) {
+		root.append_attribute(L"Discount") = params.Discount.value();
+	}
+	if (params.OperationType == POSTerminalOperationType::PayElectronicCertificate && !params.BasketID.empty()) {
+		root.append_attribute(L"BasketID") = params.BasketID.c_str();
+	}
+	if (params.OperationType == POSTerminalOperationType::PayElectronicCertificate && params.ElectronicCertificateAmount.has_value()) {
+		root.append_attribute(L"ElectronicCertificateAmount") = params.ElectronicCertificateAmount.value();
+	}
+	if (params.OperationType == POSTerminalOperationType::PayElectronicCertificate && params.OwnFundsAmount.has_value()) {
+		root.append_attribute(L"OwnFundsAmount") = params.OwnFundsAmount.value();
+	}
+    if (params.OperationType == POSTerminalOperationType::PayElectronicCertificate) {
+        root.append_attribute(L"OperationStatus") = static_cast<int>(params.OperationStatus);
+    }
+	if (params.AuthorizationType.has_value()) {
+		root.append_attribute(L"AuthorizationType") = params.AuthorizationType.value();
+	}
+	if (!params.CardNumber.empty()) {
+		root.append_attribute(L"CardNumber") = params.CardNumber.c_str();
+	}
+	if (!params.ReceiptNumber.empty()) {
+		root.append_attribute(L"ReceiptNumber") = params.ReceiptNumber.c_str();
+	}
+	if (!params.RRNCode.empty()) {
+		root.append_attribute(L"RRNCode") = params.RRNCode.c_str();
+	}
+	if (!params.AuthorizationCode.empty()) {
+		root.append_attribute(L"AuthorizationCode") = params.AuthorizationCode.c_str();
+	}
+
+    // Convert the XML document to a string
+	std::wostringstream oss;
+	doc.save(oss);
+	outXml = oss.str();
+
+	return true;
 }

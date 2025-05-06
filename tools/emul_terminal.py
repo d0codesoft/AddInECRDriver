@@ -40,8 +40,10 @@ def handle_request(data: dict) -> dict:
         current_year = datetime.datetime.now().year
         current_date = datetime.datetime.now().strftime("%d.%m.%Y")
         trn_status = random.choice([1, 2, 3, 4])  # Random transaction status
+        error = False
         response_code = None
         error_description = ""
+        param = data.get("params", {})
 
         error_mapping = {
             2: [
@@ -63,12 +65,13 @@ def handle_request(data: dict) -> dict:
         if trn_status in [2, 3, 4]:  # Declined, Reversed, or Canceled
             response_code = f"{random.randint(1, 1008):04}"
             error_description = random.choice(error_mapping[trn_status])
+            error = True
 
         return {
             "method": "Purchase",
             "step": 0,
             "params": {
-                "amount": f"{random.uniform(0.01, 1000.00):.2f}",
+                "amount": f"{param.get('amount')}",
                 "approvalCode": f"{random.randint(100000, 999999)}",
                 "captureReference": "",
                 "cardExpiryDate": f"{random.randint(current_year, current_year + 10)}",
@@ -99,7 +102,7 @@ def handle_request(data: dict) -> dict:
                 "paymentSystem": "VISA",
                 "subMerchant": ""
             },
-            "error": response_code if True else False,
+            "error": error,
             "errorDescription": error_description
         }
     return {"error": True, "errorDescription": "Unknown method"}

@@ -22,13 +22,13 @@ std::wstring convertStringToWString(const std::string& str) {
     size_t pos;
     size_t begin = 0;
     std::wstring ret;
-#if defined(OS_WINDOWS)
+#if defined(CURRENT_OS_WINDOWS)
     int size_needed = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, nullptr, 0);
     std::wstring wstr(size_needed - 1, L'\0'); // -1 to exclude null terminator
 
     MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, &wstr[0], size_needed);
 	ret = wstr;
-#elif defined(OS_LINUX) || defined(OS_MACOS)
+#elif defined(CURRENT_OS_LINUX) || defined(CURRENT_OS_MACOS)
     size_t size_needed = std::mbstowcs(nullptr, utf8Str.c_str(), 0) + 1;
     std::wstring wstr(size_needed, L'\0');
     std::mbstowcs(&wstr[0], utf8Str.c_str(), size_needed);
@@ -62,13 +62,13 @@ std::string convertWStringToString(const std::wstring& wstr) {
     size_t begin = 0;
     std::string ret;
 
-#if defined(OS_WINDOWS)
+#if defined(CURRENT_OS_WINDOWS)
     int size_needed = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, nullptr, 0, nullptr, nullptr);
     std::string utf8Str(size_needed - 1, '\0'); // -1 to exclude null terminator
 
     WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, &utf8Str[0], size_needed, nullptr, nullptr);
 	ret = utf8Str;
-#elif defined(OS_LINUX) || defined(OS_MACOS)
+#elif defined(CURRENT_OS_LINUX) || defined(CURRENT_OS_MACOS)
     size_t size_needed = std::wcstombs(nullptr, wstr.c_str(), 0) + 1;
     std::string utf8Str(size_needed, '\0');
     std::wcstombs(&utf8Str[0], wstr.c_str(), size_needed);
@@ -171,7 +171,7 @@ std::u16string utf8ToUtf16(const std::string& source) {
         return {};
     }
 
-#if defined(OS_WINDOWS)
+#if defined(CURRENT_OS_WINDOWS)
     int len = MultiByteToWideChar(CP_UTF8, 0, source.c_str(), -1, nullptr, 0);
     if (len <= 0) {
         throw std::runtime_error("Failed to get UTF-16 size.");

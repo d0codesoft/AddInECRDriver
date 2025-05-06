@@ -15,7 +15,7 @@ std::wofstream Logger::_LogFile;
 size_t Logger::_maxFileSize;
 size_t Logger::_maxFileCount;
 bool Logger::isInitialized = false;
-const std::filesystem::path Logger::current_log_path = std::filesystem::path(_logDirectory) / _logNameTemplate;
+std::filesystem::path Logger::current_log_path = std::filesystem::path(_logDirectory) / _logNameTemplate;
 
 Logger::Logger(const std::wstring& channelName) : mChannelName(channelName) {
 }
@@ -177,9 +177,10 @@ bool Logger::initialize(const std::wstring& logNameTemplate, const std::wstring&
 		return true;
 	}
 
-    std::lock_guard<std::mutex> lock(mutexLog);
+    //std::lock_guard<std::mutex> lock(mutexLog);
 	if (!logDirectory.empty()) {
         _logDirectory = logDirectory;
+        current_log_path = std::filesystem::path(_logDirectory) / _logNameTemplate;
     }
     if (!logNameTemplate.empty()) {
         _logNameTemplate = logNameTemplate;
@@ -195,7 +196,7 @@ bool Logger::initialize(const std::wstring& logNameTemplate, const std::wstring&
         }
     }
 
-	if (_initialized) {
+	if (!_initialized) {
         _initialized = initializeFileStream();
 	}
 

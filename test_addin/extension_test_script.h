@@ -111,7 +111,7 @@ private:
 					return false;
                 }
 
-                if (parsedCall.callType== CallType::CallAsFunc) {
+                if (parsedCall.callType == CallType::CallAsFunc) {
                     tVariant retValue;
 					this->extTest_->testCallAsFunc(execName, params, retValue);
 
@@ -333,15 +333,31 @@ private:
 		paramsExecute[_name].clear();
         int iCount = 0;
         for (const auto& param : params) {
-            if (param.vt == VTYPE_PWSTR || param.vt == VTYPE_PSTR) {
+            if (param.vt == VTYPE_EMPTY) {
+				paramsExecute[_name].emplace_back(std::monostate{});
+				wconsole << L"  " << _name << L"[" << iCount << L"]" << L" = " << L"Empty" << std::endl;
+            }
+            else if (param.vt == VTYPE_PWSTR || param.vt == VTYPE_PSTR) {
                 std::wstring value = getStringValue(param);
                 paramsExecute[_name].emplace_back(value);
 				wconsole << L"  " << _name << L"[" << iCount << L"]" << L" = " << value << std::endl;
             }
             else if (param.vt == VTYPE_I4) {
-                paramsExecute[_name].emplace_back(param.intVal);
-                wconsole << L"  " << _name << L"[" << iCount << L"]" << L" = " << param.intVal << std::endl;
+                paramsExecute[_name].emplace_back(static_cast<long>(param.lVal));
+                wconsole << L"  " << _name << L"[" << iCount << L"]" << L" = " << param.lVal << std::endl;
             }
+            else if (param.vt == VTYPE_I2) {
+				paramsExecute[_name].emplace_back(static_cast<long>(param.shortVal));
+				wconsole << L"  " << _name << L"[" << iCount << L"]" << L" = " << param.shortVal << std::endl;
+            }
+			else if (param.vt == VTYPE_INT) {
+				paramsExecute[_name].emplace_back(static_cast<long>(param.intVal));
+				wconsole << L"  " << _name << L"[" << iCount << L"]" << L" = " << param.intVal << std::endl;
+			}
+			else if (param.vt == VTYPE_UINT) {
+				paramsExecute[_name].emplace_back(static_cast<long>(param.uintVal));
+				wconsole << L"  " << _name << L"[" << iCount << L"]" << L" = " << param.uintVal << std::endl;
+			}
             else if (param.vt == VTYPE_R8) {
                 paramsExecute[_name].emplace_back(param.dblVal);
                 wconsole << L"  " << _name << L"[" << iCount << L"]" << L" = " << param.dblVal << std::endl;
@@ -358,7 +374,11 @@ private:
         }
 
         //result 
-        if (result.vt == VTYPE_PWSTR || result.vt == VTYPE_PSTR) {
+		if (result.vt == VTYPE_EMPTY) {
+			paramsExecute[_name].emplace_back(std::monostate{});
+			wconsole << L"  " << _name << L"[" << iCount << L"]" << L" = " << L"Empty" << std::endl;
+		}
+        else  if (result.vt == VTYPE_PWSTR || result.vt == VTYPE_PSTR) {
             std::wstring value = getStringValue(result);
             paramsExecute[_name].emplace_back(value);
             wconsole << L"  R " << _name << L"[" << iCount << L"]" << L" = " << value << std::endl;
@@ -385,7 +405,10 @@ private:
         std::wstring _name = str_utils::to_wstring(nameResultValue);
         paramsExecute[_name].clear();
         for (const auto& param : params) {
-            if (param.vt == VTYPE_PWSTR || param.vt == VTYPE_PSTR) {
+			if (param.vt == VTYPE_EMPTY) {
+				paramsExecute[_name].emplace_back(std::monostate{});
+			}
+			else if (param.vt == VTYPE_PWSTR || param.vt == VTYPE_PSTR) {
                 std::wstring value = getStringValue(param);
                 paramsExecute[_name].emplace_back(value);
             }

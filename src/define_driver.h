@@ -20,7 +20,7 @@
 
 // Выбор текущей версии драйвера (можно изменить в зависимости от требований)
 #ifndef DRIVER_REQUIREMENTS_VERSION
-#define DRIVER_REQUIREMENTS_VERSION DRIVER_REQUIREMENTS_VERSION_3_2
+#define DRIVER_REQUIREMENTS_VERSION DRIVER_REQUIREMENTS_VERSION_3_4
 #endif
 
 #endif // DEFINEDRIVER_H

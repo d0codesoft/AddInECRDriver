@@ -50,7 +50,7 @@ const SettingSettings SettingDriverPos::m_settings = {
                         L"Рівень логування", L"Виберіть рівень логування", L"Number", L"", L"0", false,
 					    {
                          { getLogLevelIndex(LogLevel::Error), getLogLevelName(LogLevel::Error) },
-                         { getLogLevelIndex(LogLevel::Error), getLogLevelName(LogLevel::Debug) }
+                         { getLogLevelIndex(LogLevel::Debug), getLogLevelName(LogLevel::Debug) }
                         }
                     },
 				}
@@ -76,9 +76,9 @@ const SettingSettings& SettingDriverPos::getSettings()
 std::u16string SettingDriverPos::getSettingXML()
 {
     pugi::xml_document doc;
-    auto decl = doc.append_child(pugi::node_declaration);
-    decl.append_attribute(L"version") = L"1.0";
-    decl.append_attribute(L"encoding") = L"UTF-8";
+    //auto decl = doc.append_child(pugi::node_declaration);
+    //decl.append_attribute(L"version") = L"1.0";
+    //decl.append_attribute(L"encoding") = L"UTF-8";
 
     auto root = doc.append_child(L"Settings");
 
@@ -121,9 +121,9 @@ std::u16string SettingDriverPos::getSettingXML()
 
 std::u16string toXML(const SettingSettings& settings, std::span<const DriverParameter> parameters) {
 	pugi::xml_document doc;
-	auto decl = doc.append_child(pugi::node_declaration);
-	decl.append_attribute(L"version") = L"1.0";
-	decl.append_attribute(L"encoding") = L"UTF-8";
+	//auto decl = doc.append_child(pugi::node_declaration);
+	//decl.append_attribute(L"version") = L"1.0";
+	//decl.append_attribute(L"encoding") = L"UTF-8";
 
 	auto root = doc.append_child(L"Settings");
 
@@ -150,7 +150,7 @@ std::u16string toXML(const SettingSettings& settings, std::span<const DriverPara
 						paramNode.append_attribute(L"DefaultValue") = std::wstring(strValue->begin(), strValue->end());
 					}
                     else {
-						paramNode.append_attribute(L"DefaultValue") = L"";
+						paramNode.append_attribute(L"DefaultValue") = param.DefaultValue;
                     }
 				}
 				else if (!param.DefaultValue.empty()) {

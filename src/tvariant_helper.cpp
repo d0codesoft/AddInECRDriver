@@ -127,7 +127,11 @@ bool VariantHelper::isValueInt(const tVariant& var) {
 
 bool VariantHelper::isValueLong(const tVariant& var)
 {
-	return TV_VT(&var) == VTYPE_HRESULT;
+	return TV_VT(&var) == VTYPE_I4 || TV_VT(&var) == VTYPE_INT
+		|| TV_VT(&var) == VTYPE_I1 || TV_VT(&var) == VTYPE_UI4
+		|| TV_VT(&var) == VTYPE_UI2 || TV_VT(&var) == VTYPE_UI1
+		|| TV_VT(&var) == VTYPE_UINT || TV_VT(&var) == VTYPE_ERROR
+        || TV_VT(&var) == VTYPE_HRESULT;
 }
 
 bool VariantHelper::isValueBool(const tVariant& var) {
@@ -148,4 +152,43 @@ bool VariantHelper::isValueArray(const tVariant& var) {
 
 bool VariantHelper::isValueEmpty(const tVariant& var) {
     return TV_VT(&var) == VTYPE_EMPTY;
+}
+
+std::wstring VariantHelper::getTypeValue(const tVariant& var)
+{
+	switch (TV_VT(&var))
+	{
+	case VTYPE_EMPTY: return L"EMPTY";
+	case VTYPE_NULL: return L"NULL";
+	case VTYPE_I2: return L"I2";
+	case VTYPE_I4: return L"I4";
+	case VTYPE_R4: return L"R4";
+	case VTYPE_R8: return L"R8";
+	case VTYPE_DATE: return L"DATE";
+	case VTYPE_TM: return L"TM";
+	case VTYPE_PSTR: return L"PSTR";
+	case VTYPE_INTERFACE: return L"INTERFACE";
+	case VTYPE_ERROR: return L"ERROR";
+	case VTYPE_BOOL: return L"BOOL";
+	case VTYPE_VARIANT: return L"VARIANT";
+	case VTYPE_I1: return L"I1";
+	case VTYPE_UI1: return L"UI1";
+	case VTYPE_UI2: return L"UI2";
+	case VTYPE_UI4: return L"UI4";
+	case VTYPE_I8: return L"I8";
+	case VTYPE_UI8: return L"UI8";
+	case VTYPE_INT: return L"INT";
+	case VTYPE_UINT: return L"UINT";
+	case VTYPE_HRESULT: return L"HRESULT";
+	case VTYPE_PWSTR: return L"PWSTR";
+	case VTYPE_BLOB: return L"BLOB";
+	case VTYPE_CLSID: return L"CLSID";
+	case VTYPE_STR_BLOB: return L"STR_BLOB";
+	case VTYPE_VECTOR: return L"VECTOR";
+	case VTYPE_ARRAY: return L"ARRAY";
+	case VTYPE_BYREF: return L"BYREF";
+	case VTYPE_RESERVED: return L"RESERVED";
+	case VTYPE_ILLEGAL: return L"ILLEGAL";
+	default: return L"UNKNOWN";
+	}
 }

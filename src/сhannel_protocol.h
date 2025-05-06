@@ -11,6 +11,8 @@
 #ifndef ICHANNELPROTOCOL_H
 #define ICHANNELPROTOCOL_H
 
+#define WAIT_MILISECONDS_MESSAGE 5000
+
 /// All non-ASCII characters, including Cyrillic characters, 
 /// are transmitted as the value of a JSON field in utf-8 encoding.
 
@@ -25,54 +27,6 @@ struct DataPayResult {
 	std::wstring authorizationCode;
 	std::wstring slip;
 	std::wstring merchantId;
-};
-
-struct PaymentParameters {
-	double amount;                              // The payment amount
-	std::wstring merchantId;                   // Merchant ID
-	std::optional<std::wstring> cardNumber;    // Optional card number
-	std::optional<std::wstring> receiptNumber; // Optional receipt number
-	double discount = 0;                       // Discount amount (default: 0)
-	std::optional<std::wstring> subMerchant;   // Sub-merchant ID (default: empty string)
-	bool facepay = false;                      // Facepay flag (default: false)
-
-	// Constructor for easy initialization
-	PaymentParameters(
-		double amount,
-		const std::wstring& merchantId,
-		const std::wstring* cardNumber = nullptr,
-		const std::wstring* receiptNumber = nullptr,
-		double discount = 0,
-		const std::wstring* subMerchant = nullptr,
-		bool facepay = false
-	)
-		: amount(amount),
-		merchantId(merchantId),
-		cardNumber(cardNumber ? std::optional<std::wstring>(*cardNumber) : std::nullopt),
-		receiptNumber(receiptNumber ? std::optional<std::wstring>(*receiptNumber) : std::nullopt),
-		discount(discount),
-		subMerchant(subMerchant ? std::optional<std::wstring>(*subMerchant) : std::nullopt),
-		facepay(facepay) {
-	}
-
-	bool isValid() const {
-		// Validate amount (must be greater than 0)
-		if (amount <= 0) {
-			return false;
-		}
-
-		// Validate merchantId (must not be empty)
-		if (merchantId.empty()) {
-			return false;
-		}
-
-		// Validate discount (must not be negative)
-		if (discount < 0) {
-			return false;
-		}
-		// All validations passed
-		return true;
-	}
 };
 
 struct receiveData {
@@ -155,60 +109,61 @@ struct sendData {
 	}
 };
 
-/// @brief Interface for sending and receiving JSON data over a connection.
-class IChannelProtocol {
-public:
-	explicit IChannelProtocol(std::unique_ptr<IConnection> connection)
-		: connection_(std::move(connection)) {
-	}
-	virtual ~IChannelProtocol() {
-	}
-
-	virtual const IConnection* getConnection() const {
-		return connection_.get();
-	}
-
-	/// @brief Sends JSON data over the connection.
-	/// All non-ASCII characters, including Cyrillic characters, 
-	/// are transmitted as the value of a JSON field in utf-8 encoding.
-	/// @param jsonData JSON object to send.
-	/// @return True if the data was sent successfully.
-	virtual bool sendJson(const sendData& jsonData) = 0;
-
-	/// @brief Receives JSON data from the connection.
-	/// @param timeoutMs Timeout in milliseconds.
-	/// @return Parsed JSON object if data is received, otherwise std::nullopt.
-	virtual std::optional<receiveData> receiveJson(std::optional<uint32_t> timeoutMs = 15000) = 0;
-
-	/// @brief Connecting to a resource.
-	/// @param address Connection address (COM port, IP address or URL for WebSocket).
-	/// @param port Port for TCP/IP connection (optional, default 2000 ).
-	/// @return true, if the connection is successful, otherwise false.
-	virtual bool connect(const std::string& address, std::optional<uint16_t> port = 2000) = 0;
-
-	/// @brief Disconnecting from the resource.
-	virtual void disconnect() = 0;
-
-	/// @brief Checking the connection status.
-	/// @return true, if the connection is active.
-	virtual bool isConnected() const = 0;
-
-
-	virtual bool Pay(const PaymentParameters paramPayement, DataPayResult& outDataResult, std::wstring& outError) = 0;
-
-protected:
-	std::unique_ptr<IConnection> connection_;
+enum class POSTerminalState {
+	Idle,
+	WaitingResponse,
+	Busy,
+	Error,
+	OperationCompleted,
+	OperationFailed,
+	MethodNotImplemented
 };
 
-class JsonChannel : public IChannelProtocol {
+// Observer interface for error notifications
+class INotifyObserver {
 public:
-	explicit JsonChannel(std::unique_ptr<IConnection> connection)
-		: IChannelProtocol(std::move(connection)) {
+	virtual ~INotifyObserver() = default;
+	virtual void onNotify(const std::wstring& errorMessage) = 0;
+};
+
+class IChannelProtocol {
+public:
+	virtual std::vector<uint8_t> encodeRequest(POSTerminalOperationParameters& op) = 0;
+	virtual void pushResponse(const std::vector<uint8_t>& rawData) = 0;
+	virtual std::optional<receiveData> getResponseData() = 0;
+	virtual ~IChannelProtocol() = default;
+};
+
+class JsonChannelProtocol : public IChannelProtocol {
+public:
+	JsonChannelProtocol() {
+		dataBuffer_.reserve(1024);
+	}
+	std::vector<uint8_t> encodeRequest(POSTerminalOperationParameters& op) override;
+
+	void pushResponse(const std::vector<uint8_t>& rawData) override;
+
+	std::optional<receiveData> getResponseData() override;
+
+private:
+
+	void _analyzeData();
+	void _handleParsedJson(const jsoncons::json& json);
+
+	std::vector<uint8_t> dataBuffer_;
+	std::queue<receiveData> dataQueue_;
+	std::mutex queueMutex_;
+}
+
+class POSTerminalController {
+public:
+	explicit POSTerminalController(std::unique_ptr<IConnection> connection, std::unique_ptr<IChannelProtocol> protocol)
+		: connection_(std::move(connection)), protocol_(std::move(protocol)) {
 	}
 	
-	~JsonChannel() override {
+	~POSTerminalController() override {
 		if (connection_ && connection_->isConnected()) {
-			disconnect();  // безопасно, ты всё ещё в производном классе
+			disconnect();
 		}
 	}
 
@@ -219,11 +174,19 @@ public:
 
 	bool isConnected() const override;
 
-	bool sendJson(const sendData& jsonData) override;
+	bool processTransaction(POSTerminalOperationParameters& paramPayement, std::wstring& outError) override;
 
-	std::optional<receiveData> receiveJson(std::optional<uint32_t> timeoutMs = 15000) override;
+	std::wstring getLastError() const {
+		return lastError_;
+	}
 
-	bool Pay(const PaymentParameters paramPayement, DataPayResult& outDataResult, std::wstring& outError) override;
+	POSTerminalState getState() const {
+		return state_;
+	}
+
+	bool isBusy() const {
+		return state_ == POSTerminalState::Busy || state_ == POSTerminalState::WaitingResponse;
+	}
 
 private:
 	
@@ -242,8 +205,8 @@ private:
 		cv.notify_all();
 	}
 
-	void _handleError(const std::string& error) {
-		
+	void _handleError(const std::wstring& error) {
+		lastError_ = error;
 	}
 
 	bool _isValidResponse(const receiveData& recvData) {
@@ -265,54 +228,67 @@ private:
 		return true;
 	}
 
+	void _transitionTo(POSTerminalState newState);
+	void _tick(); // обновляет состояние FSM
+
 	std::queue<receiveData> dataQueue = {};
 	std::mutex queueMutex = {};
 	std::condition_variable cv = {};
 
 	std::atomic<bool> stopListening_{ false };
-};
 
-class BaseECRChannel : public IChannelProtocol {
+	std::unique_ptr<IConnection> connection_;
+	std::unique_ptr<IChannelProtocol> protocol_;
+
+	std::wstring lastError_ = L"";
+
+	POSTerminalState state_ = POSTerminalState::Idle;
+}
+
+class POSTerminalControllerFactory {
 public:
-	explicit BaseECRChannel(std::unique_ptr<IConnection> connection)
-		: IChannelProtocol(std::move(connection)) {
-	}
+	static std::unique_ptr<POSTerminalController> create(POSTerminalProtocol protocol, ConnectionType connectType) {
 
-	bool connect(const std::string& address, std::optional<uint16_t> port = 2000) override {
-		return connection_->connect(address, port);
-	}
+		std::unique_ptr<IConnection> connection;
+		std::unique_ptr<IChannelProtocol> channelProtocol;
+		switch (connectType)
+		{
+		case ConnectionType::TCP:
+			connection = std::make_unique<TcpConnection>();
+			break;
+		case ConnectionType::COM:
+			connection = std::make_unique<ComConnection>();
+			break;
+		case ConnectionType::WebSocket:
+			connection = std::make_unique<WebSocketConnection>();
+			break;
+		case ConnectionType::USB:
+			//connection = std::make_unique<UsbConnection>();
+			connection = std::make_unique<ComConnection>();
+			break;
+		default:
+			throw std::invalid_argument("Unsupported connection type");
+		}
 
-	void disconnect() override;
-
-	bool isConnected() const override;
-
-	bool sendJson(const sendData& jsonData) override {
-		// Implement the BaseECR specific send logic here
-		return false;
-	}
-
-	std::optional<receiveData> receiveJson(std::optional<uint32_t> timeoutMs = 15000) override {
-		// Implement the BaseECR specific receive logic here
-		return std::nullopt;
-	}
-
-	bool Pay(const PaymentParameters paramPayement, DataPayResult& outDataResult, std::wstring& outError) override {
-		// Implement the BaseECR specific payment logic here
-		return false;
-	}
-};
-
-class ChannelProtocolFactory {
-public:
-	static std::unique_ptr<IChannelProtocol> create(ProtocolTerminal protocol, std::unique_ptr<IConnection> connection) {
 		switch (protocol) {
-		case ProtocolTerminal::JSON:
-			return std::make_unique<JsonChannel>(std::move(connection));
-		case ProtocolTerminal::BaseECR:
-			return std::make_unique<BaseECRChannel>(std::move(connection));
+		case POSTerminalProtocol::JSON:
+			channelProtocol = std::make_unique<JsonChannelProtocol>();
+			break;
+		case POSTerminalProtocol::BaseECR:
+			throw std::invalid_argument("Unsupported protocol type");
+			//channelProtocol = std::make_unique<JsonChannelProtocol>();
+			break;
 		default:
 			throw std::invalid_argument("Unsupported protocol type");
 		}
+
+		if (!connection) {
+			throw std::runtime_error("Failed to create connection");
+		}
+		if (!channelProtocol) {
+			throw std::runtime_error("Failed to create channel protocol");
+		}
+		return std::make_unique<POSTerminalController>(std::move(connection), std::move(channelProtocol));
 	}
 };
 

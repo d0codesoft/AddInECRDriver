@@ -31,14 +31,14 @@
 
 // Detect OS
 #if defined(_WIN32) || defined(_WIN64)
-#define OS_WINDOWS
+#define CURRENT_OS_WINDOWS
 #include <windows.h>
 #include <tchar.h>
 #elif defined(__APPLE__) || defined(__MACH__)
-#define OS_MACOS
+#define CURRENT_OS_MACOS
 #include <unistd.h>
 #elif defined(__linux__)
-#define OS_LINUX
+#define CURRENT_OS_LINUX
 #include <unistd.h>
 #include <pthread.h>
 #else

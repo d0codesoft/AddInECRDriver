@@ -4,10 +4,10 @@
 #include <filesystem>
 #include "logger.h"
 
-#if defined(OS_WINDOWS)
+#if defined(CURRENT_OS_WINDOWS)
 #include <windows.h>
 #include <shlobj.h>
-#elif defined(OS_MACOS) || defined(OS_LINUX)
+#elif defined(CURRENT_OS_MACOS) || defined(CURRENT_OS_LINUX)
 #include <unistd.h>
 #include <sys/types.h>
 #include <pwd.h>

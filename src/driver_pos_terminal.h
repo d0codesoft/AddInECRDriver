@@ -81,10 +81,13 @@ public:
     bool Settlement(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
 	bool PrintSlipOnTerminal(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) override;
 
-	void AddActionDriver(const std::u16string& name_en, const std::u16string& name_ru, const std::u16string& caption_en, const std::u16string& caption_ru, CallAsFunc1C ptr_method) override;
+	void AddActionDriver(const std::wstring& name_en, const std::wstring& name_ru, const std::wstring& caption_en, const std::wstring& caption_ru, CallAsFunc1C ptr_method) override;
     std::span<const ActionDriver> getActions() override;
 
-    std::optional<TerminalConfig> getTerminalConfig(std::wstring& deviceID) override;
+    std::optional<POSTerminalConfig> getTerminalConfig(std::wstring& deviceID) override;
+
+    // Action driver
+	bool ActionOpenFileLog(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray);
 
 protected:
 
@@ -100,6 +103,7 @@ protected:
     std::optional<std::reference_wrapper<std::unique_ptr<IChannelProtocol>>> getDeviceConnection(tVariant* paramDeviceID, std::wstring& deviceId);
 
     void _handleError(const std::wstring& methodName, const std::wstring& messageError, const bool driverErrorNotify = false, const AddinErrorCode errorCode = AddinErrorCode::VeryImportant);
+    inline bool fail(tVariant* pvarRetValue, const std::wstring& context, const std::wstring& errorKey);
 
 private:
 
@@ -279,10 +283,10 @@ private:
 	std::vector<DriverParameter> m_ParamConnection = {};
 	
     ConnectionType m_connectionType = ConnectionType::TCP;
-	ProtocolTerminal m_protocolTerminal = ProtocolTerminal::JSON;
+	POSTerminalProtocol m_protocolTerminal = POSTerminalProtocol::JSON;
 
 	std::unordered_map<std::wstring, std::unique_ptr<IChannelProtocol>> m_connections = {};
-	std::unordered_map<std::wstring, TerminalConfig> m_configTerminals = {};
+	std::unordered_map<std::wstring, POSTerminalConfig> m_configTerminals = {};
 
     DriverDescription m_driverDescription;
     std::unique_ptr<LicenseManager> m_licenseManager;

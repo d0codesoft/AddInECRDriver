@@ -75,7 +75,7 @@ public:
 
     virtual ~IDriverPosTerminal() = default;
 
-	virtual std::optional<TerminalConfig> getTerminalConfig(std::wstring& deviceID) = 0;
+	virtual std::optional<POSTerminalConfig> getTerminalConfig(std::wstring& deviceID) = 0;
 };
 
 #endif // IDRIVERPOSTERMINAL_H

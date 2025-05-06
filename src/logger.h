@@ -74,7 +74,7 @@ private:
     static size_t _maxFileCount;
     static std::wofstream _LogFile;
 	static bool isInitialized;
-	static const std::filesystem::path current_log_path;
+	static std::filesystem::path current_log_path;
 };
 
 #ifdef NDEBUG

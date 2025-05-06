@@ -28,6 +28,7 @@ public:
     static bool isValueDate(const tVariant& var);
     static bool isValueArray(const tVariant& var);
     static bool isValueEmpty(const tVariant& var);
+	static std::wstring getTypeValue(const tVariant& var);
 };
 
 #endif // TVARIANT_HELPER_H
