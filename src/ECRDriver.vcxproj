@@ -145,7 +145,7 @@
       <ShowProgress>LinkVerboseLib</ShowProgress>
       <AdditionalLibraryDirectories>..\libs\x64\Debug;..\..\boost\stage\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ModuleDefinitionFile>exports.def</ModuleDefinitionFile>
-      <AdditionalDependencies>icuucd.lib;icuind.lib;icuiod.lib;icudtd.lib;pugixml.lib;libssl.lib;libcrypto.lib;Ws2_32.lib;Crypt32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>pugixml.lib;libssl.lib;libcrypto.lib;Ws2_32.lib;Crypt32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">

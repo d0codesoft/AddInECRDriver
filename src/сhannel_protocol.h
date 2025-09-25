@@ -134,6 +134,7 @@ public:
 	virtual ~IChannelProtocol() = default;
 };
 
+
 class JsonChannelProtocol : public IChannelProtocol {
 public:
 	JsonChannelProtocol() {
@@ -153,15 +154,15 @@ private:
 	std::vector<uint8_t> dataBuffer_;
 	std::queue<receiveData> dataQueue_;
 	std::mutex queueMutex_;
-}
+};
 
 class POSTerminalController {
 public:
 	explicit POSTerminalController(std::unique_ptr<IConnection> connection, std::unique_ptr<IChannelProtocol> protocol)
 		: connection_(std::move(connection)), protocol_(std::move(protocol)) {
 	}
-	
-	~POSTerminalController() override {
+
+	~POSTerminalController() {
 		if (connection_ && connection_->isConnected()) {
 			disconnect();
 		}
@@ -189,7 +190,7 @@ public:
 	}
 
 private:
-	
+
 	bool _connect(const std::string& address, std::optional<uint16_t> port = 2000);
 
 	void _processIncomingData(const std::vector<uint8_t>& data);
@@ -210,7 +211,7 @@ private:
 	}
 
 	bool _isValidResponse(const receiveData& recvData) {
-		
+
 		if (recvData.error) {
 			return false;
 		}
@@ -243,8 +244,9 @@ private:
 	std::wstring lastError_ = L"";
 
 	POSTerminalState state_ = POSTerminalState::Idle;
-}
+};
 
+// Factory reset data and move to Idle state
 class POSTerminalControllerFactory {
 public:
 	static std::unique_ptr<POSTerminalController> create(POSTerminalProtocol protocol, ConnectionType connectType) {

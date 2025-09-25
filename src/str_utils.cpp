@@ -1,705 +1,552 @@
 #include "pch.h"
 #include "str_utils.h"
 #include <vector>
-#include <unicode/ucnv.h>
 
-	std::wstring str_utils::to_wstring(const std::string& str, const std::string& encoding) {
-		// Create a Unicode converter for the given encoding
-		UErrorCode error = U_ZERO_ERROR;
-		UConverter* converter = ucnv_open(encoding.c_str(), &error);
-		if (U_FAILURE(error)) {
-			std::cerr << "Failed to create converter: " << u_errorName(error) << std::endl;
-			return std::wstring();
-		}
-
-		// Convert the input string to UnicodeString
-		icu::UnicodeString unicodeStr(str.c_str(), str.length(), converter, error);
-		if (U_FAILURE(error)) {
-			std::cerr << "Failed to convert string: " << u_errorName(error) << std::endl;
-			ucnv_close(converter);
-			return std::wstring();
-		}
-
-		// Close the converter
-		ucnv_close(converter);
-		
-		std::wstring wstr = {};
-
-		// Determine the size of wchar_t
-#if WCHAR_MAX == UINT32_MAX
-	// Linux: wchar_t is UTF-32
-		int32_t length = unicodeStr.length();
-		std::vector<UChar32> utf32Buffer(length);
-		unicodeStr.toUTF32(utf32Buffer.data(), length, error);
-		if (U_FAILURE(error)) {
-			std::cerr << "Failed to extract UTF-32 string: " << u_errorName(error) << std::endl;
-			return std::wstring();
-		}
-		// Construct std::wstring from UTF-32 buffer
-		wstr = std::wstring(utf32Buffer.begin(), utf32Buffer.end());
-#elif WCHAR_MAX == UINT16_MAX
-	// Windows: wchar_t is UTF-16
-		int32_t length = unicodeStr.length();
-		std::vector<UChar> utf16Buffer(length);
-		unicodeStr.extract(utf16Buffer.data(), length, error);
-		if (U_FAILURE(error)) {
-			std::cerr << "Failed to extract UTF-16 string: " << u_errorName(error) << std::endl;
-			return std::wstring();
-		}
-		// Construct std::wstring from UTF-16 buffer
-		wstr = std::wstring(utf16Buffer.begin(), utf16Buffer.end());
+#if defined(_WIN32)
+#include <windows.h>
 #else
-		// Unsupported platform
-		#error "Unsupported platform: wchar_t size is not 16-bit or 32-bit"
-#endif
-		return wstr;
-	}
-
-	std::wstring str_utils::to_wstring(const std::u16string& str)
-	{
-		// Convert std::u16string to ICU UnicodeString
-		icu::UnicodeString unicodeStr(reinterpret_cast<const UChar*>(str.c_str()), str.length());
-
-		std::wstring wstr = {};
-		// Determine the size of wchar_t
-#if WCHAR_MAX == INT32_MAX
-	// Linux: wchar_t is UTF-32
-		int32_t length = unicodeStr.length();
-		std::vector<UChar32> utf32Buffer(length);
-		UErrorCode error = U_ZERO_ERROR;
-		unicodeStr.toUTF32(utf32Buffer.data(), length, error);
-		if (U_FAILURE(error)) {
-			std::cerr << "Failed to extract UTF-32 string: " << u_errorName(error) << std::endl;
-			return std::wstring();
-		}
-		// Construct std::wstring from UTF-32 buffer
-		wstr = std::wstring(utf32Buffer.begin(), utf32Buffer.end());
-#elif WCHAR_MAX == UINT16_MAX
-	// Windows: wchar_t is UTF-16
-		int32_t length = unicodeStr.length();
-		std::vector<UChar> utf16Buffer(length);
-		UErrorCode error = U_ZERO_ERROR;
-		unicodeStr.extract(utf16Buffer.data(), length, error);
-		if (U_FAILURE(error)) {
-			std::cerr << "Failed to extract UTF-16 string: " << u_errorName(error) << std::endl;
-			return std::wstring();
-		}
-		// Construct std::wstring from UTF-16 buffer
-		wstr = std::wstring(utf16Buffer.begin(), utf16Buffer.end());
-#else
-		// Unsupported platform
-		#error "Unsupported platform: wchar_t size is not 16-bit or 32-bit"
+#include <iconv.h>
+#include <cstring>
 #endif
 
-		return wstr;
+std::wstring str_utils::to_wstring(const std::string& str, const std::string& encoding) {
+#if defined(_WIN32)
+	UINT codePage;
+
+	if (encoding == "utf-8") codePage = CP_UTF8;
+	else if (encoding == "windows-1251") codePage = 1251;
+	else if (encoding == "windows-1252") codePage = 1252;
+	else if (encoding == "iso-8859-1") codePage = 28591;
+	else throw std::invalid_argument("Unsupported encoding: " + encoding);
+
+	int wlen = MultiByteToWideChar(codePage, 0, str.c_str(), -1, nullptr, 0);
+	if (wlen == 0)
+		throw std::runtime_error("MultiByteToWideChar failed");
+
+	std::wstring wstr(wlen, L'\0');
+	if (!MultiByteToWideChar(codePage, 0, str.c_str(), -1, &wstr[0], wlen))
+		throw std::runtime_error("MultiByteToWideChar failed during conversion");
+
+	wstr.pop_back();  // remove null terminator
+	return wstr;
+
+#else
+	// POSIX version using iconv
+	iconv_t cd = iconv_open("WCHAR_T", encoding.c_str());  // Convert from encoding to wchar_t
+	if (cd == (iconv_t)-1)
+		throw std::runtime_error("iconv_open failed for encoding: " + encoding);
+
+	size_t in_size = str.size();
+	size_t out_size = in_size * sizeof(wchar_t) * 2;
+
+	std::wstring wstr;
+	wstr.resize(out_size / sizeof(wchar_t));
+
+	char* in_buf = const_cast<char*>(str.data());
+	char* out_buf = reinterpret_cast<char*>(&wstr[0]);
+	size_t in_bytes_left = in_size;
+	size_t out_bytes_left = out_size;
+
+	size_t result = iconv(cd, &in_buf, &in_bytes_left, &out_buf, &out_bytes_left);
+	iconv_close(cd);
+
+	if (result == (size_t)-1)
+		throw std::runtime_error("iconv conversion failed");
+
+	size_t converted_chars = (out_size - out_bytes_left) / sizeof(wchar_t);
+	wstr.resize(converted_chars);
+
+	return wstr;
+#endif
+}
+
+std::wstring str_utils::to_wstring(const std::u16string& str)
+{
+	std::wstring result;
+
+#if WCHAR_MAX >= 0x10FFFF  // Typically true on Linux/macOS (wchar_t is 4 bytes)
+	// Direct 1-to-1 copy for BMP and surrogate decoding for others
+	size_t i = 0;
+	while (i < str.size()) {
+		char16_t ch = str[i++];
+
+		if (ch >= 0xD800 && ch <= 0xDBFF) { // high surrogate
+			if (i < str.size()) {
+				char16_t ch2 = str[i++];
+				if (ch2 >= 0xDC00 && ch2 <= 0xDFFF) {
+					uint32_t codepoint = ((ch - 0xD800) << 10) + (ch2 - 0xDC00) + 0x10000;
+					result += static_cast<wchar_t>(codepoint);
+				}
+				else {
+					throw std::runtime_error("Invalid UTF-16 sequence: expected low surrogate");
+				}
+			}
+			else {
+				throw std::runtime_error("Truncated UTF-16 sequence after high surrogate");
+			}
+		}
+		else if (ch >= 0xDC00 && ch <= 0xDFFF) {
+			throw std::runtime_error("Unexpected low surrogate without preceding high surrogate");
+		}
+		else {
+			result += static_cast<wchar_t>(ch);
+		}
 	}
 
-	std::wstring str_utils::to_wstring(const char* str, const std::string& encoding)
-	{
-		// Create a Unicode converter for the given encoding
-		UErrorCode error = U_ZERO_ERROR;
-		UConverter* converter = ucnv_open(encoding.c_str(), &error);
-		if (U_FAILURE(error)) {
-			std::cerr << "Failed to create converter: " << u_errorName(error) << std::endl;
-			return std::wstring();
-		}
+#else  // WCHAR_MAX <= 0xFFFF (usually Windows)
+	// On Windows, wchar_t is 16-bit; we assume u16string matches layout
+	result.assign(str.begin(), str.end());
 
-		// Convert the input string to UnicodeString
-		icu::UnicodeString unicodeStr(str, -1, converter, error);
-		if (U_FAILURE(error)) {
-			std::cerr << "Failed to convert string: " << u_errorName(error) << std::endl;
-			ucnv_close(converter);
-			return std::wstring();
-		}
-
-		// Close the converter
-		ucnv_close(converter);
-
-		std::wstring wstr = {};
-		// Determine the size of wchar_t
-#if WCHAR_MAX == UINT32_MAX
-	// Linux: wchar_t is UTF-32
-		int32_t length = unicodeStr.length();
-		std::vector<UChar32> utf32Buffer(length);
-		unicodeStr.toUTF32(utf32Buffer.data(), length, error);
-		if (U_FAILURE(error)) {
-			std::cerr << "Failed to extract UTF-32 string: " << u_errorName(error) << std::endl;
-			return std::wstring();
-		}
-		// Construct std::wstring from UTF-32 buffer
-		wstr = std::wstring(utf32Buffer.begin(), utf32Buffer.end());
-#elif WCHAR_MAX == UINT16_MAX
-	// Windows: wchar_t is UTF-16
-		int32_t length = unicodeStr.length();
-		std::vector<UChar> utf16Buffer(length);
-		unicodeStr.extract(utf16Buffer.data(), length, error);
-		if (U_FAILURE(error)) {
-			std::cerr << "Failed to extract UTF-16 string: " << u_errorName(error) << std::endl;
-			return std::wstring();
-		}
-		// Construct std::wstring from UTF-16 buffer
-		wstr = std::wstring(utf16Buffer.begin(), utf16Buffer.end());
-#else
-		// Unsupported platform
-		#error "Unsupported platform: wchar_t size is not 16-bit or 32-bit"
 #endif
 
-		return wstr;
+	return result;
+}
+
+std::wstring str_utils::to_wstring(const char* str, const std::string& encoding)
+{
+	if (!str)
+		return {};
+
+#if defined(_WIN32)
+	// Windows: use MultiByteToWideChar with code page
+	UINT codePage;
+
+	if (encoding == "utf-8") codePage = CP_UTF8;
+	else if (encoding == "windows-1251") codePage = 1251;
+	else if (encoding == "windows-1252") codePage = 1252;
+	else if (encoding == "iso-8859-1") codePage = 28591;
+	else throw std::invalid_argument("Unsupported encoding: " + encoding);
+
+	int wlen = MultiByteToWideChar(codePage, 0, str, -1, nullptr, 0);
+	if (wlen == 0)
+		throw std::runtime_error("MultiByteToWideChar failed");
+
+	std::wstring wstr(wlen, L'\0');
+	if (!MultiByteToWideChar(codePage, 0, str, -1, &wstr[0], wlen))
+		throw std::runtime_error("MultiByteToWideChar conversion failed");
+
+	wstr.pop_back(); // remove null terminator
+	return wstr;
+
+#else
+	// POSIX: use iconv to convert from encoding to wchar_t
+	iconv_t cd = iconv_open("WCHAR_T", encoding.c_str()); // to wchar_t from encoding
+	if (cd == (iconv_t)-1)
+		throw std::runtime_error("iconv_open failed for encoding: " + encoding);
+
+	size_t in_bytes = strlen(str);
+	size_t out_bytes = in_bytes * sizeof(wchar_t) * 2;
+
+	std::wstring wstr;
+	wstr.resize(out_bytes / sizeof(wchar_t));
+
+	char* in_buf = const_cast<char*>(str);
+	char* out_buf = reinterpret_cast<char*>(&wstr[0]);
+	size_t in_left = in_bytes;
+	size_t out_left = out_bytes;
+
+	size_t result = iconv(cd, &in_buf, &in_left, &out_buf, &out_left);
+	iconv_close(cd);
+
+	if (result == (size_t)-1)
+		throw std::runtime_error("iconv conversion failed");
+
+	size_t converted = (out_bytes - out_left) / sizeof(wchar_t);
+	wstr.resize(converted);
+
+	return wstr;
+#endif
+}
+
+std::wstring str_utils::to_wstring(const char16_t* str)
+{
+	if (!str) return {};
+
+	std::wstring result;
+
+#if WCHAR_MAX >= 0x10FFFF  // wchar_t is 4 bytes (Linux/macOS)
+	// Decode UTF-16 surrogate pairs into 32-bit wchar_t
+	while (*str) {
+		char16_t ch = *str++;
+
+		if (ch >= 0xD800 && ch <= 0xDBFF) { // high surrogate
+			char16_t ch2 = *str;
+			if (ch2 >= 0xDC00 && ch2 <= 0xDFFF) {
+				++str;
+				uint32_t codepoint = ((ch - 0xD800) << 10) + (ch2 - 0xDC00) + 0x10000;
+				result += static_cast<wchar_t>(codepoint);
+			}
+			else {
+				throw std::runtime_error("Invalid UTF-16: expected low surrogate after high surrogate");
+			}
+		}
+		else if (ch >= 0xDC00 && ch <= 0xDFFF) {
+			throw std::runtime_error("Invalid UTF-16: unexpected low surrogate");
+		}
+		else {
+			result += static_cast<wchar_t>(ch);
+		}
 	}
 
-	std::wstring str_utils::to_wstring(const char16_t* str)
-	{
-		// Convert const char16_t* to ICU UnicodeString
-		icu::UnicodeString unicodeStr(reinterpret_cast<const UChar*>(str));
-
-		std::wstring wstr = {};
-		// Determine the size of wchar_t
-#if WCHAR_MAX == UINT32_MAX
-	// Linux: wchar_t is UTF-32
-		int32_t length = unicodeStr.length();
-		std::vector<UChar32> utf32Buffer(length);
-		UErrorCode error = U_ZERO_ERROR;
-		unicodeStr.toUTF32(utf32Buffer.data(), length, error);
-		if (U_FAILURE(error)) {
-			std::cerr << "Failed to extract UTF-32 string: " << u_errorName(error) << std::endl;
-			return std::wstring();
-		}
-		// Construct std::wstring from UTF-32 buffer
-		wstr = std::wstring(utf32Buffer.begin(), utf32Buffer.end());
-#elif WCHAR_MAX == UINT16_MAX
-	// Windows: wchar_t is UTF-16
-		int32_t length = unicodeStr.length();
-		std::vector<UChar> utf16Buffer(length);
-		UErrorCode error = U_ZERO_ERROR;
-		unicodeStr.extract(utf16Buffer.data(), length, error);
-		if (U_FAILURE(error)) {
-			std::cerr << "Failed to extract UTF-16 string: " << u_errorName(error) << std::endl;
-			return std::wstring();
-		}
-		// Construct std::wstring from UTF-16 buffer
-		wstr = std::wstring(utf16Buffer.begin(), utf16Buffer.end());
-#else
-		// Unsupported platform
-		#error "Unsupported platform: wchar_t size is not 16-bit or 32-bit"
+#else  // wchar_t is 2 bytes (Windows)
+	// Direct copy from UTF-16 to wchar_t (same layout)
+	while (*str) {
+		result += static_cast<wchar_t>(*str++);
+	}
 #endif
 
-		return wstr;
-	}
+	return result;
+}
 
-	std::u16string str_utils::to_u16string(const std::string& str, const std::string& encoding)
-	{
-		// Create a Unicode converter for the given encoding
-		UErrorCode error = U_ZERO_ERROR;
-		UConverter* converter = ucnv_open(encoding.c_str(), &error);
-		if (U_FAILURE(error)) {
-			std::cerr << "Failed to create converter: " << u_errorName(error) << std::endl;
-			return std::u16string();
-		}
+std::u16string str_utils::to_u16string(const std::string& str, const std::string& encoding)
+{
+	if (str.empty()) return {};
 
-		// Convert the input string to UnicodeString
-		icu::UnicodeString unicodeStr(str.c_str(), str.length(), converter, error);
-		if (U_FAILURE(error)) {
-			std::cerr << "Failed to convert string: " << u_errorName(error) << std::endl;
-			ucnv_close(converter);
-			return std::u16string();
-		}
+#if defined(_WIN32)
+	// Step 1: convert to UTF-16 using MultiByteToWideChar
+	UINT codePage;
 
-		// Close the converter
-		ucnv_close(converter);
+	if (encoding == "utf-8") codePage = CP_UTF8;
+	else if (encoding == "windows-1251") codePage = 1251;
+	else if (encoding == "windows-1252") codePage = 1252;
+	else if (encoding == "iso-8859-1") codePage = 28591;
+	else throw std::invalid_argument("Unsupported encoding: " + encoding);
 
-		// Convert UnicodeString to UTF-16
-		int32_t length = unicodeStr.length();
-		std::vector<UChar> utf16Buffer(length);
-		unicodeStr.extract(utf16Buffer.data(), length, error);
-		if (U_FAILURE(error)) {
-			std::cerr << "Failed to extract UTF-16 string: " << u_errorName(error) << std::endl;
-			return std::u16string();
-		}
+	int len = MultiByteToWideChar(codePage, 0, str.c_str(), -1, nullptr, 0);
+	if (len <= 0) throw std::runtime_error("MultiByteToWideChar failed");
 
-		// Construct std::u16string from UTF-16 buffer
-		std::u16string u16str(reinterpret_cast<const char16_t*>(utf16Buffer.data()), utf16Buffer.size());
+	std::wstring wstr(len, L'\0');
+	MultiByteToWideChar(codePage, 0, str.c_str(), -1, &wstr[0], len);
+	wstr.pop_back(); // remove null terminator
 
-		return u16str;
-	}
+	// Convert wstring to u16string
+	return std::u16string(wstr.begin(), wstr.end());
 
-	std::u16string str_utils::to_u16string(const std::wstring& str)
-	{
-		// Convert std::wstring to ICU UnicodeString
-#if WCHAR_MAX == UINT32_MAX
-		// Linux: wchar_t is UTF-32
-		icu::UnicodeString unicodeStr(reinterpret_cast<const UChar*>(str.c_str()), str.length());
-#elif WCHAR_MAX == UINT16_MAX
-		// Windows: wchar_t is UTF-16
-		icu::UnicodeString unicodeStr(reinterpret_cast<const UChar*>(str.c_str()), str.length());
 #else
-		// Unsupported platform
-		#error "Unsupported platform: wchar_t size is not 16-bit or 32-bit"
+	// POSIX systems: use iconv to convert to UTF-16LE
+	iconv_t cd = iconv_open("UTF-16LE", encoding.c_str());
+	if (cd == (iconv_t)-1) {
+		throw std::runtime_error("iconv_open failed for encoding: " + encoding);
+	}
+
+	size_t in_bytes = str.size();
+	size_t out_bytes = in_bytes * 4; // max possible size in UTF-16
+	std::vector<char> outbuf(out_bytes);
+
+	char* in_ptr = const_cast<char*>(str.data());
+	char* out_ptr = outbuf.data();
+	size_t in_left = in_bytes;
+	size_t out_left = out_bytes;
+
+	size_t result = iconv(cd, &in_ptr, &in_left, &out_ptr, &out_left);
+	iconv_close(cd);
+
+	if (result == (size_t)-1)
+		throw std::runtime_error("iconv conversion failed");
+
+	size_t converted_bytes = out_bytes - out_left;
+	std::u16string out_str(reinterpret_cast<char16_t*>(outbuf.data()), converted_bytes / 2);
+	return out_str;
+#endif
+}
+
+std::u16string str_utils::to_u16string(const std::wstring& str)
+{
+	std::u16string result;
+
+	for (wchar_t wc : str) {
+		uint32_t code = static_cast<uint32_t>(wc);
+
+		if (code <= 0xFFFF) {
+			result.push_back(static_cast<char16_t>(code));
+		}
+		else if (code <= 0x10FFFF) {
+			code -= 0x10000;
+			char16_t high_surrogate = 0xD800 + (code >> 10);
+			char16_t low_surrogate = 0xDC00 + (code & 0x3FF);
+			result.push_back(high_surrogate);
+			result.push_back(low_surrogate);
+		}
+		else {
+			throw std::runtime_error("Invalid Unicode code point in std::wstring");
+		}
+	}
+
+	return result;
+}
+
+std::u16string str_utils::to_u16string(const char* str, const std::string& encoding)
+{
+	if (!str || !*str) return {};
+
+#if defined(_WIN32)
+	// Convert multibyte input to UTF-16 using Windows API
+	UINT codePage;
+
+	if (encoding == "utf-8") codePage = CP_UTF8;
+	else if (encoding == "windows-1251") codePage = 1251;
+	else if (encoding == "windows-1252") codePage = 1252;
+	else if (encoding == "iso-8859-1") codePage = 28591;
+	else throw std::invalid_argument("Unsupported encoding: " + encoding);
+
+	int len = MultiByteToWideChar(codePage, 0, str, -1, nullptr, 0);
+	if (len <= 0)
+		throw std::runtime_error("MultiByteToWideChar failed");
+
+	std::wstring wstr(len, L'\0');
+	if (!MultiByteToWideChar(codePage, 0, str, -1, &wstr[0], len))
+		throw std::runtime_error("MultiByteToWideChar conversion failed");
+
+	wstr.pop_back(); // Remove null terminator
+	return std::u16string(wstr.begin(), wstr.end());
+
+#else
+	// Convert using iconv on POSIX systems (macOS, Linux)
+	iconv_t cd = iconv_open("UTF-16LE", encoding.c_str());
+	if (cd == (iconv_t)-1) {
+		throw std::runtime_error("iconv_open failed for encoding: " + encoding);
+	}
+
+	size_t in_bytes = strlen(str);
+	size_t out_bytes = in_bytes * 4; // Overestimate UTF-16 size
+	std::vector<char> outbuf(out_bytes);
+
+	char* in_ptr = const_cast<char*>(str);
+	char* out_ptr = outbuf.data();
+	size_t in_left = in_bytes;
+	size_t out_left = out_bytes;
+
+	size_t result = iconv(cd, &in_ptr, &in_left, &out_ptr, &out_left);
+	iconv_close(cd);
+
+	if (result == (size_t)-1)
+		throw std::runtime_error("iconv conversion failed");
+
+	size_t converted_bytes = out_bytes - out_left;
+	return std::u16string(reinterpret_cast<char16_t*>(outbuf.data()), converted_bytes / 2);
+#endif
+}
+
+std::u16string str_utils::to_u16string(const wchar_t* str)
+{
+	std::u16string result;
+
+	if (!str) return result;
+
+	while (*str) {
+		uint32_t code = static_cast<uint32_t>(*str);
+
+		if (code <= 0xFFFF) {
+			result.push_back(static_cast<char16_t>(code));
+		}
+		else if (code <= 0x10FFFF) {
+			code -= 0x10000;
+			char16_t high_surrogate = 0xD800 + (code >> 10);
+			char16_t low_surrogate = 0xDC00 + (code & 0x3FF);
+			result.push_back(high_surrogate);
+			result.push_back(low_surrogate);
+		}
+		else {
+			throw std::runtime_error("Invalid Unicode code point in wchar_t string");
+		}
+
+		++str;
+	}
+
+	return result;
+}
+
+std::string str_utils::to_string(const std::wstring& str)
+{
+	std::string result;
+	result.reserve(str.size());  // rough estimate
+
+	for (wchar_t wc : str) {
+		uint32_t codepoint = static_cast<uint32_t>(wc);
+
+#if WCHAR_MAX > 0xFFFF
+		// On Linux/macOS where wchar_t is 32-bit, may include codepoints > 0xFFFF
+		if (codepoint > 0x10FFFF)
+			throw std::runtime_error("Invalid Unicode code point in wchar_t");
+#else
+		// On Windows, wchar_t is 16-bit, and surrogate pairs may be pre-split
+		if (codepoint >= 0xD800 && codepoint <= 0xDFFF)
+			throw std::runtime_error("Invalid surrogate in wchar_t stream");
 #endif
 
-		// Convert UnicodeString to UTF-16
-		int32_t length = unicodeStr.length();
-		std::vector<UChar> utf16Buffer(length);
-		UErrorCode error = U_ZERO_ERROR;
-		unicodeStr.extract(utf16Buffer.data(), length, error);
-		if (U_FAILURE(error)) {
-			std::cerr << "Failed to extract UTF-16 string: " << u_errorName(error) << std::endl;
-			return std::u16string();
+		// Encode as UTF-8
+		if (codepoint <= 0x7F) {
+			result += static_cast<char>(codepoint);
 		}
-
-		// Construct std::u16string from UTF-16 buffer
-		std::u16string u16str(reinterpret_cast<const char16_t*>(utf16Buffer.data()), utf16Buffer.size());
-
-		return u16str;
+		else if (codepoint <= 0x7FF) {
+			result += static_cast<char>(0xC0 | (codepoint >> 6));
+			result += static_cast<char>(0x80 | (codepoint & 0x3F));
+		}
+		else if (codepoint <= 0xFFFF) {
+			result += static_cast<char>(0xE0 | (codepoint >> 12));
+			result += static_cast<char>(0x80 | ((codepoint >> 6) & 0x3F));
+			result += static_cast<char>(0x80 | (codepoint & 0x3F));
+		}
+		else {
+			result += static_cast<char>(0xF0 | (codepoint >> 18));
+			result += static_cast<char>(0x80 | ((codepoint >> 12) & 0x3F));
+			result += static_cast<char>(0x80 | ((codepoint >> 6) & 0x3F));
+			result += static_cast<char>(0x80 | (codepoint & 0x3F));
+		}
 	}
 
-	std::u16string str_utils::to_u16string(const char* str, const std::string& encoding)
-	{
-		// Create a Unicode converter for the given encoding
-		UErrorCode error = U_ZERO_ERROR;
-		UConverter* converter = ucnv_open(encoding.c_str(), &error);
-		if (U_FAILURE(error)) {
-			std::cerr << "Failed to create converter: " << u_errorName(error) << std::endl;
-			return std::u16string();
+	return result;
+}
+
+std::string str_utils::to_string(const std::u16string& str)
+{
+	std::string result;
+	result.reserve(str.size());  // a rough reserve
+
+	for (size_t i = 0; i < str.size(); ++i) {
+		uint32_t codepoint;
+		char16_t ch = str[i];
+
+		// High-surrogate?
+		if (ch >= 0xD800 && ch <= 0xDBFF) {
+			if (i + 1 >= str.size())
+				throw std::runtime_error("Invalid UTF-16: high surrogate without low surrogate");
+
+			char16_t ch2 = str[i + 1];
+			if (ch2 < 0xDC00 || ch2 > 0xDFFF)
+				throw std::runtime_error("Invalid UTF-16: expected low surrogate after high surrogate");
+
+			// combine into codepoint
+			codepoint = (((uint32_t)(ch - 0xD800) << 10)
+				| (uint32_t)(ch2 - 0xDC00))
+				+ 0x10000;
+			++i;  // consume low surrogate
+		}
+		// Unexpected low-surrogate?
+		else if (ch >= 0xDC00 && ch <= 0xDFFF) {
+			throw std::runtime_error("Invalid UTF-16: unexpected low surrogate");
+		}
+		// BMP codepoint
+		else {
+			codepoint = ch;
 		}
 
-		// Convert the input string to UnicodeString
-		icu::UnicodeString unicodeStr(str, -1, converter, error);
-		if (U_FAILURE(error)) {
-			std::cerr << "Failed to convert string: " << u_errorName(error) << std::endl;
-			ucnv_close(converter);
-			return std::u16string();
+		// now encode codepoint into UTF-8
+		if (codepoint <= 0x7F) {
+			result += static_cast<char>(codepoint);
 		}
-
-		// Close the converter
-		ucnv_close(converter);
-
-		// Convert UnicodeString to UTF-16
-		int32_t length = unicodeStr.length();
-		std::vector<UChar> utf16Buffer(length);
-		unicodeStr.extract(utf16Buffer.data(), length, error);
-		if (U_FAILURE(error)) {
-			std::cerr << "Failed to extract UTF-16 string: " << u_errorName(error) << std::endl;
-			return std::u16string();
+		else if (codepoint <= 0x7FF) {
+			result += static_cast<char>(0xC0 | (codepoint >> 6));
+			result += static_cast<char>(0x80 | (codepoint & 0x3F));
 		}
-
-		// Construct std::u16string from UTF-16 buffer
-		std::u16string u16str(reinterpret_cast<const char16_t*>(utf16Buffer.data()), utf16Buffer.size());
-
-		return u16str;
+		else if (codepoint <= 0xFFFF) {
+			result += static_cast<char>(0xE0 | (codepoint >> 12));
+			result += static_cast<char>(0x80 | ((codepoint >> 6) & 0x3F));
+			result += static_cast<char>(0x80 | (codepoint & 0x3F));
+		}
+		else {
+			result += static_cast<char>(0xF0 | (codepoint >> 18));
+			result += static_cast<char>(0x80 | ((codepoint >> 12) & 0x3F));
+			result += static_cast<char>(0x80 | ((codepoint >> 6) & 0x3F));
+			result += static_cast<char>(0x80 | (codepoint & 0x3F));
+		}
 	}
 
-	std::u16string str_utils::to_u16string(const wchar_t* str)
-	{
-		// Determine the size of wchar_t
-#if WCHAR_MAX == UINT32_MAX
-		// Linux: wchar_t is UTF-32
-		auto length = std::wcslen(str);
-		icu::UnicodeString unicodeStr = icu::UnicodeString::fromUTF32(reinterpret_cast<const UChar32*>(str), static_cast<int32_t>(length));
-#elif WCHAR_MAX == UINT16_MAX
-	// Windows: wchar_t is UTF-16
-		icu::UnicodeString unicodeStr(reinterpret_cast<const UChar*>(str));
+	return result;
+}
+
+std::string str_utils::to_string(const wchar_t* str)
+{
+	if (!str) return {};
+
+#if defined(_WIN32)
+	// Convert wide string (UTF-16) to UTF-8
+	int len = WideCharToMultiByte(CP_UTF8, 0, str, -1, nullptr, 0, nullptr, nullptr);
+	if (len <= 0) {
+		throw std::runtime_error("WideCharToMultiByte failed");
+	}
+
+	std::string result(len - 1, '\0'); // exclude null terminator
+	WideCharToMultiByte(CP_UTF8, 0, str, -1, result.data(), len, nullptr, nullptr);
+	return result;
+
 #else
-		// Unsupported platform
-		#error "Unsupported platform: wchar_t size is not 16-bit or 32-bit"
+	// On Linux/macOS, wchar_t is typically UTF-32
+	std::u32string u32str(reinterpret_cast<const char32_t*>(str));
+
+	// Convert UTF-32 to UTF-8 using iconv
+	iconv_t cd = iconv_open("UTF-8", "UTF-32LE"); // or "UTF-32" depending on platform endianness
+	if (cd == (iconv_t)-1) {
+		throw std::runtime_error("iconv_open failed");
+	}
+
+	size_t in_bytes = u32str.size() * sizeof(char32_t);
+	size_t out_bytes = in_bytes * 4; // UTF-8 max expansion
+	std::vector<char> outbuf(out_bytes);
+
+	char* in_ptr = reinterpret_cast<char*>(u32str.data());
+	char* out_ptr = outbuf.data();
+	size_t in_left = in_bytes;
+	size_t out_left = out_bytes;
+
+	size_t res = iconv(cd, &in_ptr, &in_left, &out_ptr, &out_left);
+	iconv_close(cd);
+
+	if (res == (size_t)-1) {
+		throw std::runtime_error("iconv conversion failed");
+	}
+
+	return std::string(outbuf.data(), out_bytes - out_left);
 #endif
+}
 
-		// Convert UnicodeString to UTF-16
-		int32_t length = unicodeStr.length();
-		std::vector<UChar> utf16Buffer(length);
-		UErrorCode error = U_ZERO_ERROR;
-		unicodeStr.extract(utf16Buffer.data(), length, error);
-		if (U_FAILURE(error)) {
-			std::cerr << "Failed to extract UTF-16 string: " << u_errorName(error) << std::endl;
-			return std::u16string();
+std::string str_utils::to_string(const char16_t* str)
+{
+	std::string result;
+
+	while (*str) {
+		uint32_t codepoint;
+
+		char16_t ch = *str++;
+
+		// Check for surrogate pair
+		if (ch >= 0xD800 && ch <= 0xDBFF) {
+			char16_t ch2 = *str;
+			if (ch2 >= 0xDC00 && ch2 <= 0xDFFF) {
+				++str;
+				codepoint = (((ch - 0xD800) << 10) | (ch2 - 0xDC00)) + 0x10000;
+			}
+			else {
+				throw std::runtime_error("Invalid UTF-16: expected low surrogate after high surrogate");
+			}
+		}
+		else if (ch >= 0xDC00 && ch <= 0xDFFF) {
+			throw std::runtime_error("Invalid UTF-16: unexpected low surrogate");
+		}
+		else {
+			codepoint = ch;
 		}
 
-		// Construct std::u16string from UTF-16 buffer
-		std::u16string u16str(reinterpret_cast<const char16_t*>(utf16Buffer.data()), utf16Buffer.size());
-
-		return u16str;
+		// Encode UTF-8
+		if (codepoint <= 0x7F) {
+			result += static_cast<char>(codepoint);
+		}
+		else if (codepoint <= 0x7FF) {
+			result += static_cast<char>(0xC0 | (codepoint >> 6));
+			result += static_cast<char>(0x80 | (codepoint & 0x3F));
+		}
+		else if (codepoint <= 0xFFFF) {
+			result += static_cast<char>(0xE0 | (codepoint >> 12));
+			result += static_cast<char>(0x80 | ((codepoint >> 6) & 0x3F));
+			result += static_cast<char>(0x80 | (codepoint & 0x3F));
+		}
+		else {
+			result += static_cast<char>(0xF0 | (codepoint >> 18));
+			result += static_cast<char>(0x80 | ((codepoint >> 12) & 0x3F));
+			result += static_cast<char>(0x80 | ((codepoint >> 6) & 0x3F));
+			result += static_cast<char>(0x80 | (codepoint & 0x3F));
+		}
 	}
 
-	std::string str_utils::to_string(const std::wstring& str)
-	{
-#if WCHAR_MAX == UINT32_MAX
-		// Linux: wchar_t is UTF-32
-		icu::UnicodeString unicodeStr = icu::UnicodeString::fromUTF32(reinterpret_cast<const UChar32*>(str.c_str()), static_cast<int32_t>(str.length()));
-#elif WCHAR_MAX == UINT16_MAX
-		// Windows: wchar_t is UTF-16
-		icu::UnicodeString unicodeStr(reinterpret_cast<const UChar*>(str.c_str()), str.length());
-#else
-		// Unsupported platform
-		#error "Unsupported platform: wchar_t size is not 16-bit or 32-bit"
-#endif
-
-		// Convert UnicodeString to UTF-8
-		std::string utf8Str;
-		unicodeStr.toUTF8String(utf8Str);
-
-		return utf8Str;
-	}
-
-	std::string str_utils::to_string(const std::u16string& str)
-	{
-		// Convert std::u16string to ICU UnicodeString
-		icu::UnicodeString unicodeStr(reinterpret_cast<const UChar*>(str.c_str()), str.length());
-
-		// Convert UnicodeString to UTF-8
-		std::string utf8Str;
-		unicodeStr.toUTF8String(utf8Str);
-
-		return utf8Str;
-	}
-
-	std::string str_utils::to_string(const wchar_t* str)
-	{
-		// Determine the size of wchar_t
-#if WCHAR_MAX == UINT32_MAX
-		// Linux: wchar_t is UTF-32
-		auto length = std::wcslen(str);
-		icu::UnicodeString unicodeStr = icu::UnicodeString::fromUTF32(reinterpret_cast<const UChar32*>(str), static_cast<int32_t>(length));
-#elif WCHAR_MAX == UINT16_MAX
-	// Windows: wchar_t is UTF-16
-		icu::UnicodeString unicodeStr(reinterpret_cast<const UChar*>(str));
-#else
-		// Unsupported platform
-		#error "Unsupported platform: wchar_t size is not 16-bit or 32-bit"
-#endif
-
-
-		// Convert UnicodeString to UTF-8
-		std::string utf8Str;
-		unicodeStr.toUTF8String(utf8Str);
-
-		return utf8Str;
-	}
-
-	std::string str_utils::to_string(const char16_t* str)
-	{
-		// Convert const char16_t* to ICU UnicodeString
-		icu::UnicodeString unicodeStr(reinterpret_cast<const UChar*>(str));
-
-		// Convert UnicodeString to UTF-8
-		std::string utf8Str;
-		unicodeStr.toUTF8String(utf8Str);
-
-		return utf8Str;
-	}
-
-	icu::UnicodeString str_utils::to_UnicodeString(const std::string& str, const std::string& encoding)
-	{
-		// Create a Unicode converter for the given encoding
-		UErrorCode error = U_ZERO_ERROR;
-		UConverter* converter = ucnv_open(encoding.c_str(), &error);
-		if (U_FAILURE(error)) {
-			std::cerr << "Failed to create converter: " << u_errorName(error) << std::endl;
-			return icu::UnicodeString();
-		}
-
-		// Convert the input string to UnicodeString
-		icu::UnicodeString unicodeStr(str.c_str(), str.length(), converter, error);
-		if (U_FAILURE(error)) {
-			std::cerr << "Failed to convert string: " << u_errorName(error) << std::endl;
-			ucnv_close(converter);
-			return icu::UnicodeString();
-		}
-
-		// Close the converter
-		ucnv_close(converter);
-
-		return unicodeStr;
-	}
-
-	icu::UnicodeString str_utils::to_UnicodeString(const std::wstring& str)
-	{
-		// Determine the size of wchar_t
-#if WCHAR_MAX == UINT32_MAX
-		// Linux: wchar_t is UTF-32
-		icu::UnicodeString unicodeStr = icu::UnicodeString::fromUTF32(reinterpret_cast<const UChar32*>(str.c_str()), static_cast<int32_t>(str.length()));
-#elif WCHAR_MAX == UINT16_MAX
-		// Windows: wchar_t is UTF-16
-		icu::UnicodeString unicodeStr(reinterpret_cast<const UChar*>(str.c_str()), str.length());
-#else
-		// Unsupported platform
-		#error "Unsupported platform: wchar_t size is not 16-bit or 32-bit"
-#endif
-
-		return unicodeStr;
-	}
-
-	icu::UnicodeString str_utils::to_UnicodeString(const std::u16string& str)
-	{
-		// Convert std::u16string to ICU UnicodeString
-		icu::UnicodeString unicodeStr(reinterpret_cast<const UChar*>(str.c_str()), str.length());
-		return unicodeStr;
-	}
-
-	icu::UnicodeString str_utils::to_UnicodeString(const char* str, const std::string& encoding)
-	{
-		// Create a Unicode converter for the given encoding
-		UErrorCode error = U_ZERO_ERROR;
-		UConverter* converter = ucnv_open(encoding.c_str(), &error);
-		if (U_FAILURE(error)) {
-			std::cerr << "Failed to create converter: " << u_errorName(error) << std::endl;
-			return icu::UnicodeString();
-		}
-
-		// Convert the input string to UnicodeString
-		icu::UnicodeString unicodeStr(str, -1, converter, error);
-		if (U_FAILURE(error)) {
-			std::cerr << "Failed to convert string: " << u_errorName(error) << std::endl;
-			ucnv_close(converter);
-			return icu::UnicodeString();
-		}
-
-		// Close the converter
-		ucnv_close(converter);
-
-		return unicodeStr;
-	}
-
-	icu::UnicodeString str_utils::to_UnicodeString(const wchar_t* str)
-	{
-		// Determine the size of wchar_t
-#if WCHAR_MAX == UINT32_MAX
-		// Linux: wchar_t is UTF-32
-		auto length = std::wcslen(str);
-		icu::UnicodeString unicodeStr = icu::UnicodeString::fromUTF32(reinterpret_cast<const UChar32*>(str), static_cast<int32_t>(length));
-#elif WCHAR_MAX == UINT16_MAX
-		// Windows: wchar_t is UTF-16
-		icu::UnicodeString unicodeStr(reinterpret_cast<const UChar*>(str));
-#else
-		// Unsupported platform
-		#error "Unsupported platform: wchar_t size is not 16-bit or 32-bit"
-#endif
-		return unicodeStr;
-	}
-
-	icu::UnicodeString str_utils::to_UnicodeString(const char16_t* str)
-	{
-		// Convert const char16_t* to ICU UnicodeString
-		icu::UnicodeString unicodeStr(reinterpret_cast<const UChar*>(str), -1);
-		return unicodeStr;
-	}
-
-	std::wstring str_utils::to_wstring(icu::UnicodeString& unicodeStr)
-	{
-		UErrorCode error = U_ZERO_ERROR;
-		// Determine the size of wchar_t
-#if WCHAR_MAX == UINT32_MAX
-	// Linux: wchar_t is UTF-32
-		int32_t length = unicodeStr.length();
-		std::vector<UChar32> utf32Buffer(length);
-		unicodeStr.toUTF32(utf32Buffer.data(), length, error);
-		if (U_FAILURE(error)) {
-			std::cerr << "Failed to extract UTF-32 string: " << u_errorName(error) << std::endl;
-			return std::wstring();
-		}
-		// Construct std::wstring from UTF-32 buffer
-		std::wstring wstr(utf32Buffer.begin(), utf32Buffer.end());
-#elif WCHAR_MAX == UINT16_MAX
-	// Windows: wchar_t is UTF-16
-		int32_t length = unicodeStr.length();
-		std::vector<UChar> utf16Buffer(length);
-		unicodeStr.extract(utf16Buffer.data(), length, error);
-		if (U_FAILURE(error)) {
-			std::cerr << "Failed to extract UTF-16 string: " << u_errorName(error) << std::endl;
-			return std::wstring();
-		}
-		// Construct std::wstring from UTF-16 buffer
-		std::wstring wstr(utf16Buffer.begin(), utf16Buffer.end());
-#else
-		// Unsupported platform
-		#error "Unsupported platform: wchar_t size is not 16-bit or 32-bit"
-#endif
-
-		return wstr;
-
-	}
-
-	std::u16string str_utils::to_u16string(icu::UnicodeString& unicodeStr)
-	{
-		UErrorCode error = U_ZERO_ERROR;
-		// Convert UnicodeString to UTF-16
-		int32_t length = unicodeStr.length();
-		std::vector<UChar> utf16Buffer(length);
-		unicodeStr.extract(utf16Buffer.data(), length, error);
-		if (U_FAILURE(error)) {
-			std::cerr << "Failed to extract UTF-16 string: " << u_errorName(error) << std::endl;
-			return std::u16string();
-		}
-
-		// Construct std::u16string from UTF-16 buffer
-		std::u16string u16str(reinterpret_cast<const char16_t*>(utf16Buffer.data()), utf16Buffer.size());
-
-		return u16str;
-	}
-
-	std::string str_utils::to_string(icu::UnicodeString& unicodeStr)
-	{
-		// Convert UnicodeString to UTF-8
-		std::string utf8Str;
-		unicodeStr.toUTF8String(utf8Str);
-
-		return utf8Str;
-	}
-
-	std::unordered_map<std::string, UConverter*> str_utils::strConverter::list_converter;
-
-	std::wstring str_utils::strConverter::to_wstring(const std::string& str, const std::string& encoding)
-	{
-#if WCHAR_MAX == UINT32_MAX
-		auto convTo = get_converter("UTF-32");
-#elif WCHAR_MAX == UINT16_MAX
-		auto convTo = get_converter("UTF-16"); 
-#else
-		// Unsupported platform
-#error "Unsupported platform: wchar_t size is not 16-bit or 32-bit"
-#endif
-		if (!convTo) {
-			return std::wstring();
-		}
-
-		auto convFrom = get_converter(encoding);
-		if (!convFrom) {
-			return std::wstring();
-		}
-
-		UErrorCode error = U_ZERO_ERROR;
-		// Calculate the length of the UTF-16 buffer
-		int32_t utf16Length = ucnv_toUChars(convFrom, nullptr, 0, str.c_str(), str.length(), &error);
-		if (error != U_BUFFER_OVERFLOW_ERROR) {
-			std::cerr << "Failed to calculate UTF-16 length: " << u_errorName(error) << std::endl;
-			ucnv_close(convFrom);
-			return std::wstring();
-		}
-
-		error = U_ZERO_ERROR;
-		std::vector<UChar> utf16Buffer(utf16Length + 1);
-		ucnv_toUChars(convFrom, utf16Buffer.data(), utf16Length + 1, str.c_str(), str.length(), &error);
-		if (U_FAILURE(error)) {
-			std::cerr << "Failed to convert to UTF-16: " << u_errorName(error) << std::endl;
-			ucnv_close(convFrom);
-			return std::wstring();
-		}
-
-		std::wstring destBuffer = {};
-#if WCHAR_MAX == UINT32_MAX
-		// Convert UTF-16 buffer to UTF-32
-		int32_t utf32Length = ucnv_fromUChars(convTo, nullptr, 0, utf16Buffer.data(), utf16Length, &error);
-		if (error != U_BUFFER_OVERFLOW_ERROR) {
-			std::cerr << "Failed to calculate UTF-32 length: " << u_errorName(error) << std::endl;
-			ucnv_close(convTo);
-			return std::wstring();
-		}
-
-		error = U_ZERO_ERROR;
-		std::vector<char> utf32Buffer(utf32Length + 1);
-		ucnv_fromUChars(convTo, utf32Buffer.data(), utf32Length + 1, utf16Buffer.data(), utf16Length, &error);
-		if (U_FAILURE(error)) {
-			std::cerr << "Failed to convert to UTF-32: " << u_errorName(error) << std::endl;
-			ucnv_close(convTo);
-			return std::wstring();
-		}
-
-		// Construct std::wstring from UTF-32 buffer
-		destBuffer = std::wstring(reinterpret_cast<const wchar_t*>(utf32Buffer.data()), utf32Length / sizeof(wchar_t));
-#elif WCHAR_MAX == UINT16_MAX
-		// Construct std::wstring from UTF-16 buffer
-		destBuffer = std::wstring(reinterpret_cast<const wchar_t*>(utf16Buffer.data()), utf16Length);
-#else
-		// Unsupported platform
-		#error "Unsupported platform: wchar_t size is not 16-bit or 32-bit"
-#endif
-		return destBuffer;
-	}
-
-	std::string str_utils::strConverter::to_string(const std::wstring& str, const std::string& toCoding)
-	{
-		UErrorCode error = U_ZERO_ERROR;
-
-#if WCHAR_MAX == UINT32_MAX
-		auto convFrom = get_converter("UTF-32");
-#elif WCHAR_MAX == UINT16_MAX
-		auto convFrom = get_converter("UTF-16");
-#else
-		// Unsupported platform
-#error "Unsupported platform: wchar_t size is not 16-bit or 32-bit"
-#endif
-		if (!convFrom) {
-			return std::string();
-		}
-
-		auto convTo = get_converter(toCoding);
-		if (!convTo) {
-			return std::string();
-		}
-
-		// Calculate the length of the UTF-16 buffer
-		int32_t utf16Length = ucnv_toUChars(convFrom, nullptr, 0, reinterpret_cast<const char*>(str.c_str()), str.length() * sizeof(wchar_t), &error);
-		if (error != U_BUFFER_OVERFLOW_ERROR) {
-			std::cerr << "Failed to calculate UTF-16 length: " << u_errorName(error) << std::endl;
-			ucnv_close(convFrom);
-			return std::string();
-		}
-
-		error = U_ZERO_ERROR;
-		std::vector<UChar> utf16Buffer(utf16Length + 1);
-		ucnv_toUChars(convFrom, utf16Buffer.data(), utf16Length + 1, reinterpret_cast<const char*>(str.c_str()), str.length() * sizeof(wchar_t), &error);
-		if (U_FAILURE(error)) {
-			std::cerr << "Failed to convert to UTF-16: " << u_errorName(error) << std::endl;
-			ucnv_close(convFrom);
-			return std::string();
-		}
-
-		ucnv_close(convFrom);
-
-		// Calculate the length of the target encoding buffer
-		int32_t targetLength = ucnv_fromUChars(convTo, nullptr, 0, utf16Buffer.data(), utf16Length, &error);
-		if (error != U_BUFFER_OVERFLOW_ERROR) {
-			std::cerr << "Failed to calculate target encoding length: " << u_errorName(error) << std::endl;
-			ucnv_close(convTo);
-			return std::string();
-		}
-
-		error = U_ZERO_ERROR;
-		std::vector<char> targetBuffer(targetLength + 1);
-		ucnv_fromUChars(convTo, targetBuffer.data(), targetLength + 1, utf16Buffer.data(), utf16Length, &error);
-		if (U_FAILURE(error)) {
-			std::cerr << "Failed to convert to target encoding: " << u_errorName(error) << std::endl;
-			ucnv_close(convTo);
-			return std::string();
-		}
-
-		ucnv_close(convTo);
-
-		// Construct std::string from target encoding buffer
-		return std::string(targetBuffer.data(), targetLength);
-	}
-
-	void str_utils::strConverter::destroy()
-	{
-		for (auto& it : list_converter)
-		{
-			ucnv_close(it.second);
-		}
-		list_converter.clear();
-	}
-
-	UConverter* str_utils::strConverter::get_converter(const std::string& encoding)
-	{
-		auto it = list_converter.find(encoding);
-		if (it != list_converter.end()) {
-			return it->second;
-		}
-
-		UErrorCode error = U_ZERO_ERROR;
-		auto converter = ucnv_open(encoding.c_str(), &error);
-		if (U_FAILURE(error)) {
-			std::cerr << "Failed to create converter: " << u_errorName(error) << std::endl;
-			return nullptr;
-		}
-
-		list_converter[encoding] = converter;
-		return list_converter[encoding];
-	}
+	return result;
+}
