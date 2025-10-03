@@ -90,7 +90,7 @@ void CAddInECRDriver::Done()
 bool CAddInECRDriver::RegisterExtensionAs(WCHAR_T** wsExtensionName)
 {
     SysUtils::LogInfo(L"AddIn RegisterExtensionAs");
-    std::u16string extensionName = wstringToU16string(this->m_driver->getDescriptionDriver().ExtensionName);
+    std::u16string extensionName = str_utils::to_u16string(this->m_driver->getDescriptionDriver().ExtensionName);
 
 	uint32_t iSize = 0;
     if (getString1C(extensionName, wsExtensionName, iSize)) {
@@ -510,8 +510,8 @@ bool CAddInECRDriver::loadValue(const std::u16string& key, std::u16string& value
         else {
             if (errorCode != 0) {
                 std::u16string _errorDesc = std::u16string(errorDesc);
-                std::wstring werrorDesc = u16stringToWstring(_errorDesc);
-                std::wstring wnameProp = u16stringToWstring(key);
+                std::wstring werrorDesc = str_utils::to_wstring(_errorDesc);
+                std::wstring wnameProp = str_utils::to_wstring(key);
                 std::wstring wErrorCode = std::to_wstring(errorCode);
                 LOG_ERROR_ADD(L"AddIn", L"Error read property '" + wnameProp + L"' : " + werrorDesc + L" Code " + wErrorCode);
             }
@@ -536,8 +536,8 @@ bool CAddInECRDriver::loadValue(const std::u16string& key, int& value)
 		else {
 			if (errorCode != 0) {
 				std::u16string _errorDesc = std::u16string(errorDesc);
-				std::wstring werrorDesc = u16stringToWstring(_errorDesc);
-				std::wstring wnameProp = u16stringToWstring(key);
+				std::wstring werrorDesc = str_utils::to_wstring(_errorDesc);
+				std::wstring wnameProp = str_utils::to_wstring(key);
 				std::wstring wErrorCode = std::to_wstring(errorCode);
 				LOG_ERROR_ADD(L"AddIn", L"Error read property '" + wnameProp + L"' : " + werrorDesc + L" Code " + wErrorCode);
 			}
@@ -562,8 +562,8 @@ bool CAddInECRDriver::loadValue(const std::u16string& key, bool& value)
         else {
             if (errorCode != 0) {
                 std::u16string _errorDesc = std::u16string(errorDesc);
-                std::wstring werrorDesc = u16stringToWstring(_errorDesc);
-                std::wstring wnameProp = u16stringToWstring(key);
+                std::wstring werrorDesc = str_utils::to_wstring(_errorDesc);
+                std::wstring wnameProp = str_utils::to_wstring(key);
                 std::wstring wErrorCode = std::to_wstring(errorCode);
                 LOG_ERROR_ADD(L"AddIn", L"Error read property '" + wnameProp + L"' : " + werrorDesc + L" Code " + wErrorCode);
             }

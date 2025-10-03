@@ -199,3 +199,29 @@ void WebSocketConnection::disconnect() {
 bool WebSocketConnection::isConnected() const {
     return connected_;
 }
+
+ComConnection::ComConnection()
+    : serial_(io_context_)
+{
+    this->port = "COM1";
+	this->baud_rate_ = 9600;
+}
+
+ComConnection::ComConnection(const std::string& port, uint32_t baud_rate)
+	: serial_(io_context_)
+{
+	this->port = port;
+	this->baud_rate_ = baud_rate;
+}
+
+void ComConnection::startListening(std::function<void(std::vector<uint8_t>)> callback)
+{
+    std::thread([this, callback]() {
+		while (true) {
+			auto data = this->receive();
+			if (data) {
+				callback(data.value());
+			}
+		}
+	}).detach();
+}

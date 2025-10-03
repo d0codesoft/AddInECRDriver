@@ -36,8 +36,9 @@ const SettingSettings SettingDriverPos::m_settings = {
 				L"Параметри оплати",
 				{
 					{ OptionDriverNames.at(DriverOption::Facepay), 
-                        L"Дозволити оплату через FacePay24", L"", L"Boolean", L"", L"false", false,{}}
-					//{ DriverOption::MerchantId, L"Код мерчанта", L"Введите код мерчанта", L"String", L"", L"", false,{}},
+                        L"Дозволити оплату через FacePay24", L"", L"Boolean", L"", L"false", false,{}},
+					{ OptionDriverNames.at(DriverOption::MerchantId), 
+                        L"Код мерчанта", L"Код мерчанта", L"Number", L"", L"", false,{}},
 				}
 			},
 			{   // Logging parameters

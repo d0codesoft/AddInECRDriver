@@ -49,7 +49,7 @@ bool POSTerminalController::processTransaction(POSTerminalOperationParameters& p
 	Params _paramPayement = {
 		{ L"amount" , doubleToAmountString(paramPayement.Amount.value()) },
 		{ L"discount" , _discount },
-		{ L"merchantId" , L"0" },
+		{ L"merchantId" , paramPayement.MerchantNumber.has_value() ? std::to_wstring(paramPayement.MerchantNumber.value()) : L"0" },
 		{ L"facepay" , paramPayement.isFacepay() ? L"true" : L"false"},
 		{ L"subMerchant" , paramPayement.SubMerchant.has_value() ? std::to_wstring(paramPayement.SubMerchant.value()) : L""}
 	};
@@ -71,10 +71,10 @@ bool POSTerminalController::processTransaction(POSTerminalOperationParameters& p
 			if (_isValidResponse(recvData)) {
 				// Process the response
 				if (recvData.method == L"ServiceMessage") {
-					handleServiceMessage(recvData.params);
+					//handleServiceMessage(recvData.params);
 				}
 				else if (recvData.method == L"PayResult") {
-					handlePayResult(recvData.params);
+					//handlePayResult(recvData.params);
 				}
 				else if (recvData.method == L"Error") {
 					outError = recvData.errorDescription;
@@ -106,8 +106,6 @@ bool POSTerminalController::_connect(const std::string& address, std::optional<u
 		return false;
 	}
 
-
-
 	connection_->startListening([this](std::vector<uint8_t> data) {
 		this->_processIncomingData(data);
 		});
@@ -127,50 +125,50 @@ void POSTerminalController::_processIncomingData(const std::vector<uint8_t>& dat
 
 void POSTerminalController::_transitionTo(POSTerminalState newState)
 {
-	if (state_ != newState) {
-		state_ = newState;
+	if (m_state != newState) {
+		m_state = newState;
 	}
 }
 
 void POSTerminalController::_tick()
 {
-	using namespace std::chrono;
-	auto now = steady_clock::now();
-	if (duration_cast<milliseconds>(now - m_lastTick).count() < 200) return;
+	//using namespace std::chrono;
+	//auto now = steady_clock::now();
+	//if (duration_cast<milliseconds>(now - m_lastTick).count() < 200) return;
 
-	m_lastTick = now;
+	//m_lastTick = now;
 
-	switch (m_state) {
-	case POSTerminalState::SendingCommand:
-		transitionTo(POSTerminalState::WaitingForResponse);
-		break;
+	//switch (m_state) {
+	//case POSTerminalState::Busy: {
+	//		updateStatus();
+	//		break;
+	//	}
+	//	case POSTerminalState::WaitingResponse {
+	//	auto response = m_channel->receive(); // возврат JSON или структуры
+	//	if (!response.has_value()) break;
 
-	case POSTerminalState::WaitingForResponse: {
-		auto response = m_channel->receive(); // возврат JSON или структуры
-		if (!response.has_value()) break;
+	//	const auto& msg = response.value();
 
-		const auto& msg = response.value();
+	//	if (msg.method == L"ServiceMessage") {
+	//		handleServiceMessage(msg.paramsJson);
+	//	}
+	//	else if (msg.error) {
+	//		transitionTo(POSTerminalState::Error);
+	//	}
+	//	else {
+	//		transitionTo(POSTerminalState::Done);
+	//	}
+	//	break;
+	//}
 
-		if (msg.method == L"ServiceMessage") {
-			handleServiceMessage(msg.paramsJson);
-		}
-		else if (msg.error) {
-			transitionTo(POSTerminalState::Error);
-		}
-		else {
-			transitionTo(POSTerminalState::Done);
-		}
-		break;
-	}
+	//case POSTerminalState::Busy:
+	//case POSTerminalState::Processing:
+	//	updateStatus();
+	//	break;
 
-	case POSTerminalState::Busy:
-	case POSTerminalState::Processing:
-		updateStatus();
-		break;
-
-	default:
-		break;
-	}
+	//default:
+	//	break;
+	//}
 }
 
 std::vector<uint8_t> JsonChannelProtocol::encodeRequest(POSTerminalOperationParameters& op)

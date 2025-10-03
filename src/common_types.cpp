@@ -1,4 +1,5 @@
 ﻿#include "pch.h"
+#include <limits>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -9,9 +10,18 @@
 #include "logger.h"
 #include "str_utils.h"
 
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
 #if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
 #include <combaseapi.h>
+#ifdef min
+#undef min
+#endif
+#ifdef max
+#undef max
+#endif
 #elif defined(__APPLE__)
 #include <CoreFoundation/CFUUID.h>
 #else
@@ -84,7 +94,7 @@ std::vector<DriverParameter> ParseParameters(const std::wstring& xmlPath) {
     // 📂 Загрузка XML файла
     pugi::xml_parse_result result = doc.load_file(xmlPath.c_str(), pugi::parse_default, pugi::encoding_utf8);
     if (!result) {
-        LOG_ERROR_ADD(L"CommonTypes", L"Ошибка загрузки XML: " + convertStringToWString(result.description()));
+        LOG_ERROR_ADD(L"CommonTypes", L"Ошибка загрузки XML: " + str_utils::to_wstring(result.description()));
         return parameters;
     }
 
@@ -111,7 +121,7 @@ bool ParseParametersFromXML(std::vector<DriverParameter>& parameters, const std:
     // 📂 Загрузка XML файла
     pugi::xml_parse_result result = doc.load_file(xmlSource.c_str(), pugi::parse_default, pugi::encoding_utf8);
     if (!result) {
-        LOG_ERROR_ADD(L"CommonTypes", L"Ошибка загрузки XML: " + convertStringToWString(result.description()));
+        LOG_ERROR_ADD(L"CommonTypes", L"Ошибка загрузки XML: " + str_utils::to_wstring(result.description()));
         return false;
     }
 
@@ -393,25 +403,31 @@ std::wstring doubleToAmountString(double value) {
 }
 
 long stringToLong(const std::wstring& str) {
-	try {
-		// Use std::stoul to convert wstring to unsigned long
-		unsigned long value = std::stol(str);
-		// Cast to unsigned int if necessary
-		return static_cast<unsigned int>(value);
-	}
+    try {
+        long value = std::stol(str);
+        return value;
+    }
     catch (const std::invalid_argument& e) {
-        // Handle invalid argument exception
         LOG_ERROR_ADD(L"CommonTypes", L"Invalid convert argument: " + str + L" to long: " + str_utils::to_wstring(e.what()));
     }
-
+    catch (const std::out_of_range& e) {
+        LOG_ERROR_ADD(L"CommonTypes", L"Out of range converting: " + str + L" to long: " + str_utils::to_wstring(e.what()));
+    }
     return 0;
 }
 
 std::optional<long> get_long_attr(const pugi::xml_node& node, const std::wstring& name) {
     if (!node.attribute(name).empty()) {
-        return node.attribute(name).as_llong(0);
+        long long v64 = node.attribute(name).as_llong(0);
+        if (v64 < static_cast<long long>(std::numeric_limits<long>::min()) ||
+            v64 > static_cast<long long>(std::numeric_limits<long>::max())) {
+            LOG_ERROR_ADD(L"CommonTypes",
+                L"Attribute \"" + name + L"\" value out of range for long");
+            return std::nullopt;
+        }
+        return static_cast<long>(v64); // explicit, safe narrowing
     }
-	return std::nullopt;
+    return std::nullopt;
 }
 
 std::optional<double> get_double_attr(const pugi::xml_node& node, const std::wstring& name) {

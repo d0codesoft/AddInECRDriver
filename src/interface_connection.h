@@ -185,6 +185,7 @@ private:
 
 class ComConnection : public IConnection {
 public:
+    ComConnection();
 	ComConnection(const std::string& port, uint32_t baud_rate = 9600);
     bool connect(const std::string& port, std::optional<uint16_t> baudRate) override {
 		return false;
@@ -207,6 +208,8 @@ public:
 		return ConnectionType::COM;
 	}
 
+    void startListening(std::function<void(std::vector<uint8_t>)> callback) override;
+
 	void enableKeepAlive(bool enable) override {
 		keepAlive_ = enable;
 	}
@@ -220,6 +223,8 @@ private:
 	boost::asio::serial_port serial_;
 	std::atomic<bool> keepAlive_{ true };
 	std::chrono::milliseconds reconnectDelay_{ 5000 };
+    std::string port;
+	uint32_t baud_rate_;
 };
 
 class ConnectionFactory {

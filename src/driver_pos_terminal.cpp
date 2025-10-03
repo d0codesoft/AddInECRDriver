@@ -40,14 +40,14 @@ DriverPOSTerminal::~DriverPOSTerminal()
 	if (m_licenseManager)
 		m_licenseManager.reset();
 
-	if (m_connections.size() > 0) {
-		for (auto& connection : m_connections) {
+	if (m_controller.size() > 0) {
+		for (auto& connection : m_controller) {
 			if (connection.second->isConnected()) {
                 connection.second->disconnect();
 			}
 		}
 	}
-	m_connections.clear();
+	m_controller.clear();
 }
 
 void DriverPOSTerminal::InitDriver()
@@ -87,6 +87,8 @@ void DriverPOSTerminal::InitDriver()
 	AddActionDriver(L"OpenLogFile", L"ОткрытьФайлЛога", L"Open log file", L"Відкрити файл лога", 
 		std::bind(&DriverPOSTerminal::ActionOpenFileLog, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
+	AddActionDriver(L"OpenSettings", L"OpenSettings", L"Open log file", L"Налаштування драйверу",
+		std::bind(&DriverPOSTerminal::ActionOpenConfiguration, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
 const DriverDescription& DriverPOSTerminal::getDescriptionDriver()
@@ -294,7 +296,7 @@ bool DriverPOSTerminal::Close(tVariant* pvarRetValue, tVariant* paParams, const 
         _connect->get()->disconnect();
     }
     _connect->get().reset();
-    m_connections.erase(deviceId);
+	m_controller.erase(deviceId);
 
     m_addInBase->setBoolValue(pvarRetValue, true);
     return true;
@@ -455,8 +457,8 @@ bool DriverPOSTerminal::DisconnectEquipment(tVariant* pvarRetValue, tVariant* pa
 		return fail(pvarRetValue, L"DisconnectEquipment", L"Invalid type for device ID");
 	}
 
-	auto findId = m_connections.find(deviceID);
-	if (findId == m_connections.end()) {
+	auto findId = m_controller.find(deviceID);
+	if (findId == m_controller.end()) {
 		return fail(pvarRetValue, L"DisconnectEquipment", L"Invalid device ID");
 	}
 
@@ -468,7 +470,7 @@ bool DriverPOSTerminal::DisconnectEquipment(tVariant* pvarRetValue, tVariant* pa
 		}
         findId->second.reset();
 	}
-	m_connections.erase(findId);
+	m_controller.erase(findId);
     
     m_addInBase->setBoolValue(pvarRetValue, true);
     return true;
@@ -571,9 +573,7 @@ bool DriverPOSTerminal::EquipmentTest(tVariant* pvarRetValue, tVariant* paParams
 bool DriverPOSTerminal::EquipmentAutoSetup(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray) {
     clearError();
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 5, u"EquipmentAutoSetup");
-
     
-
     return false;
 }
 
@@ -2436,6 +2436,20 @@ bool DriverPOSTerminal::ActionOpenFileLog(tVariant* pvarRetValue, tVariant* paPa
 	return true;
 }
 
+bool DriverPOSTerminal::ActionOpenConfiguration(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray)
+{
+	clearError();
+
+	// Open the configuration dialog
+	//if (m_showConfigDialog) {
+	//	m_showConfigDialog();
+	//	return true;
+	//}
+	
+	m_addInBase->setBoolValue(pvarRetValue, true);
+	return true;
+}
+
 bool DriverPOSTerminal::InitConnection(std::wstring& deviceID, std::wstring &error)
 {
 	auto newDeviceID = generateGUID();
@@ -2464,21 +2478,20 @@ bool DriverPOSTerminal::InitConnection(std::wstring& deviceID, std::wstring &err
 	}
 
 	auto connectionType = connType.value();
-    auto connection = ConnectionFactory::create(connectionType);
-    auto protocolChanel = POSTerminalControllerFactory::create(m_protocolTerminal, std::move(connection));
+    auto terminalController = POSTerminalControllerFactory::create(m_protocolTerminal, connectionType);
 
 	auto host = str_utils::to_string(paramHost.value());
 	auto port = static_cast<uint16_t>(paramPort.value());
 
-	if (!protocolChanel.get()->connect(host, port)) {
+	if (!terminalController.get()->connect(host, port)) {
 		error = L"Failed to connect";
 		return false;
 	}
     
-	bool result = protocolChanel->isConnected();
+	bool result = terminalController->isConnected();
     if (result) {
 		deviceID = newDeviceID;
-        m_connections.insert({ newDeviceID, std::move(protocolChanel) });
+		m_controller.insert({ newDeviceID, std::move(terminalController) });
     }
 
 	return result;
@@ -2516,8 +2529,7 @@ bool DriverPOSTerminal::testConnection(std::vector<DriverParameter>& paramConnec
     }
 
     auto connectionType = connType.value();
-	auto connection = ConnectionFactory::create(connectionType);
-	auto protocolChanel = POSTerminalControllerFactory::create(m_protocolTerminal, std::move(connection));
+	auto protocolChanel = POSTerminalControllerFactory::create(m_protocolTerminal, connectionType);
 
 	auto host = str_utils::to_string(paramHost.value());
 	auto port = static_cast<uint16_t>(paramPort.value());
@@ -2583,16 +2595,16 @@ std::optional<EquipmentTypeInfo> DriverPOSTerminal::getEquipmentTypeInfoFromVari
 	return type;
 }
 
-std::optional<std::reference_wrapper<std::unique_ptr<IChannelProtocol>>> DriverPOSTerminal::getDeviceConnection(tVariant* paramDeviceID, std::wstring& deviceId)
+std::optional<std::reference_wrapper<std::unique_ptr<POSTerminalController>>> DriverPOSTerminal::getDeviceConnection(tVariant* paramDeviceID, std::wstring& deviceId)
 {
 	deviceId = L"";
 	if (VariantHelper::isValueString(*paramDeviceID)) {
 		auto opVal = VariantHelper::getStringValue(*paramDeviceID);
 		if (opVal.has_value()) {
             deviceId = opVal.value();
-			auto findId = m_connections.find(deviceId);
-			if (findId != m_connections.end() && findId->second != nullptr) {
-				return std::optional<std::reference_wrapper<std::unique_ptr<IChannelProtocol>>>(findId->second);
+			auto findId = m_controller.find(deviceId);
+			if (findId != m_controller.end() && findId->second != nullptr) {
+				return std::optional<std::reference_wrapper<std::unique_ptr<POSTerminalController>>>(findId->second);
 			}
 		}
 	}

@@ -169,24 +169,24 @@ public:
 	}
 
 	// Implementing connection
-	bool connect(const std::string& address, std::optional<uint16_t> port = 2000) override;
+	bool connect(const std::string& address, std::optional<uint16_t> port = 2000);
 
-	void disconnect() override;
+	void disconnect();
 
-	bool isConnected() const override;
+	bool isConnected() const;
 
-	bool processTransaction(POSTerminalOperationParameters& paramPayement, std::wstring& outError) override;
+	bool processTransaction(POSTerminalOperationParameters& paramPayement, std::wstring& outError);
 
 	std::wstring getLastError() const {
 		return lastError_;
 	}
 
 	POSTerminalState getState() const {
-		return state_;
+		return m_state;
 	}
 
 	bool isBusy() const {
-		return state_ == POSTerminalState::Busy || state_ == POSTerminalState::WaitingResponse;
+		return m_state == POSTerminalState::Busy || m_state == POSTerminalState::WaitingResponse;
 	}
 
 private:
@@ -230,7 +230,7 @@ private:
 	}
 
 	void _transitionTo(POSTerminalState newState);
-	void _tick(); // обновляет состояние FSM
+	void _tick(); // update state FSM
 
 	std::queue<receiveData> dataQueue = {};
 	std::mutex queueMutex = {};
@@ -243,7 +243,9 @@ private:
 
 	std::wstring lastError_ = L"";
 
-	POSTerminalState state_ = POSTerminalState::Idle;
+	std::chrono::steady_clock::time_point m_lastTick = std::chrono::steady_clock::now();
+
+	POSTerminalState m_state = POSTerminalState::Idle;
 };
 
 // Factory reset data and move to Idle state
@@ -295,4 +297,3 @@ public:
 };
 
 #endif // ICHANNELPROTOCOL_H
-

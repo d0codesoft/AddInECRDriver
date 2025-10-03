@@ -88,6 +88,7 @@ public:
 
     // Action driver
 	bool ActionOpenFileLog(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray);
+	bool ActionOpenConfiguration(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray);
 
 protected:
 
@@ -100,7 +101,7 @@ protected:
 
 	std::optional<EquipmentTypeInfo> getEquipmentTypeInfoFromVariant(tVariant* paParam);
 
-    std::optional<std::reference_wrapper<std::unique_ptr<IChannelProtocol>>> getDeviceConnection(tVariant* paramDeviceID, std::wstring& deviceId);
+    std::optional<std::reference_wrapper<std::unique_ptr<POSTerminalController>>> getDeviceConnection(tVariant* paramDeviceID, std::wstring& deviceId);
 
     void _handleError(const std::wstring& methodName, const std::wstring& messageError, const bool driverErrorNotify = false, const AddinErrorCode errorCode = AddinErrorCode::VeryImportant);
     inline bool fail(tVariant* pvarRetValue, const std::wstring& context, const std::wstring& errorKey);
@@ -285,7 +286,7 @@ private:
     ConnectionType m_connectionType = ConnectionType::TCP;
 	POSTerminalProtocol m_protocolTerminal = POSTerminalProtocol::JSON;
 
-	std::unordered_map<std::wstring, std::unique_ptr<IChannelProtocol>> m_connections = {};
+	std::unordered_map<std::wstring, std::unique_ptr<POSTerminalController>> m_controller = {};
 	std::unordered_map<std::wstring, POSTerminalConfig> m_configTerminals = {};
 
     DriverDescription m_driverDescription;
