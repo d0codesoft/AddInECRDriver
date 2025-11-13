@@ -26,6 +26,7 @@ public:
     virtual bool getString1C(const std::u16string& source, WCHAR_T** value, uint32_t& length) = 0;
 	virtual bool getString(const WCHAR_T* source, std::u16string& dest) = 0;
     virtual bool setStringValue(tVariant* pvarParamDefValue, const std::u16string& source) = 0;
+    virtual bool setDoubleValue(tVariant* pvarParamDefValue, const double source) = 0;
     virtual bool setBoolValue(tVariant* pvarParamDefValue, const bool flag) = 0;
 
 	// Function to save and load value to storage 1C

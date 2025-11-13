@@ -5,6 +5,7 @@
 
 #include <string>
 #include <iostream>
+#include <optional>
 
 namespace str_utils
 {
@@ -23,6 +24,10 @@ namespace str_utils
 	std::string to_string(const std::u16string& str);
 	std::string to_string(const wchar_t* str);
 	std::string to_string(const char16_t* str);
+
+	bool iequals(const std::wstring& a, const std::wstring& b) noexcept;
+	std::optional<uint32_t> to_UInt(const std::wstring& value);
+	std::optional<double> to_Double(const std::wstring& value);
 
 } // namespace str_utils
 

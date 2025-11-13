@@ -7,6 +7,7 @@
 #include "connection_types.h"
 #include "logger.h"
 #include <queue>
+#include "protocol_consts.h"
 
 #ifndef ICHANNELPROTOCOL_H
 #define ICHANNELPROTOCOL_H
@@ -42,6 +43,34 @@ struct receiveData {
 		return ss.str();
 	}
 
+	// Get a parameter as string regardless of underlying stored type.
+	// Returns std::nullopt if the key is not present or type is unsupported.
+	// Inside struct receiveData
+	std::optional<std::wstring> GetParams(const std::wstring& name) const {
+		// Helper to turn variant into string
+		auto toStr = [](const std::variant<std::wstring, long, double, bool>& v) -> std::optional<std::wstring> {
+			if (std::holds_alternative<std::wstring>(v)) return std::get<std::wstring>(v);
+			if (std::holds_alternative<long>(v))       return std::to_wstring(std::get<long>(v));
+			if (std::holds_alternative<double>(v))     return std::to_wstring(std::get<double>(v));
+			if (std::holds_alternative<bool>(v))       return std::get<bool>(v) ? L"true" : L"false";
+			return std::nullopt;
+			};
+
+		// 1) Fast exact match (case-sensitive)
+		if (auto it = params.find(name); it != params.end()) {
+			return toStr(it->second);
+		}
+
+		// 2) Fallback: case-insensitive search
+		for (const auto& [k, v] : params) {
+			if (str_utils::iequals(k, name)) {
+				return toStr(v);
+			}
+		}
+
+		return std::nullopt;
+	}
+
 	// Overload the << operator for receiveData
 	friend std::wostream& operator<<(std::wostream& os, const receiveData& data) {
 		os << L"Method: " << data.method << L" Step: " << data.step << L" Error: " << (data.error ? "true" : "false");
@@ -71,6 +100,29 @@ struct receiveData {
 		}
 		return os;
 	}
+
+	std::unique_ptr<POSTerminalOperationResponse> to_OperationResponse() const;
+
+	//// Move constructor
+	//receiveData(receiveData&& other) noexcept
+	//	: method(std::move(other.method)),
+	//	step(other.step),
+	//	params(std::move(other.params)),
+	//	error(other.error),
+	//	errorDescription(std::move(other.errorDescription)) {
+	//}
+
+	//// Move assignment operator
+	//receiveData& operator=(receiveData&& other) noexcept {
+	//	if (this != &other) {
+	//		method = std::move(other.method);
+	//		step = other.step;
+	//		params = std::move(other.params);
+	//		error = other.error;
+	//		errorDescription = std::move(other.errorDescription);
+	//	}
+	//	return *this;
+	//}
 };
 
 struct sendData {
@@ -129,6 +181,7 @@ public:
 class IChannelProtocol {
 public:
 	virtual std::vector<uint8_t> encodeRequest(POSTerminalOperationParameters& op) = 0;
+	virtual std::vector<uint8_t> encodeRequest(sendData& op) = 0;
 	virtual void pushResponse(const std::vector<uint8_t>& rawData) = 0;
 	virtual std::optional<receiveData> getResponseData() = 0;
 	virtual ~IChannelProtocol() = default;
@@ -141,6 +194,7 @@ public:
 		dataBuffer_.reserve(1024);
 	}
 	std::vector<uint8_t> encodeRequest(POSTerminalOperationParameters& op) override;
+	std::vector<uint8_t> encodeRequest(sendData& op) override;
 
 	void pushResponse(const std::vector<uint8_t>& rawData) override;
 
@@ -152,7 +206,7 @@ private:
 	void _handleParsedJson(const jsoncons::json& json);
 
 	std::vector<uint8_t> dataBuffer_;
-	std::queue<receiveData> dataQueue_;
+	std::deque<receiveData> dataQueue_;
 	std::mutex queueMutex_;
 };
 
@@ -175,7 +229,7 @@ public:
 
 	bool isConnected() const;
 
-	bool processTransaction(POSTerminalOperationParameters& paramPayement, std::wstring& outError);
+	std::unique_ptr<POSTerminalOperationResponse> processTransaction(POSTerminalOperationParameters& paramPayement, std::wstring& outError);
 
 	std::wstring getLastError() const {
 		return lastError_;
@@ -187,6 +241,16 @@ public:
 
 	bool isBusy() const {
 		return m_state == POSTerminalState::Busy || m_state == POSTerminalState::WaitingResponse;
+	}
+
+	std::wstring getTerminalId() const {
+		return terminalId_;
+	}
+	std::wstring getTerminalModel() const {
+		return terminalModel_;
+	}
+	std::wstring getTerminalVendor() const {
+		return terminalVendor_;
 	}
 
 private:
@@ -230,7 +294,30 @@ private:
 	}
 
 	void _transitionTo(POSTerminalState newState);
-	void _tick(); // update state FSM
+	void _handleServiceMessage(const Params& params); // update state FSM
+	bool _sendInterrupt();
+
+	int _getLastResult();
+	int _getLastStatMsgCode();
+
+	bool _msgIsBussy(const receiveData& recvData) {
+		auto it = recvData.params.find(PROTOCOL_MESSAGE_TYPE);
+		if (it != recvData.params.end() && std::holds_alternative<std::wstring>(it->second)) {
+			const auto& value = std::get<std::wstring>(it->second);
+			if (str_utils::iequals(value, PROTOCOL_MESSAGE_TYPE_DEVICEBUSY)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	bool _msgIsServiceMessage(const receiveData& recvData) {
+		bool result = str_utils::iequals(recvData.method, PROTOCOL_METHOD_SERVICEMESSAGE);
+		return result;
+	}
+
+	bool _handshakeTerminal();
+	bool _identifyTerminal();
 
 	std::queue<receiveData> dataQueue = {};
 	std::mutex queueMutex = {};
@@ -242,6 +329,9 @@ private:
 	std::unique_ptr<IChannelProtocol> protocol_;
 
 	std::wstring lastError_ = L"";
+	std::wstring terminalId_ = L"";
+	std::wstring terminalModel_ = L"";
+	std::wstring terminalVendor_ = L"";
 
 	std::chrono::steady_clock::time_point m_lastTick = std::chrono::steady_clock::now();
 

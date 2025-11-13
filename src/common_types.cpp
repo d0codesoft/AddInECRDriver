@@ -208,6 +208,45 @@ std::u16string toXMLTerminalConfig(const POSTerminalConfig& config)
 	return str_utils::to_u16string(xml_str);
 }
 
+POSTerminalLastStatMsgCode getLastStatMsgCode(uint8_t pVal)
+{
+    switch (pVal) {
+    case 1:  return POSTerminalLastStatMsgCode::CardRead;
+    case 2:  return POSTerminalLastStatMsgCode::ChipCardUsed;
+    case 3:  return POSTerminalLastStatMsgCode::Authorization;
+    case 4:  return POSTerminalLastStatMsgCode::WaitingCashier;
+    case 5:  return POSTerminalLastStatMsgCode::PrintingReceipt;
+    case 6:  return POSTerminalLastStatMsgCode::PinEntryRequired;
+    case 7:  return POSTerminalLastStatMsgCode::CardRemoved;
+    case 8:  return POSTerminalLastStatMsgCode::EMVMultiAID;
+    case 9:  return POSTerminalLastStatMsgCode::WaitingCard;
+    case 10: return POSTerminalLastStatMsgCode::InProgress;
+    case 11: return POSTerminalLastStatMsgCode::TransactionOK;
+    default: return POSTerminalLastStatMsgCode::NotAvailable;
+    }
+}
+
+std::wstring to_wstring(const POSTerminalLastStatMsgCode code)
+{
+
+    switch (code) {
+    case POSTerminalLastStatMsgCode::NotAvailable:    return L"NotAvailable";
+    case POSTerminalLastStatMsgCode::CardRead:        return L"CardRead";
+    case POSTerminalLastStatMsgCode::ChipCardUsed:    return L"ChipCardUsed";
+    case POSTerminalLastStatMsgCode::Authorization:   return L"Authorization";
+    case POSTerminalLastStatMsgCode::WaitingCashier:  return L"WaitingCashier";
+    case POSTerminalLastStatMsgCode::PrintingReceipt: return L"PrintingReceipt";
+    case POSTerminalLastStatMsgCode::PinEntryRequired:return L"PinEntryRequired";
+    case POSTerminalLastStatMsgCode::CardRemoved:     return L"CardRemoved";
+    case POSTerminalLastStatMsgCode::EMVMultiAID:     return L"EMVMultiAID";
+    case POSTerminalLastStatMsgCode::WaitingCard:     return L"WaitingCard";
+    case POSTerminalLastStatMsgCode::InProgress:      return L"InProgress";
+    case POSTerminalLastStatMsgCode::TransactionOK:   return L"TransactionOK";
+    default:                                          return L"Unknown";
+    }
+
+}
+
 bool isValidPOSTerminalOperationParameters(const POSTerminalOperationParameters& op, const POSTerminalOperationType opType)
 {
 	switch (opType)
@@ -541,6 +580,40 @@ bool writePOSTerminalOperationParametersToXml(const POSTerminalOperationParamete
 	if (!params.AuthorizationCode.empty()) {
 		root.append_attribute(L"AuthorizationCode") = params.AuthorizationCode.c_str();
 	}
+
+    // Convert the XML document to a string
+	std::wostringstream oss;
+	doc.save(oss);
+	outXml = oss.str();
+
+	return true;
+}
+
+bool writePOSTerminalResponseToXml(const std::unique_ptr<POSTerminalOperationResponse>& params, const POSTerminalOperationType opType, std::wstring& outXml)
+{
+    pugi::xml_document doc;
+
+    // Create the root node
+    auto root = doc.append_child(L"OperationParameters");
+
+    // Add attributes to the root node
+    root.append_attribute(L"AuthorizationType") = params->merchant;
+    root.append_attribute(L"CardNumber") = params->subMerchant;
+    root.append_attribute(L"ReceiptNumber") = L"";
+    if (opType == POSTerminalOperationType::Pay 
+        || opType == POSTerminalOperationType::ReturnPayment
+        || opType == POSTerminalOperationType::Authorisation 
+        || opType == POSTerminalOperationType::PayWithCashWithdrawal
+        || opType == POSTerminalOperationType::PayElectronicCertificate) {
+        root.append_attribute(L"RRNCode") = params->rrn;
+    }
+    if (opType == POSTerminalOperationType::Pay
+        || opType == POSTerminalOperationType::ReturnPayment
+        || opType == POSTerminalOperationType::Authorisation
+        || opType == POSTerminalOperationType::PayWithCashWithdrawal
+        || opType == POSTerminalOperationType::PayElectronicCertificate) {
+        root.append_attribute(L"AuthorizationCode") = params->approvalCode;
+    }
 
     // Convert the XML document to a string
 	std::wostringstream oss;

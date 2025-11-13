@@ -451,6 +451,16 @@ bool CAddInECRDriver::setStringValue(tVariant* pvarParamDefValue, const std::u16
     return true;
 }
 
+bool CAddInECRDriver::setDoubleValue(tVariant* pvarParamDefValue, const double source)
+{
+    if (!pvarParamDefValue) {
+        return false;
+    }
+    TV_VT(pvarParamDefValue) = VTYPE_R8;
+    TV_R8(pvarParamDefValue) = source;
+	return true;
+}
+
 bool CAddInECRDriver::setBoolValue(tVariant* pvarParamDefValue, const bool flag) {
 	if (!pvarParamDefValue) {
 		return false;

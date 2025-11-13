@@ -7,8 +7,8 @@
 #include "logger.h"
 #include "connection_types.h"
 
-const SettingSettings SettingDriverPos::m_settings = {
-{
+SettingDriverPos::SettingDriverPos()
+    : m_settings({
     {
         L"Параметри", // PageCaption
         {
@@ -39,7 +39,9 @@ const SettingSettings SettingDriverPos::m_settings = {
                         L"Дозволити оплату через FacePay24", L"", L"Boolean", L"", L"false", false,{}},
 					{ OptionDriverNames.at(DriverOption::MerchantId), 
                         L"Код мерчанта", L"Код мерчанта", L"Number", L"", L"", false,{}},
-				}
+                    { OptionDriverNames.at(DriverOption::PrintReceiptOnTerminal),
+                        L"Друкувати чек на терміналі", L"Друкувати чек на терміналі", L"Boolean", L"", L"false", false,{}},
+                }
 			},
 			{   // Logging parameters
 				L"Логування",
@@ -66,8 +68,9 @@ const SettingSettings SettingDriverPos::m_settings = {
             }
         }
     }
+    })
+{
 }
-};
 
 const SettingSettings& SettingDriverPos::getSettings()
 {

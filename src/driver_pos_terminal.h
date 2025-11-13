@@ -84,7 +84,7 @@ public:
 	void AddActionDriver(const std::wstring& name_en, const std::wstring& name_ru, const std::wstring& caption_en, const std::wstring& caption_ru, CallAsFunc1C ptr_method) override;
     std::span<const ActionDriver> getActions() override;
 
-    std::optional<POSTerminalConfig> getTerminalConfig(std::wstring& deviceID) override;
+    POSTerminalConfig* getTerminalConfig(const std::wstring& deviceID) override;
 
     // Action driver
 	bool ActionOpenFileLog(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray);
@@ -105,6 +105,8 @@ protected:
 
     void _handleError(const std::wstring& methodName, const std::wstring& messageError, const bool driverErrorNotify = false, const AddinErrorCode errorCode = AddinErrorCode::VeryImportant);
     inline bool fail(tVariant* pvarRetValue, const std::wstring& context, const std::wstring& errorKey);
+
+	void _initializeConfigurationTerminal(const std::wstring& id);
 
 private:
 
@@ -292,6 +294,8 @@ private:
     DriverDescription m_driverDescription;
     std::unique_ptr<LicenseManager> m_licenseManager;
 	std::vector<ActionDriver> m_actions = {};
+
+    SettingDriverPos m_settingDriverPos;
 
 	LanguageCode m_languageCode = LanguageCode::RU;
 };

@@ -176,7 +176,7 @@ bool DriverPOSTerminal::GetParameters(tVariant* pvarRetValue, tVariant* paParams
 	clearError();
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 1, u"GetParameters");
 
-	auto xmlParam = toXML(SettingDriverPos::getSettings(), this->m_ParamConnection);
+	auto xmlParam = toXML(m_settingDriverPos.getSettings(), this->m_ParamConnection);
 	m_addInBase->setStringValue(paParams, xmlParam);
 	m_addInBase->setBoolValue(pvarRetValue, true);
 
@@ -258,6 +258,9 @@ bool DriverPOSTerminal::Open(tVariant* pvarRetValue, tVariant* paParams, const l
     if (result)
     {
         m_addInBase->setStringValue(paParams, str_utils::to_u16string(deviceId));
+		// Need initialize configuration terminal
+		// And get parameters from terminal
+		_initializeConfigurationTerminal(deviceId);
     }
     else {
 		_handleError(L"Open", error);
@@ -367,7 +370,7 @@ bool DriverPOSTerminal::EquipmentParameters(tVariant* pvarRetValue, tVariant* pa
 	}
 
     // Get SettingXML
-	auto settingXml = SettingDriverPos::getSettingXML();
+	auto settingXml = m_settingDriverPos.getSettingXML();
 	m_addInBase->setStringValue(&paParams[1], settingXml);
     m_addInBase->setBoolValue(pvarRetValue, true);
 
@@ -798,11 +801,11 @@ bool DriverPOSTerminal::TerminalParameters(tVariant* pvarRetValue, tVariant* paP
 
 	auto deviceId = optDeviceId.value();
     auto param = getTerminalConfig(deviceId);
-	if (!param.has_value()) {
+	if (!param) {
 		return fail(pvarRetValue, L"TerminalParameters", L"Invalid device ID");
 	}
 
-    auto xmlParameter = toXMLTerminalConfig(param.value());
+    auto xmlParameter = toXMLTerminalConfig(*param);
 	m_addInBase->setStringValue(&paParams[1], xmlParameter);
 	m_addInBase->setBoolValue(pvarRetValue, true);
 
@@ -875,12 +878,12 @@ bool DriverPOSTerminal::Pay(tVariant* pvarRetValue, tVariant* paParams, const lo
 	}
 
 	std::wstring _resultXML{};
-	if (!writePOSTerminalOperationParametersToXml(paramPayment, _resultXML)) {
+	if (!writePOSTerminalResponseToXml(resultPay, paramPayment.OperationType, _resultXML)) {
 		return fail(pvarRetValue, L"Pay", L"Invalid OperationParameters format");
 	}
-
 	m_addInBase->setStringValue(&paParams[2], str_utils::to_u16string(_resultXML));
 	m_addInBase->setStringValue(&paParams[3], str_utils::to_u16string(paramPayment.Slip));
+
 	m_addInBase->setBoolValue(pvarRetValue, true);
 
 	return true;
@@ -988,12 +991,12 @@ bool DriverPOSTerminal::PayByPaymentCard(tVariant* pvarRetValue, tVariant* paPar
 		return fail(pvarRetValue, L"PayByPaymentCard", _errorCode);
 	}
 
-	m_addInBase->setStringValue(&paParams[1], str_utils::to_u16string(paramPayment.CardNumber));
-	m_addInBase->setStringValue(&paParams[3], str_utils::to_u16string(paramPayment.ReceiptNumber));
-	m_addInBase->setStringValue(&paParams[4], str_utils::to_u16string(paramPayment.RRNCode));
-	m_addInBase->setStringValue(&paParams[5], str_utils::to_u16string(paramPayment.AuthorizationCode));
-	m_addInBase->setStringValue(&paParams[6], str_utils::to_u16string(paramPayment.Slip));
-	m_addInBase->setBoolValue(pvarRetValue, true);
+	m_addInBase->setStringValue(&paParams[1], str_utils::to_u16string(resultPay->pan));
+	m_addInBase->setStringValue(&paParams[3], str_utils::to_u16string(resultPay->invoiceNumber));
+	m_addInBase->setStringValue(&paParams[4], str_utils::to_u16string(resultPay->rrn));
+	m_addInBase->setStringValue(&paParams[5], str_utils::to_u16string(resultPay->approvalCode));
+	m_addInBase->setStringValue(&paParams[6], str_utils::to_u16string(resultPay->receipt));
+	m_addInBase->setBoolValue(pvarRetValue, resultPay->result);
 
     return true;
 }
@@ -1094,11 +1097,11 @@ bool DriverPOSTerminal::ReturnPaymentByPaymentCard(tVariant* pvarRetValue, tVari
 		return fail(pvarRetValue, L"ReturnPaymentByPaymentCard", _errorCode);
 	}
 
-	m_addInBase->setStringValue(&paParams[1], str_utils::to_u16string(paramPayment.CardNumber));
-	m_addInBase->setStringValue(&paParams[3], str_utils::to_u16string(paramPayment.ReceiptNumber));
-	m_addInBase->setStringValue(&paParams[4], str_utils::to_u16string(paramPayment.RRNCode));
-	m_addInBase->setStringValue(&paParams[5], str_utils::to_u16string(paramPayment.AuthorizationCode));
-	m_addInBase->setStringValue(&paParams[6], str_utils::to_u16string(paramPayment.Slip));
+	m_addInBase->setStringValue(&paParams[1], str_utils::to_u16string(resultPay->pan));
+	m_addInBase->setStringValue(&paParams[3], str_utils::to_u16string(resultPay->invoiceNumber));
+	m_addInBase->setStringValue(&paParams[4], str_utils::to_u16string(resultPay->rrn));
+	m_addInBase->setStringValue(&paParams[5], str_utils::to_u16string(resultPay->approvalCode));
+	m_addInBase->setStringValue(&paParams[6], str_utils::to_u16string(resultPay->receipt));
 	m_addInBase->setBoolValue(pvarRetValue, true);
 
 	return true;
@@ -1170,7 +1173,7 @@ bool DriverPOSTerminal::ReturnPayment(tVariant* pvarRetValue, tVariant* paParams
 	}
 
 	std::wstring _resultXML{};
-	if (!writePOSTerminalOperationParametersToXml(paramPayment, _resultXML)) {
+	if (!writePOSTerminalResponseToXml(resultPay, paramPayment.OperationType, _resultXML)) {
 		return fail(pvarRetValue, L"ReturnPayment", L"Invalid OperationParameters format");
 	}
 
@@ -1246,7 +1249,7 @@ bool DriverPOSTerminal::CancelPayment(tVariant* pvarRetValue, tVariant* paParams
 	}
 
 	std::wstring _resultXML{};
-	if (!writePOSTerminalOperationParametersToXml(paramPayment, _resultXML)) {
+	if (!writePOSTerminalResponseToXml(resultPay, paramPayment.OperationType, _resultXML)) {
 		return fail(pvarRetValue, L"CancelPayment", L"Invalid OperationParameters format");
 	}
 
@@ -1436,7 +1439,7 @@ bool DriverPOSTerminal::Authorisation(tVariant* pvarRetValue, tVariant* paParams
 	}
 
 	std::wstring _resultXML{};
-	if (!writePOSTerminalOperationParametersToXml(paramPayment, _resultXML)) {
+	if (!writePOSTerminalResponseToXml(resultPay, paramPayment.OperationType, _resultXML)) {
 		return fail(pvarRetValue, L"Authorisation", L"Invalid OperationParameters format");
 	}
 
@@ -1616,7 +1619,7 @@ bool DriverPOSTerminal::AuthConfirmation(tVariant* pvarRetValue, tVariant* paPar
 	}
 
 	std::wstring _resultXML{};
-	if (!writePOSTerminalOperationParametersToXml(paramPayment, _resultXML)) {
+	if (!writePOSTerminalResponseToXml(resultPay, paramPayment.OperationType, _resultXML)) {
 		return fail(pvarRetValue, L"AuthConfirmation", L"Invalid OperationParameters format");
 	}
 
@@ -1702,8 +1705,6 @@ bool DriverPOSTerminal::AuthConfirmationByPaymentCard(tVariant* pvarRetValue, tV
 
 	m_addInBase->setStringValue(&paParams[1], str_utils::to_u16string(paramPayment.CardNumber));
 	m_addInBase->setStringValue(&paParams[3], str_utils::to_u16string(paramPayment.ReceiptNumber));
-	m_addInBase->setStringValue(&paParams[4], str_utils::to_u16string(paramPayment.RRNCode));
-	m_addInBase->setStringValue(&paParams[5], str_utils::to_u16string(paramPayment.AuthorizationCode));
 	m_addInBase->setStringValue(&paParams[6], str_utils::to_u16string(paramPayment.Slip));
 	m_addInBase->setBoolValue(pvarRetValue, true);
 
@@ -1775,7 +1776,7 @@ bool DriverPOSTerminal::CancelAuthorisation(tVariant* pvarRetValue, tVariant* pa
 	}
 
 	std::wstring _resultXML{};
-	if (!writePOSTerminalOperationParametersToXml(paramPayment, _resultXML)) {
+	if (!writePOSTerminalResponseToXml(resultPay, paramPayment.OperationType, _resultXML)) {
 		return fail(pvarRetValue, L"CancelAuthorisation", L"Invalid OperationParameters format");
 	}
 
@@ -1890,8 +1891,6 @@ bool DriverPOSTerminal::CancelAuthorisationByPaymentCard(tVariant* pvarRetValue,
 
 	m_addInBase->setStringValue(&paParams[1], str_utils::to_u16string(paramPayment.CardNumber));
 	m_addInBase->setStringValue(&paParams[3], str_utils::to_u16string(paramPayment.ReceiptNumber));
-	//m_addInBase->setStringValue(&paParams[4], str_utils::to_u16string(paramPayment.RRNCode));
-	//m_addInBase->setStringValue(&paParams[5], str_utils::to_u16string(paramPayment.AuthorizationCode));
 	m_addInBase->setStringValue(&paParams[6], str_utils::to_u16string(paramPayment.Slip));
 	m_addInBase->setBoolValue(pvarRetValue, true);
 
@@ -1963,7 +1962,7 @@ bool DriverPOSTerminal::PayWithCashWithdrawal(tVariant* pvarRetValue, tVariant* 
 	}
 
 	std::wstring _resultXML{};
-	if (!writePOSTerminalOperationParametersToXml(paramPayment, _resultXML)) {
+	if (!writePOSTerminalResponseToXml(resultPay, paramPayment.OperationType, _resultXML)) {
 		return fail(pvarRetValue, L"PayWithCashWithdrawal", L"Invalid OperationParameters format");
 	}
 
@@ -2085,11 +2084,11 @@ bool DriverPOSTerminal::PayByPaymentCardWithCashWithdrawal(tVariant* pvarRetValu
 		return fail(pvarRetValue, L"PayByPaymentCardWithCashWithdrawal", _errorCode);
 	}
 
-	m_addInBase->setStringValue(&paParams[1], str_utils::to_u16string(paramPayment.CardNumber));
-	m_addInBase->setStringValue(&paParams[3], str_utils::to_u16string(paramPayment.ReceiptNumber));
-	m_addInBase->setStringValue(&paParams[4], str_utils::to_u16string(paramPayment.RRNCode));
-	m_addInBase->setStringValue(&paParams[5], str_utils::to_u16string(paramPayment.AuthorizationCode));
-	m_addInBase->setStringValue(&paParams[6], str_utils::to_u16string(paramPayment.Slip));
+	m_addInBase->setStringValue(&paParams[5], str_utils::to_u16string(paramPayment.CardNumber));
+	m_addInBase->setStringValue(&paParams[6], str_utils::to_u16string(paramPayment.ReceiptNumber));
+	m_addInBase->setStringValue(&paParams[7], str_utils::to_u16string(paramPayment.RRNCode));
+	m_addInBase->setStringValue(&paParams[8], str_utils::to_u16string(paramPayment.AuthorizationCode));
+	m_addInBase->setStringValue(&paParams[9], str_utils::to_u16string(paramPayment.Slip));
 	m_addInBase->setBoolValue(pvarRetValue, true);
 
 	return true;
@@ -2377,13 +2376,13 @@ std::span<const ActionDriver> DriverPOSTerminal::getActions()
 	return m_actions;
 }
 
-std::optional<POSTerminalConfig> DriverPOSTerminal::getTerminalConfig(std::wstring& deviceID)
+POSTerminalConfig* DriverPOSTerminal::getTerminalConfig(const std::wstring& deviceID)
 {
 	auto it = m_configTerminals.find(deviceID);
 	if ( it != m_configTerminals.end()) {
-		return it->second;
+		return &it->second;
 	}
-	return std::nullopt;
+	return nullptr;
 }
 
 bool DriverPOSTerminal::ActionOpenFileLog(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray)
@@ -2626,4 +2625,32 @@ bool DriverPOSTerminal::fail(tVariant* pvarRetValue, const std::wstring& context
 	_handleError(context, LocalizationManager::GetLocalizedString(errorKey));
 	m_addInBase->setBoolValue(pvarRetValue, false);
 	return false;
+}
+
+void DriverPOSTerminal::_initializeConfigurationTerminal(const std::wstring& id)
+{
+	auto config = this->getTerminalConfig(id);
+	if (config == nullptr) {
+		m_configTerminals[id] = POSTerminalConfig{};
+		config = &m_configTerminals[id];
+	}
+
+	// Initialize settings
+	config->CashWithdrawal = false;
+	config->ConsumerPresentedQR = false;
+	config->ElectronicCertificates = false;
+	config->ListCardTransactions = false;
+	config->PartialCancellation = false;
+	config->PrintSlipOnTerminal = true;
+	config->PurchaseWithEnrollment = false;
+	config->ReturnElectronicCertificateByBasketID = false;
+	config->ShortSlip = false;
+	config->TerminalID = id;
+	config->TerminalModel = m_controller[id]->getTerminalModel();
+	config->TerminalVendor = m_controller[id]->getTerminalVendor();
+
+	if (config->TerminalVendor == L"PAX")
+	{
+
+	}
 }

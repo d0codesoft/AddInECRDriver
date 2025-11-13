@@ -81,6 +81,9 @@
     <ClInclude Include="connection_types.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="protocol_consts.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -138,6 +141,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="connection_types.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="protocol_consts.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

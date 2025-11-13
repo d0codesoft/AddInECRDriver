@@ -188,6 +188,7 @@
     <ClInclude Include="localization_manager.h" />
     <ClInclude Include="logger.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="protocol_consts.h" />
     <ClInclude Include="setting_driver_pos.h" />
     <ClInclude Include="storage_manager.h" />
     <ClInclude Include="string_conversion.h" />
@@ -214,6 +215,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="protocol_consts.cpp" />
     <ClCompile Include="setting_driver_pos.cpp" />
     <ClCompile Include="storage_manager.cpp" />
     <ClCompile Include="string_conversion.cpp" />

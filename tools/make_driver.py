@@ -100,15 +100,23 @@ def main():
         raise FileNotFoundError("Файл конфигурации не найден: config.ini")
 
     parser = argparse.ArgumentParser(description="Формирование файла драйвера для загрузки в конфигурации 1С 8.3.")
-    parser.add_argument("--build_type", choices=["DEBUG", "RELEASE"], default="DEBUG",
+    parser.add_argument("-build_type", choices=["DEBUG", "RELEASE"], default="DEBUG",
                         help="Тип сборки (DEBUG или RELEASE)")
-    parser.add_argument("build_dir", help="Каталог файлов библиотек")
-    parser.add_argument("output_dir", nargs='?', default=os.getcwd(), help="Каталог для сохранения выходного архива (по умолчанию текущий каталог)")
-    args = parser.parse_args()
+    parser.add_argument("-build_dir", help="Каталог файлов библиотек")
+    parser.add_argument("-output_dir", nargs='?', default=os.getcwd(), help="Каталог для сохранения выходного архива (по умолчанию текущий каталог)")
 
-    build_dir = args.build_dir
-    output_dir = args.output_dir
-    build_type = args.build_type
+    build_dir = None
+    output_dir = None
+    build_type = None
+    try:
+        args = parser.parse_args()
+        build_dir = args.build_dir
+        output_dir = args.output_dir
+        build_type = args.build_type
+    except SystemExit:
+        print("\nОшибка: неверные параметры.\n Example: make_driver.py DEBUG ../bin/x64/")
+        parser.print_help()
+        exit(1)
 
     config = read_config(config_path)
     with TemporaryDirectory() as temp_dir:

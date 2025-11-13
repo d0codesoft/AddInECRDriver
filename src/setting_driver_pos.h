@@ -39,12 +39,12 @@ struct SettingSettings {
 class SettingDriverPos
 {
 public:
-	static const SettingSettings& getSettings();
-	static std::u16string getSettingXML();
+    SettingDriverPos();
+	const SettingSettings& getSettings();
+	std::u16string getSettingXML();
 
 private:
-    static const SettingSettings m_settings;
-
+    const SettingSettings m_settings;
 };
 
 std::u16string toXML(const SettingSettings& settings, std::span<const DriverParameter> parameters);

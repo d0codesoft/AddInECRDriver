@@ -127,6 +127,7 @@ enum class DriverOption {
     MerchantId,
     Facepay,
     LogFullPath,
+	PrintReceiptOnTerminal,
     other
 };
 
@@ -138,7 +139,8 @@ const std::unordered_map<DriverOption, std::wstring> OptionDriverNames = {
     { DriverOption::LogLevel, L"LogLevel" },
     { DriverOption::MerchantId, L"MerchantId" },
     { DriverOption::Facepay, L"Facepay" },
-    { DriverOption::LogFullPath, L"LogFullPath" }
+    { DriverOption::LogFullPath, L"LogFullPath" },
+	{ DriverOption::PrintReceiptOnTerminal, L"PrintReceiptOnTerminal" }
 };
 
 struct DriverParameter {
@@ -357,6 +359,10 @@ struct POSTerminalConfig {
      * @note Не является обязательным параметром.
      */
     bool PurchaseWithEnrollment = false;
+
+    std::wstring TerminalModel = L"";
+
+    std::wstring TerminalVendor = L"";
 };
 
 enum class POSTerminalProtocol {
@@ -397,6 +403,25 @@ enum class POSTerminalIndicatorStatus {
 	Success = 1,         // Операция выполнена успешно
 	Failure = 2          // Операция не выполнена
 };
+
+
+enum class POSTerminalLastStatMsgCode : uint8_t {
+    NotAvailable = 0,  // Status code is not available
+    CardRead = 1,  // Card was read
+    ChipCardUsed = 2,  // Chip card was used
+    Authorization = 3,  // Authorization in progress
+    WaitingCashier = 4,  // Waiting for cashier action
+    PrintingReceipt = 5,  // Printing receipt
+    PinEntryRequired = 6,  // PIN entry is needed
+    CardRemoved = 7,  // Card was removed
+    EMVMultiAID = 8,  // EMV multi AID selection
+    WaitingCard = 9,  // Waiting for card
+    InProgress = 10, // Transaction in progress
+    TransactionOK = 11  // Transaction completed successfully
+};
+
+POSTerminalLastStatMsgCode getLastStatMsgCode(uint8_t pVal);
+std::wstring to_wstring(const POSTerminalLastStatMsgCode code);
 
 // Пример структуры локалей (можно хранить отдельно или грузить из ресурсов)
 static const std::unordered_map<std::wstring, std::unordered_map<POSTerminalIndicatorStatus, std::wstring>> IndicatorStatusLocales = {
@@ -453,10 +478,45 @@ struct POSTerminalOperationParameters {
 	}
 };
 
+struct POSTerminalOperationResponse {
+	bool result = false;
+	std::wstring amount;
+	std::wstring approvalCode;
+	std::wstring captureReference;
+	std::wstring cardExpiryDate;
+	std::wstring cardHolderName;
+	std::wstring date;
+	std::wstring discount;
+	std::wstring hstFld63Sf89;
+	std::wstring invoiceNumber;
+	std::wstring issuerName;
+	std::wstring merchant;
+	std::wstring pan;
+	std::wstring posConditionCode;
+	std::wstring posEntryMode;
+	std::wstring processingCode;
+	std::wstring receipt;
+	std::wstring responseCode;
+	std::wstring rrn;
+	std::wstring rrnExt;
+	std::wstring terminalId;
+	std::wstring time;
+	std::wstring track1;
+	std::wstring signVerif;
+	std::wstring txnType;
+	std::wstring trnStatus;
+	std::wstring adv;
+	std::wstring adv2p;
+	std::wstring bankAcquirer;
+	std::wstring paymentSystem;
+	std::wstring subMerchant;
+};
+
 bool isValidPOSTerminalOperationParameters(const POSTerminalOperationParameters& op, const POSTerminalOperationType opType);
 bool isValidPOSTerminalOperationParameters(const POSTerminalOperationParameters& op);
 bool readPOSTerminalOperationParametersFromXml(const std::wstring& xmlContent, POSTerminalOperationParameters& outParams);
 bool writePOSTerminalOperationParametersToXml(const POSTerminalOperationParameters& params, std::wstring& outXml);
+bool writePOSTerminalResponseToXml(const std::unique_ptr<POSTerminalOperationResponse>& params, const POSTerminalOperationType opType, std::wstring& outXml);
 
 std::u16string toXml(const DriverDescription& driver);
 std::u16string toXmlApplication(const DriverDescription& driver);

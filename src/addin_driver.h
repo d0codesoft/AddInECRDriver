@@ -54,6 +54,7 @@ public:
     virtual bool getString1C(const std::u16string& source, WCHAR_T** value, uint32_t& length) override;
     virtual bool getString(const WCHAR_T* source, std::u16string& desct) override;
     virtual bool setStringValue(tVariant* pvarParamDefValue, const std::u16string& source) override;
+	virtual bool setDoubleValue(tVariant* pvarParamDefValue, const double source) override;
 	virtual bool setBoolValue(tVariant* pvarParamDefValue, const bool flag) override;
 
 	// IAddInBase

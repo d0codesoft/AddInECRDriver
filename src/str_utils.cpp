@@ -1,9 +1,16 @@
 #include "pch.h"
 #include "str_utils.h"
+#include <limits>
 #include <vector>
 
 #if defined(_WIN32)
 #include <windows.h>
+#ifdef min
+#undef min
+#endif
+#ifdef max
+#undef max
+#endif
 #else
 #include <iconv.h>
 #include <cstring>
@@ -549,4 +556,69 @@ std::string str_utils::to_string(const char16_t* str)
 	}
 
 	return result;
+}
+
+bool str_utils::iequals(const std::wstring& a, const std::wstring& b) noexcept
+{
+#ifdef _WIN32
+	// Unicode-aware, ordinal, case-insensitive
+	return CompareStringOrdinal(
+		a.c_str(), static_cast<int>(a.size()),
+		b.c_str(), static_cast<int>(b.size()),
+		TRUE) == CSTR_EQUAL;
+#else
+	if (a.size() != b.size()) return false;
+	const auto& facet = std::use_facet<std::ctype<wchar_t>>(std::locale());
+	for (size_t i = 0; i < a.size(); ++i) {
+		if (facet.tolower(a[i]) != facet.tolower(b[i])) return false;
+	}
+	return true;
+#endif
+}
+
+std::optional<uint32_t> str_utils::to_UInt(const std::wstring& value)
+{
+	// Trim whitespace
+	const auto first = value.find_first_not_of(L" \t\r\n");
+	if (first == std::wstring::npos) return std::nullopt;
+	const auto last = value.find_last_not_of(L" \t\r\n");
+
+	uint32_t result = 0;
+	for (size_t i = first; i <= last; ++i) {
+		const wchar_t ch = value[i];
+		if (ch < L'0' || ch > L'9') {
+			return std::nullopt; // non-digit found
+		}
+		const uint32_t digit = static_cast<uint32_t>(ch - L'0');
+		if (result > (std::numeric_limits<uint32_t>::max() - digit) / 10u) {
+			return std::nullopt; // overflow
+		}
+		result = result * 10u + digit;
+	}
+	return result;
+}
+
+std::optional<double> str_utils::to_Double(const std::wstring& value)
+{
+	try {
+		// Normalize decimal separator: accept comma by converting it to dot
+		std::wstring normalized = value;
+		for (auto& ch : normalized) {
+			if (ch == L',') ch = L'.';
+		}
+
+		size_t idx = 0;
+		double result = std::stod(normalized, &idx);
+		// Ensure the whole (normalized) string was consumed
+		if (idx != normalized.size()) {
+			return std::nullopt;
+		}
+		return result;
+	}
+	catch (const std::invalid_argument&) {
+		return std::nullopt;
+	}
+	catch (const std::out_of_range&) {
+		return std::nullopt;
+	}
 }
