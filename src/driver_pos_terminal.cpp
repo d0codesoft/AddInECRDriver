@@ -331,11 +331,13 @@ bool DriverPOSTerminal::DeviceTest(tVariant* pvarRetValue, tVariant* paParams, c
 	// Test connection
 	auto result = testConnection(m_ParamConnection);
 
+	m_addInBase->setStringValue(&paParams[0], str_utils::to_u16string(m_driverDescription.Description));
+
 	if (m_licenseManager->isDemoMode()) {
         m_addInBase->setStringValue(&paParams[1], str_utils::to_u16string(m_licenseManager->getDemoModeDescription()));
 	}
 	else {
-		TV_VT(&paParams[1]) = VTYPE_EMPTY;
+		m_addInBase->setStringValue(&paParams[1], u"");
 	}
 
     m_addInBase->setBoolValue(pvarRetValue, result);

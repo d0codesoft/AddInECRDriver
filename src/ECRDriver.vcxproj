@@ -147,6 +147,12 @@
       <ModuleDefinitionFile>exports.def</ModuleDefinitionFile>
       <AdditionalDependencies>pugixml.lib;libssl.lib;libcrypto.lib;Ws2_32.lib;Crypt32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>python ..\tools\make_driver.py -build_type DEBUG -build_dir ..\bin\x64\Debug\ -output_dir ..\tools\ </Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Run build driver for 1C AddIn</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -171,6 +177,10 @@
       <AdditionalDependencies>icuuc.lib;icuin.lib;icuio.lib;icudt.lib;pugixml.lib;libssl.lib;libcrypto.lib;Ws2_32.lib;Crypt32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>exports.def</ModuleDefinitionFile>
     </Link>
+    <PostBuildEvent>
+      <Command>python ..\tools\make_driver.py -build_type RELEASE -build_dir ..\bin\x64\Release\ -output_dir ..\tools\ </Command>
+      <Message>Run build driver for 1C AddIn</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="addin_driver.h" />

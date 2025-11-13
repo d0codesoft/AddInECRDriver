@@ -37,17 +37,13 @@ public:
         const WCHAR_T* descr, long scode) override {
 
         // Конвертация WCHAR_T* в std::wstring с использованием ICU
-        icu::UnicodeString sourceStr(source);
-        icu::UnicodeString descrStr(descr);
-
-        std::string _source, _descr;
-        sourceStr.toUTF8String(_source);
-        descrStr.toUTF8String(_descr);
+        std::string sourceStr = str_utils::to_string(source);
+        std::string descrStr = str_utils::to_string(descr);
 
         // Вывод сообщения об ошибке в консоль
         std::cout << "Error Code: " << wcode << "\n"
-            << "Source: " << _source << "\n"
-            << "Description: " << _descr << "\n"
+            << "Source: " << sourceStr << "\n"
+            << "Description: " << descrStr << "\n"
             << "code: " << scode << std::endl;
 
         return true;
@@ -67,13 +63,10 @@ public:
     bool ADDIN_API RegisterProfileAs(WCHAR_T* wszProfileName) override {
 
         // Конвертация WCHAR_T* в std::wstring с использованием ICU
-        icu::UnicodeString profileUni(wszProfileName);
-
-        std::string _profile;
-        profileUni.toUTF8String(_profile);
+        std::string profileUni = str_utils::to_string(wszProfileName);
 
         // Вывод сообщения о регистрации профиля в консоль
-        std::cout << "Profile registered as: " << _profile << std::endl;
+        std::cout << "Profile registered as: " << profileUni << std::endl;
 
         return true;
     }
@@ -92,14 +85,10 @@ public:
     bool ADDIN_API ExternalEvent(WCHAR_T* wszSource, WCHAR_T* wszMessage,
         WCHAR_T* wszData) override {
 
-        icu::UnicodeString sourceStr = str_utils::to_UnicodeString(wszSource);
-        icu::UnicodeString messageStr = str_utils::to_UnicodeString(wszMessage);
+        std::string sourceStr = str_utils::to_string(wszSource);
+        std::string messageStr = str_utils::to_string(wszMessage);
 
-        std::string _source, _message;
-        sourceStr.toUTF8String(_source);
-        messageStr.toUTF8String(_message);
-
-        std::cout << "External event: " << _source << " Messsage: " << _message << " " << std::endl;
+        std::cout << "External event: " << sourceStr << " Messsage: " << messageStr << " " << std::endl;
         return true;
     }
 
@@ -109,10 +98,8 @@ public:
 
     bool ADDIN_API SetStatusLine(WCHAR_T* wszStatusLine) override {
 
-        icu::UnicodeString statusLine = str_utils::to_UnicodeString(wszStatusLine);
-        std::string _statusLine;
-        statusLine.toUTF8String(_statusLine);
-        std::cout << "Set status line: " << _statusLine << std::endl;
+        std::string statusLine = str_utils::to_string(wszStatusLine);
+        std::cout << "Set status line: " << statusLine << std::endl;
         return true;
     }
 

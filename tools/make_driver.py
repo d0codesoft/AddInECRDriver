@@ -97,13 +97,13 @@ def create_zip(archive_path, src_dir):
 def main():
     config_path = os.path.join(os.path.dirname(__file__), "config.ini")
     if not os.path.exists(config_path):
-        raise FileNotFoundError("Файл конфигурации не найден: config.ini")
+        raise FileNotFoundError("Configuration file not found: config.ini")
 
-    parser = argparse.ArgumentParser(description="Формирование файла драйвера для загрузки в конфигурации 1С 8.3.")
+    parser = argparse.ArgumentParser(description="Creating a driver file for download in the 1C configuration 8.3.")
     parser.add_argument("-build_type", choices=["DEBUG", "RELEASE"], default="DEBUG",
                         help="Тип сборки (DEBUG или RELEASE)")
-    parser.add_argument("-build_dir", help="Каталог файлов библиотек")
-    parser.add_argument("-output_dir", nargs='?', default=os.getcwd(), help="Каталог для сохранения выходного архива (по умолчанию текущий каталог)")
+    parser.add_argument("-build_dir", help="dll build file catalog")
+    parser.add_argument("-output_dir", nargs='?', default=os.getcwd(), help="Directory for saving the output archive (default is the current directory)")
 
     build_dir = None
     output_dir = None
@@ -114,13 +114,13 @@ def main():
         output_dir = args.output_dir
         build_type = args.build_type
     except SystemExit:
-        print("\nОшибка: неверные параметры.\n Example: make_driver.py DEBUG ../bin/x64/")
+        print("\nError: incorrect parameters.\n Example: make_driver.py DEBUG ../bin/x64/")
         parser.print_help()
         exit(1)
 
     config = read_config(config_path)
     with TemporaryDirectory() as temp_dir:
-        print(f"Создан временный каталог для файлов драйвера {temp_dir}")
+        print(f"Create temporary folder catalog {temp_dir}")
         os.makedirs(temp_dir, exist_ok=True)
 
         create_info_xml(config, temp_dir)
@@ -132,7 +132,7 @@ def main():
         output_zip = os.path.join(output_dir, f"ECRDriverPOSTerminal_{build_type}.zip")
         os.makedirs(output_dir, exist_ok=True)
         create_zip(output_zip, temp_dir)
-        print(f"Архив драйвера создан: {output_zip}")
+        print(f"Driver AddIn 1C 8 successfully created on archive: {output_zip}")
 
 if __name__ == "__main__":
     main()
