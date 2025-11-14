@@ -74,11 +74,11 @@ void DriverPOSTerminal::InitDriver()
 	//OptionDriverNames
 	//L"ConnectionType"
     m_ParamConnection = {
-        { OptionDriverNames.at(DriverOption::ConnectionType), static_cast<int>(ConnectionType::TCP), TypeParameter::String},
+        { OptionDriverNames.at(DriverOption::ConnectionType), static_cast<int>(ConnectionType::TCP), TypeParameter::Number},
 	    { OptionDriverNames.at(DriverOption::Address), L"", TypeParameter::String },
-	    { OptionDriverNames.at(DriverOption::Port), 2000, TypeParameter::Number },
+		{ OptionDriverNames.at(DriverOption::Port), 2000, TypeParameter::Number },
 		{ OptionDriverNames.at(DriverOption::Speed), 9600, TypeParameter::Number },
-		{ OptionDriverNames.at(DriverOption::LogLevel), static_cast<int>(LogLevel::Debug), TypeParameter::String },
+		{ OptionDriverNames.at(DriverOption::LogLevel), static_cast<int>(LogLevel::Debug), TypeParameter::Number },
 		{ OptionDriverNames.at(DriverOption::MerchantId), 0, TypeParameter::Number },
 		{ OptionDriverNames.at(DriverOption::Facepay), false, TypeParameter::Bool },
 		{ OptionDriverNames.at(DriverOption::LogFullPath), Logger::getLogFilePath(), TypeParameter::String }
@@ -2505,19 +2505,19 @@ bool DriverPOSTerminal::testConnection()
 
 bool DriverPOSTerminal::testConnection(std::vector<DriverParameter>& paramConnection)
 {
-    auto paramTypeConnection = findParameterValue<std::wstring>(paramConnection, L"ConnectionType");
+    auto paramTypeConnection = findParameterValue<long>(paramConnection, DriverOption::ConnectionType);
     if (!paramTypeConnection.has_value()) {
         addErrorDriver(u"Invalid connection type", L"InitConnection: Invalid connection type");
         return false;
     }
 
-    auto paramHost = findParameterValue<std::wstring>(paramConnection, L"Host");
+    auto paramHost = findParameterValue<std::wstring>(paramConnection, DriverOption::Address);
     if (!paramHost.has_value()) {
         addErrorDriver(u"Invalid host", L"InitConnection: Invalid host");
         return false;
     }
 
-    auto paramPort = findParameterValue<long>(paramConnection, L"Port");
+    auto paramPort = findParameterValue<long>(paramConnection, DriverOption::Port);
     if (!paramPort.has_value()) {
         addErrorDriver(u"Invalid port", L"InitConnection: Invalid port");
         return false;

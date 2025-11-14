@@ -128,26 +128,48 @@ bool POSTerminalController::_connect(const std::string& address, std::optional<u
 		return false;
 	}
 
+	LOG_INFO_ADD(L"POSTerminalController", L"Start listening POS Terminal");
+	connection_->startListening([this](std::vector<uint8_t> data) {
+		this->_processIncomingData(data);
+		});
+
+	LOG_INFO_ADD(L"POSTerminalController", L"Start Handshake POS terminal");
 	auto resultHandshake = _handshakeTerminal();
 	if (!resultHandshake) {
+		LOG_ERROR_ADD(L"POSTerminalController", L"Error Handshake POS terminal");
 		connection_->disconnect();
 		return false;
 	}
+	LOG_INFO_ADD(L"POSTerminalController", L"Disconnect POS Terminal");
 	connection_->disconnect();
+
+	LOG_INFO_ADD(L"POSTerminalController", L"Connect POS Terminal");
 	if (!connection_->connect(address, port)) {
+		LOG_ERROR_ADD(L"POSTerminalController", L"Error connect POS Terminal");
 		return false;
 	}
+	LOG_INFO_ADD(L"POSTerminalController", L"Start listening POS Terminal");
+	connection_->startListening([this](std::vector<uint8_t> data) {
+		this->_processIncomingData(data);
+		});
 
+	LOG_INFO_ADD(L"POSTerminalController", L"Start Identify POS Terminal");
 	auto resultIdentify = _identifyTerminal();
 	if (!resultIdentify) {
+		LOG_ERROR_ADD(L"POSTerminalController", L"Error Identify POS Terminal");
 		connection_->disconnect();
 		return false;
 	}
+	LOG_INFO_ADD(L"POSTerminalController", L"Disconnect POS Terminal");
 	connection_->disconnect();
+
+	LOG_INFO_ADD(L"POSTerminalController", L"Connect POS Terminal");
 	if (!connection_->connect(address, port)) {
+		LOG_ERROR_ADD(L"POSTerminalController", L"Error connect POS Terminal");
 		return false;
 	}
 
+	LOG_INFO_ADD(L"POSTerminalController", L"Start listening POS Terminal");
 	connection_->startListening([this](std::vector<uint8_t> data) {
 		this->_processIncomingData(data);
 		});
@@ -163,9 +185,15 @@ void POSTerminalController::_processIncomingData(const std::vector<uint8_t>& dat
 	std::wcout << L"	_processIncomingData size:" << data.size() << std::endl;
 #endif
 
-	// Append the new data to the buffer
+	std::wstring debugData = L"Process incoming data. Size: ";
+	debugData += str_utils::to_wstring(data.size());
+	debugData += L" bytes .Data: ";
+	for (const auto& byte : data) {
+		debugData += str_utils::to_wstring(static_cast<int>(byte)) + L" ";
+	}
+	
+	LOG_INFO_ADD(L"POSTerminalController", debugData);
 	protocol_->pushResponse(data);
-	// Parce and enqueue complete messages
 }
 
 void POSTerminalController::_handleParsedJson(const jsoncons::json& json)
@@ -319,6 +347,14 @@ bool POSTerminalController::_handshakeTerminal()
 	handshakeRequest.step = 0;
 	handshakeRequest.params = {};
 
+	_clearAllMessages();
+
+	auto sendData = protocol_->encodeRequest(handshakeRequest);
+	if (!connection_->send(sendData)) {
+		LOG_ERROR_ADD(L"POSTerminalController", L"Failed to send data on handshake POS terminal");
+		return false;
+	}
+
 	// Wait for handshake response
 	const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
 	while (!stopListening_) {
@@ -356,12 +392,21 @@ bool POSTerminalController::_handshakeTerminal()
 bool POSTerminalController::_identifyTerminal()
 {
 	// Send handshake request
-	sendData handshakeRequest;
-	handshakeRequest.method = PROTOCOL_METHOD_SERVICEMESSAGE;
-	handshakeRequest.step = 0;
-	handshakeRequest.params = {
+	sendData request;
+	request.method = PROTOCOL_METHOD_SERVICEMESSAGE;
+	request.step = 0;
+	request.params = {
 		{ PROTOCOL_MESSAGE_PARAM_MSGTYPE , std::wstring(PROTOCOL_MESSAGE_TYPE_IDENTIFY) }
 	};
+
+
+	_clearAllMessages();
+
+	auto sendData = protocol_->encodeRequest(request);
+	if (!connection_->send(sendData)) {
+		LOG_ERROR_ADD(L"POSTerminalController", L"Failed to send data on identify POS terminal");
+		return false;
+	}
 
 	// Wait for handshake response
 	const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);

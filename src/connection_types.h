@@ -99,7 +99,7 @@ std::optional<ConnectionType> toConnectionType(const T& value) {
             }
         }
     }
-    else if constexpr (std::is_same<T, int>::value) {
+    else if constexpr (std::is_same_v<T, int> || std::is_same_v<T, long>)  {
         switch (value) {
         case 0: return ConnectionType::TCP;
         case 1: return ConnectionType::COM;

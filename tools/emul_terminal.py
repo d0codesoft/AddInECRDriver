@@ -140,6 +140,9 @@ def start_server(host='127.0.0.1', port=2000):
 
                                 conn.sendall(response_bytes)
                                 buffer = b''
+                            else:
+                                print(f"Ошибка формата данных нет завершающего байта х00")
+
                         except ConnectionResetError:
                             print(f"Клиент {addr} разорвал соединение.")
                             break  # Выход из внутреннего цикла, ожидание нового клиента

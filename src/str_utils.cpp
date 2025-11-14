@@ -2,6 +2,7 @@
 #include "str_utils.h"
 #include <limits>
 #include <vector>
+#include <algorithm>
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -20,10 +21,15 @@ std::wstring str_utils::to_wstring(const std::string& str, const std::string& en
 #if defined(_WIN32)
 	UINT codePage;
 
-	if (encoding == "utf-8") codePage = CP_UTF8;
-	else if (encoding == "windows-1251") codePage = 1251;
-	else if (encoding == "windows-1252") codePage = 1252;
-	else if (encoding == "iso-8859-1") codePage = 28591;
+
+	//std::string lowerEncoding = encoding;
+	//std::transform(lowerEncoding.cbegin(), lowerEncoding.cend(), lowerEncoding.cbegin(),
+	//	[]{ return std::tolower(c); });
+
+	if (encoding == "utf-8" || encoding == "UTF-8") codePage = CP_UTF8;
+	else if (encoding == "windows-1251" || encoding == "WINDOWS-1251") codePage = 1251;
+	else if (encoding == "windows-1252" || encoding == "WINDOWS-1252") codePage = 1252;
+	else if (encoding == "iso-8859-1" || encoding == "ISO-8859-1") codePage = 28591;
 	else throw std::invalid_argument("Unsupported encoding: " + encoding);
 
 	int wlen = MultiByteToWideChar(codePage, 0, str.c_str(), -1, nullptr, 0);
@@ -118,10 +124,10 @@ std::wstring str_utils::to_wstring(const char* str, const std::string& encoding)
 	// Windows: use MultiByteToWideChar with code page
 	UINT codePage;
 
-	if (encoding == "utf-8") codePage = CP_UTF8;
-	else if (encoding == "windows-1251") codePage = 1251;
-	else if (encoding == "windows-1252") codePage = 1252;
-	else if (encoding == "iso-8859-1") codePage = 28591;
+	if (encoding == "utf-8" || encoding == "UTF-8") codePage = CP_UTF8;
+	else if (encoding == "windows-1251" || encoding == "WINDOWS-1251") codePage = 1251;
+	else if (encoding == "windows-1252" || encoding == "WINDOWS-1252") codePage = 1252;
+	else if (encoding == "iso-8859-1" || encoding == "ISO-8859-1") codePage = 28591;
 	else throw std::invalid_argument("Unsupported encoding: " + encoding);
 
 	int wlen = MultiByteToWideChar(codePage, 0, str, -1, nullptr, 0);
@@ -205,6 +211,16 @@ std::wstring str_utils::to_wstring(const char16_t* str)
 	return result;
 }
 
+std::wstring str_utils::to_wstring(const int value)
+{
+	return std::to_wstring(value);
+}
+
+std::wstring str_utils::to_wstring(const size_t value)
+{
+	return std::to_wstring(value);
+}
+
 std::u16string str_utils::to_u16string(const std::string& str, const std::string& encoding)
 {
 	if (str.empty()) return {};
@@ -213,10 +229,10 @@ std::u16string str_utils::to_u16string(const std::string& str, const std::string
 	// Step 1: convert to UTF-16 using MultiByteToWideChar
 	UINT codePage;
 
-	if (encoding == "utf-8") codePage = CP_UTF8;
-	else if (encoding == "windows-1251") codePage = 1251;
-	else if (encoding == "windows-1252") codePage = 1252;
-	else if (encoding == "iso-8859-1") codePage = 28591;
+	if (encoding == "utf-8" || encoding == "UTF-8") codePage = CP_UTF8;
+	else if (encoding == "windows-1251" || encoding == "WINDOWS-1251") codePage = 1251;
+	else if (encoding == "windows-1252" || encoding == "WINDOWS-1252") codePage = 1252;
+	else if (encoding == "iso-8859-1" || encoding == "ISO-8859-1") codePage = 28591;
 	else throw std::invalid_argument("Unsupported encoding: " + encoding);
 
 	int len = MultiByteToWideChar(codePage, 0, str.c_str(), -1, nullptr, 0);
@@ -290,10 +306,10 @@ std::u16string str_utils::to_u16string(const char* str, const std::string& encod
 	// Convert multibyte input to UTF-16 using Windows API
 	UINT codePage;
 
-	if (encoding == "utf-8") codePage = CP_UTF8;
-	else if (encoding == "windows-1251") codePage = 1251;
-	else if (encoding == "windows-1252") codePage = 1252;
-	else if (encoding == "iso-8859-1") codePage = 28591;
+	if (encoding == "utf-8" || encoding == "UTF-8") codePage = CP_UTF8;
+	else if (encoding == "windows-1251" || encoding == "WINDOWS-1251") codePage = 1251;
+	else if (encoding == "windows-1252" || encoding == "WINDOWS-1252") codePage = 1252;
+	else if (encoding == "iso-8859-1" || encoding == "ISO-8859-1") codePage = 28591;
 	else throw std::invalid_argument("Unsupported encoding: " + encoding);
 
 	int len = MultiByteToWideChar(codePage, 0, str, -1, nullptr, 0);
@@ -574,6 +590,17 @@ bool str_utils::iequals(const std::wstring& a, const std::wstring& b) noexcept
 	}
 	return true;
 #endif
+}
+
+bool str_utils::iequals(const std::string& a, const std::string& b) noexcept
+{
+	if (a.size() != b.size())
+		return false;
+
+	return std::equal(a.begin(), a.end(), b.begin(),
+		[](unsigned char c1, unsigned char c2) {
+			return std::tolower(c1) == std::tolower(c2);
+		});
 }
 
 std::optional<uint32_t> str_utils::to_UInt(const std::wstring& value)
