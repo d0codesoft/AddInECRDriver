@@ -91,19 +91,19 @@ private:
 };
 
 // 🔄 COM connection
-class TcpConnection : public IConnection {
+class TcpConnection : public IConnection, public std::enable_shared_from_this<TcpConnection> {
 public:
-    TcpConnection() : socket_(io_context_) {}
+    TcpConnection() : socket_(io_context_), strand_(boost::asio::make_strand(io_context_)) {}
 
     bool connect(const std::string& host, std::optional<uint16_t> port) override;
 
     bool send(const std::span<const uint8_t> data) override;
 
-    std::optional<std::vector<uint8_t>> receive() override;
-
     void disconnect() override;
 
     bool isConnected() const override;
+
+	std::optional<std::vector<uint8_t>> receive() override;
 
     ConnectionType getType() override {
         return ConnectionType::TCP;
@@ -124,14 +124,23 @@ public:
 	void setReconnectDelay(std::chrono::milliseconds delay);
 
 private:
+    using WorkGuard = boost::asio::executor_work_guard<boost::asio::io_context::executor_type>;
+
+    void startIoThreadIfNeeded_();
+    void stopIoThread_();
 
 	boost::asio::io_context io_context_; ///< Boost.Asio I/O context
+    boost::asio::strand<boost::asio::any_io_executor> strand_;
 	boost::asio::ip::tcp::socket socket_; ///< Boost.Asio TCP socket
+
+	std::array<char, 4096> read_buf_{}; ///< Buffer for reading data
 
 	std::atomic<bool> readingThread_{ false }; ///< On thread reading data
 	std::atomic<bool> keepAlive_{ true }; ///< Flag to keep the connection alive
 	std::atomic<bool> stopListening_{ false }; ///< Flag to stop listening
 	std::chrono::milliseconds reconnectDelay_{ 5000 }; ///< Delay before reconnecting
+    std::thread ioThread_;
+    std::optional<WorkGuard> workGuard_;
 	std::thread listeningThread_; ///< Thread for listening to incoming data
 
 	std::string host_; ///< Host to connect to
@@ -141,7 +150,7 @@ private:
 };
 
 // 🌐 WebSocket
-class WebSocketConnection : public IConnection {
+class WebSocketConnection : public IConnection, public std::enable_shared_from_this<WebSocketConnection> {
 public:
     WebSocketConnection()
         : resolver_(ioc_), ws_(ioc_) {
@@ -183,7 +192,7 @@ private:
 	std::chrono::milliseconds reconnectDelay_{ 5000 };
 };
 
-class ComConnection : public IConnection {
+class ComConnection : public IConnection, public std::enable_shared_from_this<ComConnection> {
 public:
     ComConnection();
 	ComConnection(const std::string& port, uint32_t baud_rate = 9600);
@@ -229,12 +238,12 @@ private:
 
 class ConnectionFactory {
 public:
-    static std::unique_ptr<IConnection> create(ConnectionType type) {
+    static std::shared_ptr<IConnection> create(ConnectionType type) {
         switch (type) {
         case ConnectionType::TCP:
-            return std::make_unique<TcpConnection>();
+            return std::make_shared<TcpConnection>();
         case ConnectionType::WebSocket:
-            return std::make_unique<WebSocketConnection>();
+            return std::make_shared<WebSocketConnection>();
         default:
             throw std::invalid_argument("Unsupported connection type");
         }

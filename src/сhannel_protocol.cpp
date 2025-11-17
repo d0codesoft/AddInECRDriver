@@ -36,7 +36,7 @@ bool POSTerminalController::isConnected() const
 
 std::unique_ptr<POSTerminalOperationResponse> POSTerminalController::processTransaction(POSTerminalOperationParameters& paramPayement, std::wstring& outError)
 {
-	if (isValidPOSTerminalOperationParameters(paramPayement, POSTerminalOperationType::Pay)) {
+	if (!isValidPOSTerminalOperationParameters(paramPayement, POSTerminalOperationType::Pay)) {
 		outError = L"Invalid parameters for payment";
 		LOG_ERROR_ADD(L"POSTerminalController", L"Invalid parameters for payment");
 		return nullptr;
@@ -53,7 +53,7 @@ std::unique_ptr<POSTerminalOperationResponse> POSTerminalController::processTran
 		{ L"facepay" , paramPayement.isFacepay() ? L"true" : L"false"},
 		{ L"subMerchant" , paramPayement.SubMerchant.has_value() ? std::to_wstring(paramPayement.SubMerchant.value()) : L""}
 	};
-	sendData dataPayement = { PROTOCOL_METHOD_PURCHASE, 0, _paramPayement };
+	//sendData dataPayement = { PROTOCOL_METHOD_PURCHASE, 0, _paramPayement };
 	
 	_clearAllMessages();
 
@@ -66,7 +66,7 @@ std::unique_ptr<POSTerminalOperationResponse> POSTerminalController::processTran
 
 	_transitionTo(POSTerminalState::WaitingResponse);
 
-	const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(120);
+	const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(30);
 	while (!stopListening_) {
 		if (std::chrono::steady_clock::now() > deadline) {
 			outError = L"Timeout awaiting terminal response";
@@ -108,6 +108,7 @@ std::unique_ptr<POSTerminalOperationResponse> POSTerminalController::processTran
 			}
 
 			auto result = msg.to_OperationResponse();
+			result->result = true;
 			_transitionTo(POSTerminalState::OperationCompleted);
 			return result;
 		}
@@ -183,16 +184,20 @@ void POSTerminalController::_processIncomingData(const std::vector<uint8_t>& dat
 {
 #ifdef _DEBUG
 	std::wcout << L"	_processIncomingData size:" << data.size() << std::endl;
-#endif
+
+	std::wstring out;
+	out.reserve(data.size() * 2);
+	for (uint8_t b : data) {
+		std::format_to(std::back_inserter(out), L"{:02X}", b);
+	}
 
 	std::wstring debugData = L"Process incoming data. Size: ";
 	debugData += str_utils::to_wstring(data.size());
-	debugData += L" bytes .Data: ";
-	for (const auto& byte : data) {
-		debugData += str_utils::to_wstring(static_cast<int>(byte)) + L" ";
-	}
+	debugData += L" bytes .\r\nData: " + out;
 	
 	LOG_INFO_ADD(L"POSTerminalController", debugData);
+#endif
+
 	protocol_->pushResponse(data);
 }
 
@@ -560,7 +565,7 @@ std::vector<uint8_t> JsonChannelProtocol::encodeRequest(POSTerminalOperationPara
 
 	switch  (op.OperationType) {
 		case POSTerminalOperationType::Pay:
-			json["method"] = PROTOCOL_METHOD_PAY;
+			json["method"] = PROTOCOL_METHOD_PURCHASE;
 			params_json["amount"] = op.Amount;
 			params_json["discount"] = op.Discount;
 			params_json["merchantId"] = op.MerchantNumber;

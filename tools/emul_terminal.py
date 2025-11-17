@@ -2,6 +2,10 @@ import socket
 import json
 import random
 import datetime
+import threading
+import time
+from dispatcher import load_handlers, dispatch
+from config import ServerConfig
 
 def json_to_bytes(data: dict, null_terminated=True) -> bytes:
     """Преобразует JSON в байты с UTF-8 кодировкой и добавляет NULL-терминатор."""
@@ -15,139 +19,169 @@ def bytes_to_json(data: bytes) -> dict:
         return json.loads(json_str)
     except (json.JSONDecodeError, UnicodeDecodeError):
         return {}
+# ========================== КОНФИГ СЕРВЕРА (ПОТОКОБЕЗОПАСНО) ==========================
 
+def handle_request_via_plugins(data: dict, cfg: ServerConfig) -> dict:
+    snap = cfg.snapshot()
 
-def handle_request(data: dict) -> dict:
-    """Обрабатывает запрос и возвращает ответ."""
-    method = data.get("method")
-    if method == "PingDevice":
-        return {
-            "method": "PingDevice",
-            "step": data.get("step", 0),
-            "params": {"code": "00", "responseCode": "0000"},
-            "error": False,
-            "errorDescription": ""
-        }
-    elif method == "ServiceMessage" and data.get("params", {}).get("msgType") == "identify":
+    # Глобальная задержка
+    if snap["delay_ms"] > 0:
+        time.sleep(snap["delay_ms"] / 1000.0)
+
+    # Глобальная занятость
+    if snap["busy"]:
         return {
             "method": "ServiceMessage",
             "step": data.get("step", 0),
-            "params": {"msgType": "identify", "result": "true", "vendor": "PAX", "model": "s800"},
+            "params": { "msgType": "deviceBusy" },
             "error": False,
             "errorDescription": ""
         }
-    elif method == "Purchase":
-        current_year = datetime.datetime.now().year
-        current_date = datetime.datetime.now().strftime("%d.%m.%Y")
-        trn_status = random.choice([1, 2, 3, 4])  # Random transaction status
-        error = False
-        response_code = None
-        error_description = ""
-        param = data.get("params", {})
 
-        error_mapping = {
-            2: [
-                "1002 – EMV Decline",
-                "1003 – Transaction log is full. Need close batch",
-                "1004 – No connection with host"
-            ],
-            3: [
-                "1001 – Transaction canceled by user",
-                "1007 – Card reader is not connected"
-            ],
-            4: [
-                "1005 – No paper in printer",
-                "1006 – Error Crypto keys",
-                "1008 – Transaction is already complete"
-            ]
-        }
+    # Переход к плагинам
+    return dispatch(data, cfg)
 
-        if trn_status in [2, 3, 4]:  # Declined, Reversed, or Canceled
-            response_code = f"{random.randint(1, 1008):04}"
-            error_description = random.choice(error_mapping[trn_status])
-            error = True
+# ========================== TCP-СЕРВЕР (В ОТДЕЛЬНОМ ПОТОКЕ) ==========================
 
-        return {
-            "method": "Purchase",
-            "step": 0,
-            "params": {
-                "amount": f"{param.get('amount')}",
-                "approvalCode": f"{random.randint(100000, 999999)}",
-                "captureReference": "",
-                "cardExpiryDate": f"{random.randint(current_year, current_year + 10)}",
-                "cardHolderName": f"USER{random.randint(1000, 9999)}",
-                "date": current_date,
-                "discount": "0.00",
-                "hstFld63Sf89": "",
-                "invoiceNumber": f"{random.randint(100000, 999999)}",
-                "issuerName": "VISA ПРИВАТ",
-                "merchant": "TSTTTTTT",
-                "pan": "4731XXXXXXXX9838",
-                "posConditionCode": "00",
-                "posEntryMode": "022",
-                "processingCode": "000000",
-                "receipt": "text-of-receipt",
-                "responseCode": response_code if response_code else "0000",
-                "rrn": f"{random.randint(1000000000000, 9999999999999)}",
-                "rrnExt": f"{random.randint(1000000000000, 9999999999999)}",
-                "terminalId": "TSTSALE1",
-                "time": datetime.datetime.now().strftime("%H:%M:%S"),
-                "track1": "",
-                "signVerif": "0",
-                "txnType": "1",
-                "trnStatus": str(trn_status),
-                "adv": "ПриватБанк",
-                "adv2p": "Беремо і робимо!",
-                "bankAcquirer": "ПриватБанк",
-                "paymentSystem": "VISA",
-                "subMerchant": ""
-            },
-            "error": error,
-            "errorDescription": error_description
-        }
-    return {"error": True, "errorDescription": "Unknown method"}
-
-def start_server(host='127.0.0.1', port=2000):
-    """Запускает TCP-сервер на указанном порту."""
+def start_server(host: str, port: int, cfg: ServerConfig, stop_event: threading.Event):
+    """Запускает TCP-сервер. Работает, пока не установлен stop_event."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
+        # Позволяет быстро перезапускать после остановки
+        server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server.bind((host, port))
-        server.listen(1)
+        server.listen(5)
+        server.settimeout(1.0)  # чтобы периодически проверять stop_event
         print(f"Сервер запущен на {host}:{port}")
 
-        while True:
-            try:
-                conn, addr = server.accept()
-                print(f"Подключение от {addr}")
+        try:
+            while not stop_event.is_set():
+                try:
+                    conn, addr = server.accept()
+                except socket.timeout:
+                    continue  # Проверяем stop_event заново
+                except OSError:
+                    break
 
+                print(f"Подключение от {addr}")
+                # Обработка в том же потоке (можно вынести в отдельный поток под клиента, если нужно)
                 with conn:
                     buffer = b''
-
-                    while True:
+                    conn.settimeout(5.0)  # таймаут на чтение от клиента
+                    while not stop_event.is_set():
                         try:
                             chunk = conn.recv(1024)
                             if not chunk:
                                 print(f"Клиент {addr} отключился.")
-                                break  # Выход из внутреннего цикла, но сервер продолжит работу
+                                break
 
                             buffer += chunk
+
+                            # Ожидаем NULL-терминатор
                             if buffer.endswith(b'\x00'):
                                 request = bytes_to_json(buffer)
                                 print(f"Получен запрос: {request}")
 
-                                response = handle_request(request)
+                                response = handle_request_via_plugins(request, cfg)
                                 response_bytes = json_to_bytes(response)
                                 print(f"Отправка ответа: {response}")
 
                                 conn.sendall(response_bytes)
                                 buffer = b''
                             else:
-                                print(f"Ошибка формата данных нет завершающего байта х00")
+                                # Можно не спамить лог, пока пакет не завершён
+                                pass
 
+                        except socket.timeout:
+                            # Ждём следующих данных
+                            continue
                         except ConnectionResetError:
                             print(f"Клиент {addr} разорвал соединение.")
-                            break  # Выход из внутреннего цикла, ожидание нового клиента
-            except Exception as e:
-                print(f"Ошибка: {e}")
+                            break
+                        except Exception as e:
+                            print(f"Ошибка при обработке клиента {addr}: {e}")
+                            break
+        finally:
+            print("Сервер остановлен.")
+
+# ========================== КОНСОЛЬНОЕ МЕНЮ (ГЛАВНЫЙ ПОТОК) ==========================
+
+def print_menu(cfg: ServerConfig):
+    snap = cfg.snapshot()
+    print("\n=== Меню управления POS-эмулятором ===")
+    print(f"1) Ошибка Purchase: {'ВКЛ' if snap['force_error'] else 'ВЫКЛ'}")
+    print(f"2) Задержка ответа (мс): {snap['delay_ms']}")
+    print(f"3) Терминал занят: {'ВКЛ' if snap['busy'] else 'ВЫКЛ'}")
+    print("4) Показать текущие параметры")
+    print("q) Выход (остановить сервер)")
+    print("Выберите пункт: ", end="", flush=True)
+
+def main():
+    host = '127.0.0.1'
+    port = 2000
+
+    cfg = ServerConfig()
+    stop_event = threading.Event()
+
+    load_handlers(reload=False)
+
+    server_thread = threading.Thread(
+        target=start_server,
+        args=(host, port, cfg, stop_event),
+        daemon=True
+    )
+    server_thread.start()
+
+    try:
+        while True:
+            print_menu(cfg)
+            choice = input().strip().lower()
+
+            if choice == '1':
+                # Тумблер ошибки Purchase
+                snap = cfg.snapshot()
+                cfg.set_force_error(not snap["force_error"])
+                state = "ВКЛ" if not snap["force_error"] else "ВЫКЛ"
+                print(f"[OK] Ошибка Purchase -> {state}")
+
+            elif choice == '2':
+                print("Введите задержку в миллисекундах (например, 250): ", end="", flush=True)
+                val = input().strip()
+                try:
+                    ms = int(val)
+                    cfg.set_delay_ms(ms)
+                    print(f"[OK] Задержка ответа = {ms} мс")
+                except ValueError:
+                    print("[ERR] Неверное число, попробуйте снова.")
+
+            elif choice == '3':
+                snap = cfg.snapshot()
+                cfg.set_busy(not snap["busy"])
+                state = "ВКЛ" if not snap["busy"] else "ВЫКЛ"
+                print(f"[OK] Терминал занят -> {state}")
+
+            elif choice == '4':
+                snap = cfg.snapshot()
+                print(f"Текущие параметры: {snap}")
+
+            elif choice == '5':
+                load_handlers(reload=True)
+                print("[OK] Обработчики перечитаны")
+
+            elif choice == 'q':
+                print("Остановка сервера...")
+                stop_event.set()
+                break
+
+            else:
+                print("Неизвестный пункт меню. Повторите ввод.")
+
+    except KeyboardInterrupt:
+        print("\n[INTERRUPT] Завершение работы...")
+        stop_event.set()
+    finally:
+        # Дожидаемся завершения сервера
+        server_thread.join(timeout=3.0)
+        print("Готово. Выход.")
 
 if __name__ == "__main__":
-    start_server()
+    main()

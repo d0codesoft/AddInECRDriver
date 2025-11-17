@@ -212,7 +212,7 @@ private:
 
 class POSTerminalController {
 public:
-	explicit POSTerminalController(std::unique_ptr<IConnection> connection, std::unique_ptr<IChannelProtocol> protocol)
+	explicit POSTerminalController(std::shared_ptr<IConnection> connection, std::shared_ptr<IChannelProtocol> protocol)
 		: connection_(std::move(connection)), protocol_(std::move(protocol)) {
 	}
 
@@ -325,8 +325,8 @@ private:
 
 	std::atomic<bool> stopListening_{ false };
 
-	std::unique_ptr<IConnection> connection_;
-	std::unique_ptr<IChannelProtocol> protocol_;
+	std::shared_ptr<IConnection> connection_;
+	std::shared_ptr<IChannelProtocol> protocol_;
 
 	std::wstring lastError_ = L"";
 	std::wstring terminalId_ = L"";
@@ -343,30 +343,30 @@ class POSTerminalControllerFactory {
 public:
 	static std::unique_ptr<POSTerminalController> create(POSTerminalProtocol protocol, ConnectionType connectType) {
 
-		std::unique_ptr<IConnection> connection;
-		std::unique_ptr<IChannelProtocol> channelProtocol;
+		std::shared_ptr<IConnection> connection;
 		switch (connectType)
 		{
 		case ConnectionType::TCP:
-			connection = std::make_unique<TcpConnection>();
+			connection = std::make_shared<TcpConnection>();
 			break;
 		case ConnectionType::COM:
-			connection = std::make_unique<ComConnection>();
+			connection = std::make_shared<ComConnection>();
 			break;
 		case ConnectionType::WebSocket:
-			connection = std::make_unique<WebSocketConnection>();
+			connection = std::make_shared<WebSocketConnection>();
 			break;
 		case ConnectionType::USB:
 			//connection = std::make_unique<UsbConnection>();
-			connection = std::make_unique<ComConnection>();
+			connection = std::make_shared<ComConnection>();
 			break;
 		default:
 			throw std::invalid_argument("Unsupported connection type");
 		}
 
+		std::shared_ptr<IChannelProtocol> channelProtocol;
 		switch (protocol) {
 		case POSTerminalProtocol::JSON:
-			channelProtocol = std::make_unique<JsonChannelProtocol>();
+			channelProtocol = std::make_shared<JsonChannelProtocol>();
 			break;
 		case POSTerminalProtocol::BaseECR:
 			throw std::invalid_argument("Unsupported protocol type");

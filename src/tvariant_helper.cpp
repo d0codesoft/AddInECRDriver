@@ -97,6 +97,22 @@ std::optional<double> VariantHelper::getDoubleValue(const tVariant& var)
         return static_cast<double>(TV_R8(&var));
     case VTYPE_DATE:
         return static_cast<double>(TV_DATE(&var));
+	case VTYPE_I4:
+		return static_cast<double>(TV_I4(&var));
+	case VTYPE_I2:
+		return static_cast<double>(TV_I2(&var));
+	case VTYPE_I1:
+		return static_cast<double>(TV_I1(&var));
+	case VTYPE_INT:
+		return static_cast<double>(TV_INT(&var));
+	case VTYPE_UI4:
+		return static_cast<double>(TV_UI4(&var));
+	case VTYPE_UI2:
+		return static_cast<double>(TV_UI2(&var));
+	case VTYPE_UI1:
+		return static_cast<double>(TV_UI1(&var));
+	case VTYPE_UINT:
+		return static_cast<double>(TV_UINT(&var));
     }
     return std::nullopt;
 }
