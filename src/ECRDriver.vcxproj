@@ -200,6 +200,7 @@
     <ClInclude Include="license_manager.h" />
     <ClInclude Include="localization_manager.h" />
     <ClInclude Include="logger.h" />
+    <ClInclude Include="manager_hwid.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="protocol_consts.h" />
     <ClInclude Include="setting_driver_pos.h" />
@@ -220,8 +221,11 @@
     <ClCompile Include="interface_connection.cpp" />
     <ClCompile Include="interface_driver_base.cpp" />
     <ClCompile Include="license_manager.cpp" />
+    <ClCompile Include="localization_consts.cpp" />
+    <ClInclude Include="localization_consts.h" />
     <ClCompile Include="localization_manager.cpp" />
     <ClCompile Include="logger.cpp" />
+    <ClCompile Include="manager_hwid.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

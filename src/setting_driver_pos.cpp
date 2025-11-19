@@ -28,6 +28,9 @@ SettingDriverPos::SettingDriverPos()
                     },
                     { OptionDriverNames.at(DriverOption::Port), 
                         L"Порт", L"Введіть номер порту", L"Number", L"", L"2000", false, {}
+                    },
+                    { OptionDriverNames.at(DriverOption::ResponseTimeout),
+                        L"Час очікування відповіді (сек.)", L"Введіть кількіть секунд", L"Number", L"", L"30", false, {}
                     }
                     //{L"Speed", L"Скорость подключения", L"Укажите скорость соединения.", L"Number", L"", L"9600", false, {}}
                 }

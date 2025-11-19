@@ -84,6 +84,12 @@
     <ClInclude Include="protocol_consts.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="manager_hwid.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="localization_consts.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -144,6 +150,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="protocol_consts.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="manager_hwid.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="localization_consts.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

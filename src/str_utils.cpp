@@ -221,6 +221,11 @@ std::wstring str_utils::to_wstring(const size_t value)
 	return std::to_wstring(value);
 }
 
+std::wstring str_utils::to_wstring(const long value)
+{
+	return std::to_wstring(value);
+}
+
 std::u16string str_utils::to_u16string(const std::string& str, const std::string& encoding)
 {
 	if (str.empty()) return {};

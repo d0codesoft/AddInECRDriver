@@ -42,6 +42,7 @@ public:
 	virtual const std::vector<MethodName>& GetMethods() = 0;
 	virtual const std::vector<PropName>& GetProperties() = 0;
 	virtual const DriverDescription& getDescriptionDriver() = 0;
+	virtual EquipmentType getEquipmentType() const = 0;
 
 	virtual void AddActionDriver(const std::wstring& name_en, const std::wstring& name_ru,
         const std::wstring& caption_en, const std::wstring& caption_ru, CallAsFunc1C ptr_method) = 0;

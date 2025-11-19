@@ -48,8 +48,11 @@ public:
     // UserLanguageBase
     virtual void ADDIN_API SetUserInterfaceLanguageCode(const WCHAR_T* lang) override;
 
-    virtual void addError(uint32_t wcode, const std::u16string& source,
-        const std::u16string& descriptor, long code) override;
+    virtual void sendError(const std::u16string& source, const std::u16string& descriptor,
+        UiAddinError codeMsg = UiAddinError::Fail, FacilityCode code = FacilityCode::None) override;
+
+    virtual void sendMsg(const std::u16string& source, const std::u16string& descriptor,
+        UiAddinError codeMsg = UiAddinError::Ordinary) override;
 
     virtual bool getString1C(const std::u16string& source, WCHAR_T** value, uint32_t& length) override;
     virtual bool getString(const WCHAR_T* source, std::u16string& desct) override;
@@ -65,18 +68,27 @@ public:
     bool loadValue(const std::u16string& key, int& value) override;
     bool loadValue(const std::u16string& key, bool& value) override;
 
+    virtual bool ExternalEvent(const std::u16string& message, const std::u16string& data) override;
+    virtual bool ExternalEvent(const std::wstring& message, const std::wstring& data) override;
+    virtual long GetEventBufferDepth() override;
+    virtual void SetEventBufferDepth(long depth) override;
+    virtual void CleanEventBuffer() override;
+
     LanguageCode getLanguageCode() override;
 
     IAddInDefBase* getAddInDefBase() const override;
     IMemoryManager* getMemoryManager() const override;
 
+	HostPlatformInfo getHostPlatformInfo() const;
+
 private:
 
     bool SetParam(tVariant* pvarParamDefValue, const ParamDefault* defaultParam);
-
+	void initializeDriver();
 
     // Attributes
     IAddInDefBase* m_iConnect;
+	IAddInDefBaseEx* m_iConnectEx;
     IMemoryManager* m_iMemory;
 
     std::unique_ptr<IDriver1CUniBase> m_driver;
@@ -84,6 +96,7 @@ private:
     std::u16string      m_userLang;
 	std::u16string      m_locale;
 	LanguageCode 	    m_langCode;
+    HostPlatformInfo    m_platformInfo;
 };
 
 #endif // ADDINECRCOMMONSC_H

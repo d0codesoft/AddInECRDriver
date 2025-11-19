@@ -20,8 +20,21 @@ public:
     virtual IMemoryManager* getMemoryManager() const = 0;
 
     // Function to add an error
-    virtual void addError(uint32_t wcode, const std::u16string& source,
-        const std::u16string& descriptor, long code) = 0;
+    // If scode has a non-zero value, an exception will be generated that can be intercepted and handled by the built-in language of 1C:Enterprise.
+    virtual void sendError(const std::u16string& source, const std::u16string& descriptor,
+        UiAddinError codeMsg = UiAddinError::Info, FacilityCode code = FacilityCode::None) = 0;
+
+    virtual void sendMsg(const std::u16string& source, const std::u16string& descriptor,
+        UiAddinError codeMsg = UiAddinError::Ordinary) = 0;
+
+    virtual bool ExternalEvent(const std::u16string& message,
+		                       const std::u16string& data) = 0;
+    virtual bool ExternalEvent(const std::wstring& message,
+        const std::wstring& data) = 0;
+
+	virtual long GetEventBufferDepth() = 0;
+    virtual void SetEventBufferDepth(long depth) = 0;
+	virtual void CleanEventBuffer() = 0;
 
     virtual bool getString1C(const std::u16string& source, WCHAR_T** value, uint32_t& length) = 0;
 	virtual bool getString(const WCHAR_T* source, std::u16string& dest) = 0;

@@ -29,6 +29,36 @@
 #endif
 #include <iomanip>
 
+std::optional<EquipmentType> findEquipmentByType(EquipmentTypeInfo type)
+{
+    auto it = std::find_if(EquipmentTypes.begin(), EquipmentTypes.end(),
+        [type](const EquipmentType& e) { return e.type == type; });
+    if (it != EquipmentTypes.end())
+        return *it;
+    return std::nullopt;
+}
+
+std::u16string getEquipmentName(EquipmentTypeInfo type, LanguageCode lang)
+{
+    auto et = findEquipmentByType(type);
+    if (!et) return u"";
+    return (lang == LanguageCode::RU) ? et->russian : et->english;
+}
+
+std::u16string getEquipmentName(EquipmentType* type, LanguageCode lang)
+{
+	if (!type) return u"";
+    return (lang == LanguageCode::RU) ? type->russian : type->english;
+}
+
+std::wstring getHostAppTypeName(HostAppType type)
+{
+    auto it = HostAppTypeNames.find(type);
+    if (it != HostAppTypeNames.end())
+        return it->second;
+    return HostAppTypeNames.at(HostAppType::eAppUnknown);
+}
+
 bool isValidEquipmentType(const std::u16string& input) {
     return std::any_of(EquipmentTypes.begin(), EquipmentTypes.end(), [&](const EquipmentType& eq) {
         return eq.english == input || eq.russian == input;

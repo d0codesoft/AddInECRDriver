@@ -41,6 +41,7 @@ CAddInECRDriver::CAddInECRDriver()
 {
     m_iMemory = nullptr;
     m_iConnect = nullptr;
+	m_iConnectEx = nullptr;
 	m_langCode = LanguageCode::RU;
 
 	//std::u16string logDirectory = SysUtils::getLogDriverFilePath();
@@ -61,16 +62,22 @@ bool CAddInECRDriver::Init(void* pConnection)
 
     if (!pConnection) return false;
     m_iConnect = static_cast<IAddInDefBase*>(pConnection);
-	
+	m_iConnectEx = dynamic_cast<IAddInDefBaseEx*>(m_iConnect);
+
     if (m_iConnect)
         m_driver->InitDriver();
+
+    initializeDriver();
+
+	SysUtils::LogInfo(L"Type platform:" + getHostAppTypeName(m_platformInfo.HostAppType));
+    SysUtils::LogInfo(L"Version platform:" + m_platformInfo.HostAppVersion);
+    SysUtils::LogInfo(L"User agent information:" + m_platformInfo.UserAgentInformation);
 
     return m_iConnect != nullptr;
 }
 //---------------------------------------------------------------------------//
 long CAddInECRDriver::GetInfo()
 {
-    SysUtils::LogInfo(L"AddIn GetInfo");
     // Component should put supported component technology version 
     // This component supports 2.0 version
     return 2000;
@@ -82,6 +89,7 @@ void CAddInECRDriver::Done()
 {
 	m_iConnect = nullptr;
 	m_iMemory = nullptr;
+	m_iConnectEx = nullptr;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -89,7 +97,6 @@ void CAddInECRDriver::Done()
 //---------------------------------------------------------------------------//
 bool CAddInECRDriver::RegisterExtensionAs(WCHAR_T** wsExtensionName)
 {
-    SysUtils::LogInfo(L"AddIn RegisterExtensionAs");
     std::u16string extensionName = str_utils::to_u16string(this->m_driver->getDescriptionDriver().ExtensionName);
 
 	uint32_t iSize = 0;
@@ -370,14 +377,24 @@ bool CAddInECRDriver::setMemManager(void* mem)
 }
 
 //---------------------------------------------------------------------------//
-void CAddInECRDriver::addError(uint32_t wcode, const std::u16string& source,
-    const std::u16string& descriptor, long code)
+void CAddInECRDriver::sendError(const std::u16string& source, const std::u16string& descriptor,
+    UiAddinError codeMsg, FacilityCode code)
 {
     if (m_iConnect)
     {
-        m_iConnect->AddError(wcode, source.c_str(), descriptor.c_str(), code);
+        m_iConnect->AddError(static_cast<unsigned short>(codeMsg), source.c_str(), descriptor.c_str(), static_cast<long>(code));
     }
 }
+
+void CAddInECRDriver::sendMsg(const std::u16string& source, const std::u16string& descriptor,
+    UiAddinError codeMsg)
+{
+    if (m_iConnect)
+    {
+        m_iConnect->AddError(static_cast<unsigned short>(codeMsg), source.c_str(), descriptor.c_str(), 0);
+    }
+}
+
 
 IAddInDefBase* CAddInECRDriver::getAddInDefBase() const
 {
@@ -387,6 +404,11 @@ IAddInDefBase* CAddInECRDriver::getAddInDefBase() const
 IMemoryManager* CAddInECRDriver::getMemoryManager() const
 {
     return m_iMemory;
+}
+
+HostPlatformInfo CAddInECRDriver::getHostPlatformInfo() const
+{
+    return m_platformInfo;
 }
 
 bool CAddInECRDriver::getString1C(const std::u16string& source, WCHAR_T** value, uint32_t& length)
@@ -538,8 +560,8 @@ bool CAddInECRDriver::loadValue(const std::u16string& key, int& value)
 		long errorCode = 0;
 		WCHAR_T* errorDesc = nullptr;
 		if (m_iConnect->Read(const_cast<char16_t*>(key.c_str()), &var, &errorCode, &errorDesc)) {
-			if (var.vt == VTYPE_I4) {
-				value = var.intVal;
+			if (var.vt == VTYPE_I4 || var.vt == VTYPE_I2 || var.vt == VTYPE_I4 || var.vt == VTYPE_ERROR || var.vt == VTYPE_UI1) {
+				value = var.lVal;
 				return true;
 			}
 		}
@@ -583,6 +605,46 @@ bool CAddInECRDriver::loadValue(const std::u16string& key, bool& value)
     return false;
 }
 
+bool CAddInECRDriver::ExternalEvent(const std::u16string& message, const std::u16string& data)
+{
+    if (m_iConnect) {
+        auto equipment = m_driver->getEquipmentType();
+		auto name_qe = getEquipmentName(&equipment, m_langCode);
+        return m_iConnect->ExternalEvent(
+            const_cast<char16_t*>(name_qe.c_str()),
+            const_cast<char16_t*>(message.c_str()),
+            const_cast<char16_t*>(data.c_str()));
+	}
+	return false;
+}
+
+bool CAddInECRDriver::ExternalEvent(const std::wstring& message, const std::wstring& data)
+{
+    return ExternalEvent(str_utils::to_u16string(message), str_utils::to_u16string(data));
+}
+
+long CAddInECRDriver::GetEventBufferDepth()
+{
+    if (m_iConnect) {
+        return m_iConnect->GetEventBufferDepth();
+	}
+	return 0;
+}
+
+void CAddInECRDriver::SetEventBufferDepth(long depth)
+{
+    if (m_iConnect) {
+        m_iConnect->SetEventBufferDepth(depth);
+	}
+}
+
+void CAddInECRDriver::CleanEventBuffer()
+{
+    if (m_iConnect) {
+        m_iConnect->CleanEventBuffer();
+	}
+}
+
 LanguageCode CAddInECRDriver::getLanguageCode()
 {
     return m_langCode;
@@ -606,7 +668,6 @@ bool CAddInECRDriver::SetParam(tVariant* pvarParamDefValue, const ParamDefault* 
 		}
 		else {
 			TV_VT(pvarParamDefValue) = VTYPE_EMPTY;
-			this->addError(ADDIN_E_VERY_IMPORTANT, u"SetParam", u"Error setting default value", -1);
 			return false;
 		}
 	}
@@ -615,11 +676,54 @@ bool CAddInECRDriver::SetParam(tVariant* pvarParamDefValue, const ParamDefault* 
 //        TV_BOOL(pvarParamDefValue) = std::get<bool>(*defaultParam);
 //    }
     else {
-        this->addError(ADDIN_E_VERY_IMPORTANT, u"SetParam", u"Error setting default value", -1);
         TV_VT(pvarParamDefValue) = VTYPE_EMPTY;
     }
 
     return true;
+}
+
+void CAddInECRDriver::initializeDriver()
+{
+    if (m_iConnectEx) {
+        IPlatformInfo* platformInfo = nullptr;
+		void* iPlatform = m_iConnectEx->GetInterface(Interfaces::eIPlatformInfo);
+        if (iPlatform) {
+            IPlatformInfo* platformInfo = static_cast<IPlatformInfo*>(iPlatform);
+		}
+        if (platformInfo) {
+            auto info = platformInfo->GetPlatformInfo();
+
+            switch (info->Application)
+			{
+			    case IPlatformInfo::AppType::eAppThinClient:
+                    m_platformInfo.HostAppType = HostAppType::eAppThickClient;
+                    break;
+                case IPlatformInfo::AppType::eAppThickClient:
+                    m_platformInfo.HostAppType = HostAppType::eAppThickClient;
+                    break;
+                case IPlatformInfo::AppType::eAppWebClient:
+                    m_platformInfo.HostAppType = HostAppType::eAppWebClient;
+                    break;
+                case IPlatformInfo::AppType::eAppServer:
+                    m_platformInfo.HostAppType = HostAppType::eAppServer;
+                    break;
+                case IPlatformInfo::AppType::eAppExtConn:
+                    m_platformInfo.HostAppType = HostAppType::eAppExtConn;
+                    break;
+                case IPlatformInfo::AppType::eAppMobileClient:
+                    m_platformInfo.HostAppType = HostAppType::eAppMobileClient;
+                    break;
+                case IPlatformInfo::AppType::eAppMobileServer:
+                    m_platformInfo.HostAppType = HostAppType::eAppMobileServer;
+                    break;
+    			default:
+                    m_platformInfo.HostAppType = HostAppType::eAppUnknown;
+			}
+
+			m_platformInfo.HostAppVersion = str_utils::to_wstring(info->AppVersion);
+			m_platformInfo.UserAgentInformation = str_utils::to_wstring(info->UserAgentInformation);
+        }
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -13,10 +13,21 @@ std::u16string LoadStringResourceFor1C(const std::wstring& resourceId)
     return LocalizationManager::GetLocalizedStringFor1C(resourceId);
 }
 
+std::u16string LoadStringResourceFor1C(const std::wstring_view& resourceId)
+{
+    return LocalizationManager::GetLocalizedStringFor1C(resourceId);
+}
+
 std::wstring LoadStringResource(const std::wstring& resourceId)
 {
 	return LocalizationManager::GetLocalizedString(resourceId);
 }
+
+std::wstring LoadStringResource(const std::wstring_view& resourceId)
+{
+    return LocalizationManager::GetLocalizedString(resourceId);
+}
+
 
 // Conversion function UTF-16 -> UTF-8
 std::u16string convertDriverDescriptionToJson(const DriverDescription& desc) {

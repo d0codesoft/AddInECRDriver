@@ -1,5 +1,4 @@
 #include "pch.h"
-
 #include "interface_connection.h"
 #include "string_conversion.h"
 #include "logger.h"

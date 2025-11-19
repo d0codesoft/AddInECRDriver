@@ -41,18 +41,14 @@ std::unique_ptr<POSTerminalOperationResponse> POSTerminalController::processTran
 		LOG_ERROR_ADD(L"POSTerminalController", L"Invalid parameters for payment");
 		return nullptr;
 	}
-	std::wstring _discount = L"";
-	if (paramPayement.Discount.has_value()) {
-		_discount = doubleToAmountString(paramPayement.Discount.value());
-	}
 
-	Params _paramPayement = {
+	/*Params _paramPayement = {
 		{ L"amount" , doubleToAmountString(paramPayement.Amount.value()) },
 		{ L"discount" , _discount },
 		{ L"merchantId" , paramPayement.MerchantNumber.has_value() ? std::to_wstring(paramPayement.MerchantNumber.value()) : L"0" },
 		{ L"facepay" , paramPayement.isFacepay() ? L"true" : L"false"},
 		{ L"subMerchant" , paramPayement.SubMerchant.has_value() ? std::to_wstring(paramPayement.SubMerchant.value()) : L""}
-	};
+	};*/
 	//sendData dataPayement = { PROTOCOL_METHOD_PURCHASE, 0, _paramPayement };
 	
 	_clearAllMessages();
@@ -193,7 +189,7 @@ void POSTerminalController::_processIncomingData(const std::vector<uint8_t>& dat
 
 	std::wstring debugData = L"Process incoming data. Size: ";
 	debugData += str_utils::to_wstring(data.size());
-	debugData += L" bytes .\r\nData: " + out;
+	debugData += L" bytes .\nRaw: " + out;
 	
 	LOG_INFO_ADD(L"POSTerminalController", debugData);
 #endif
@@ -566,19 +562,19 @@ std::vector<uint8_t> JsonChannelProtocol::encodeRequest(POSTerminalOperationPara
 	switch  (op.OperationType) {
 		case POSTerminalOperationType::Pay:
 			json["method"] = PROTOCOL_METHOD_PURCHASE;
-			params_json["amount"] = op.Amount;
-			params_json["discount"] = op.Discount;
-			params_json["merchantId"] = op.MerchantNumber;
+			params_json["amount"] = op.Amount.value_or(0);
+			params_json["discount"] = op.Discount.value_or(0);
+			params_json["merchantId"] = str_utils::to_wstring(op.MerchantNumber.value_or(0));
 			params_json["facepay"] = op.isFacepay();
-			params_json["subMerchant"] = op.SubMerchant;
+			params_json["subMerchant"] = op.SubMerchant.has_value() ? str_utils::to_wstring(op.SubMerchant.value()) : L"";
 			break;
 		case POSTerminalOperationType::ReturnPayment:
 			json["method"] = PROTOCOL_METHOD_RETURN_PAYMENT;
-			params_json["amount"] = op.Amount;
-			params_json["discount"] = op.Discount;
-			params_json["merchantId"] = op.MerchantNumber;
+			params_json["amount"] = op.Amount.value_or(0);
+			params_json["discount"] = op.Discount.value_or(0);
+			params_json["merchantId"] = str_utils::to_wstring(op.MerchantNumber.value_or(0));
 			params_json["rrn"] = op.RRNCode;
-			params_json["subMerchant"] = op.SubMerchant;
+			params_json["subMerchant"] = op.SubMerchant.has_value() ? str_utils::to_wstring(op.SubMerchant.value()) : L"";
 			break;
 		case POSTerminalOperationType::CancelPayment:
 			json["method"] = PROTOCOL_METHOD_CANCEL_PAYMENT;
@@ -725,12 +721,10 @@ void JsonChannelProtocol::_handleParsedJson(const jsoncons::json& json)
 				data.params[key] = item.value().as<bool>();
 			}
 		}
+		LOG_INFO_ADD(L"JsonChannelProtocol", L"Received json data: " + str_utils::to_wstring(json.to_string()));
 		dataQueue_.push_back(data);
 	}
 	catch (const std::exception& e) {
-#ifdef _DEBUG
-		std::wcout << L"	_handleParsedJson Failed to parse JSON " << str_utils::to_wstring(e.what()) << std::endl;
-#endif
 		LOG_ERROR_ADD(L"POSTerminalController", L"Failed to parse JSON: " + str_utils::to_wstring(e.what()));
 		return;
 	}

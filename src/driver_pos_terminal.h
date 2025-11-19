@@ -85,6 +85,7 @@ public:
     std::span<const ActionDriver> getActions() override;
 
     POSTerminalConfig* getTerminalConfig(const std::wstring& deviceID) override;
+    EquipmentType getEquipmentType() const override;
 
     // Action driver
 	bool ActionOpenFileLog(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray);
@@ -103,7 +104,7 @@ protected:
 
     std::optional<std::reference_wrapper<std::unique_ptr<POSTerminalController>>> getDeviceConnection(tVariant* paramDeviceID, std::wstring& deviceId);
 
-    void _handleError(const std::wstring& methodName, const std::wstring& messageError, const bool driverErrorNotify = false, const AddinErrorCode errorCode = AddinErrorCode::VeryImportant);
+    void _handleError(const std::wstring& methodName, const std::wstring& messageError, const bool driverErrorNotify = false, const UiAddinError errorCode = UiAddinError::VeryImportant);
     inline bool fail(tVariant* pvarRetValue, const std::wstring& context, const std::wstring& errorKey);
 
 	void _initializeConfigurationTerminal(const std::wstring& id);
@@ -291,13 +292,15 @@ private:
 	std::unordered_map<std::wstring, std::unique_ptr<POSTerminalController>> m_controller = {};
 	std::unordered_map<std::wstring, POSTerminalConfig> m_configTerminals = {};
 
-    DriverDescription m_driverDescription;
+    DriverDescription m_driverDescription = {};
     std::unique_ptr<LicenseManager> m_licenseManager;
 	std::vector<ActionDriver> m_actions = {};
 
     SettingDriverPos m_settingDriverPos;
 
 	LanguageCode m_languageCode = LanguageCode::RU;
+
+    EquipmentType m_equipmentType = {};
 };
 
 #endif // DRIVERPOSTERMINAL_H

@@ -1,6 +1,5 @@
 ﻿#include "pch.h"
 #include "license_manager.h"
-
 #include <iostream>
 #include <stdexcept>
 #include <jsoncons/json.hpp>

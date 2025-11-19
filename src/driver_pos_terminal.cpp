@@ -11,6 +11,8 @@
 #include "setting_driver_pos.h"
 #include "logger.h"
 #include "tvariant_helper.h"
+#include "localization_manager.h"
+#include "localization_consts.h"
 
 #if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
@@ -18,7 +20,6 @@
 #elif defined(__APPLE__) || defined(__MACH__)
 #include <sys/stat.h> // For struct stat and stat
 #endif
-#include "localization_manager.h"
 
 #define CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, lValidCountParams, methodName) \
     if ((lSizeArray) != (lValidCountParams) || (lSizeArray!=0 && !(paParams))) { \
@@ -33,6 +34,11 @@
 DriverPOSTerminal::DriverPOSTerminal(IAddInBase * addInBase) : m_addInBase(addInBase)
 {
 	m_licenseManager = std::make_unique<LicenseManager>();
+
+	auto fEqipment = findEquipmentByType(EquipmentTypeInfo::POSTerminal);
+	if (fEqipment) {
+		m_equipmentType = *fEqipment;
+	}
 }
 
 DriverPOSTerminal::~DriverPOSTerminal()
@@ -54,21 +60,21 @@ void DriverPOSTerminal::InitDriver()
 {
 	// Implementation here
     m_driverDescription = {
-        LoadStringResource(L"IDS_DRIVER_NAME"),
-        LoadStringResource(L"IDS_DRIVER_DESCRIPTION"),
-        LoadStringResource(L"IDS_EQUIPMENT_TYPE"),
+        LoadStringResource(IDS_LC_DRIVER_NAME),
+        LoadStringResource(IDS_LC_DRIVER_DESCRIPTION),
+        LoadStringResource(IDS_LC_EQUIPMENT_TYPE),
         false, // IntegrationComponent
         false, // MainDriverInstalled
-        LoadStringResource(L"IDS_DRIVER_VERSION"),
-        LoadStringResource(L"IDS_DRIVER_INTEGRATION_COMPONENT_VERSION"),
+        LoadStringResource(IDS_LC_DRIVER_VERSION),
+        LoadStringResource(IDS_LC_DRIVER_INTEGRATION_COMPONENT_VERSION),
         false, // IsEmulator
         true, // LocalizationSupported
         false, // AutoSetup
-        LoadStringResource(L"IDS_DRIVER_DOWNLOAD_URL"),
-        LoadStringResource(L"IDS_DRIVER_ENVIRONMENT_INFORMATION"),
+        LoadStringResource(IDS_LC_DRIVER_DOWNLOAD_URL),
+        LoadStringResource(IDS_LC_DRIVER_ENVIRONMENT_INFORMATION),
         true, // LogIsEnabled
 		Logger::getLogFilePath(),
-        LoadStringResource(L"IDS_DRIVER_NAME_ADDIN")
+        LoadStringResource(IDS_LC_DRIVER_NAME_ADDIN)
     };
 
 	//OptionDriverNames
@@ -253,7 +259,8 @@ bool DriverPOSTerminal::Open(tVariant* pvarRetValue, tVariant* paParams, const l
 	clearError();
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 1, u"Open");
 
-    std::wstring error = {}, deviceId = {};
+	this->m_addInBase->sendError(u"Open", u"Start open", UiAddinError::Attention, FacilityCode::None);
+	std::wstring error = {}, deviceId = {};
     auto result = InitConnection(deviceId, error);
     if (result)
     {
@@ -328,6 +335,7 @@ bool DriverPOSTerminal::DeviceTest(tVariant* pvarRetValue, tVariant* paParams, c
 	clearError();
     CHECK_PARAMS_COUNT(pvarRetValue, paParams, lSizeArray, 2, u"DeviceTest");
 
+	//this->m_addInBase->sendError(u"Open", u"Start test", UiAddinError::Attention, FacilityCode::Core);
 	// Test connection
 	auto result = testConnection(m_ParamConnection);
 
@@ -538,21 +546,25 @@ bool DriverPOSTerminal::EquipmentTest(tVariant* pvarRetValue, tVariant* paParams
 		return true;
     }
 
-    if (m_licenseManager->isDemoMode()) {
-        m_addInBase->setStringValue(&paParams[2], str_utils::to_u16string(m_licenseManager->getDemoModeDescription()));
-    }
-    else {
-        TV_VT(&paParams[1]) = VTYPE_EMPTY;
-    }
-
 	// Test connection
 	auto result = testConnection(paramConnection);
     m_addInBase->setBoolValue(pvarRetValue, result);
 
 	if (!result) {
+		m_addInBase->setStringValue(&paParams[2], LoadStringResourceFor1C(IDS_LC_DRIVER_ERROR_CONNECT_TERMINAL));
 		fail(pvarRetValue, L"EquipmentTest", L"Error connection");
 		return true;
     }
+	else
+	{
+		if (m_licenseManager->isDemoMode()) {
+			m_addInBase->setStringValue(&paParams[2], str_utils::to_u16string(m_licenseManager->getDemoModeDescription()));
+		}
+		else
+		{
+			m_addInBase->setStringValue(&paParams[2], str_utils::to_u16string(m_driverDescription.Description));
+		}
+	}
 
 	return true;
 }
@@ -2451,6 +2463,11 @@ POSTerminalConfig* DriverPOSTerminal::getTerminalConfig(const std::wstring& devi
 	return nullptr;
 }
 
+EquipmentType DriverPOSTerminal::getEquipmentType() const
+{
+	return m_equipmentType;
+}
+
 bool DriverPOSTerminal::ActionOpenFileLog(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray)
 {
 	clearError();
@@ -2676,11 +2693,11 @@ std::optional<std::reference_wrapper<std::unique_ptr<POSTerminalController>>> Dr
 	return std::nullopt;
 }
 
-void DriverPOSTerminal::_handleError(const std::wstring& methodName, const std::wstring& messageError, const bool driverErrorNotify, const AddinErrorCode errorCode)
+void DriverPOSTerminal::_handleError(const std::wstring& methodName, const std::wstring& messageError, const bool driverErrorNotify, const UiAddinError errorCode)
 {
 	auto error_ = str_utils::to_u16string(messageError);
 	if (driverErrorNotify) {
-		m_addInBase->addError(static_cast<int>(errorCode), str_utils::to_u16string(methodName), error_, -1);
+		m_addInBase->sendError(str_utils::to_u16string(methodName), error_, errorCode, FacilityCode::None);
 	}
 	auto log_error = methodName + L": " + messageError;
 	addErrorDriver(error_, log_error);

@@ -23,12 +23,12 @@ using ParamDefault = std::variant<int, std::u16string>;
 
 // Define structure for the property
 struct PropName {
-    uint32_t propId;
+    uint32_t propId = 0;
     std::u16string name_en;
     std::u16string name_ru;
     std::u16string descr;
-	bool isReadable;
-	bool isWritable;
+	bool isReadable = false;
+	bool isWritable = false;
     CallParamFunc getPropValFunc;
     CallParamFunc setPropValFunc;
 };
@@ -46,26 +46,27 @@ struct MethodName {
 };
 
 struct DriverDescription {
-    std::wstring Name;
-    std::wstring Description;
-    std::wstring EquipmentType;
-    bool IntegrationComponent;
-    bool MainDriverInstalled;
-    std::wstring DriverVersion;
-    std::wstring IntegrationComponentVersion;
-    bool IsEmulator;
-    bool LocalizationSupported;
-    bool AutoSetup;
-    std::wstring DownloadURL;
-    std::wstring EnvironmentInformation;
-    bool LogIsEnabled;
-    std::wstring LogPath;
-    std::wstring ExtensionName;
+    std::wstring Name = {};
+    std::wstring Description = {};
+    std::wstring EquipmentType = {};
+    bool IntegrationComponent = false;
+    bool MainDriverInstalled = false;
+    std::wstring DriverVersion = {};
+    std::wstring IntegrationComponentVersion = {};
+    bool IsEmulator = false;
+    bool LocalizationSupported = false;
+    bool AutoSetup = false;
+    std::wstring DownloadURL = {};
+    std::wstring EnvironmentInformation = {};
+    bool LogIsEnabled = false;
+    std::wstring LogPath = {};
+    std::wstring ExtensionName = {};
 };
 
 // 🏭 Types of equipment
 enum class EquipmentTypeInfo {
-    BarcodeScanner,
+    Unknown = -1,
+    BarcodeScanner = 0,
     CardReader,
     KKT,
     ReceiptPrinter,
@@ -75,25 +76,86 @@ enum class EquipmentTypeInfo {
     WeighingScales,
     LabelPrintingScale,
     LabelPrinter,
-    RFIDReader,
+    RFIDReader
 };
 
 // 🌐 Localized lang code
 enum class LanguageCode {
-	EN,
+	EN = 0,
 	RU,
 	Unknown
 };
 
 // 🌐 Localized types of equipment
 struct EquipmentType {
-    std::u16string english;
-    std::u16string russian;
-    EquipmentTypeInfo type;
+    std::u16string english = {};
+    std::u16string russian = {};
+    EquipmentTypeInfo type = EquipmentTypeInfo::Unknown;
+};
+
+std::optional<EquipmentType> findEquipmentByType(EquipmentTypeInfo type);
+std::u16string getEquipmentName(EquipmentTypeInfo type, LanguageCode lang);
+std::u16string getEquipmentName(EquipmentType* type, LanguageCode lang);
+
+/// <summary>
+/// Enumeration of add-in error and message severity codes.
+/// </summary>
+enum class UiAddinError : std::uint32_t {
+    None = 1000,
+    Ordinary = 1001,
+    Attention = 1002,
+    Important = 1003,
+    VeryImportant = 1004,
+    Info = 1005,
+    Fail = 1006,
+    MsgBoxAttention = 1007,
+    MsgBoxInfo = 1008,
+    MsgBoxFail = 1009
+};
+
+enum class FacilityCode : long {
+	None = 0,
+    FailPosOperaions = 1,
+    FailNetwork = 2,
+    FailLicensing = 3
+};
+
+enum class HostAppType : int
+{
+    eAppUnknown = -1,
+    eAppThinClient = 0,
+    eAppThickClient,
+    eAppWebClient,
+    eAppServer,
+    eAppExtConn,
+    eAppMobileClient,
+    eAppMobileServer,
+};
+
+// Mapping names
+static const std::unordered_map<HostAppType, std::wstring> HostAppTypeNames = {
+    { HostAppType::eAppUnknown,      L"Unknown" },
+    { HostAppType::eAppThinClient,   L"ThinClient" },
+    { HostAppType::eAppThickClient,  L"ThickClient" },
+    { HostAppType::eAppWebClient,    L"WebClient" },
+    { HostAppType::eAppServer,       L"Server" },
+    { HostAppType::eAppExtConn,      L"ExternalConnection" },
+    { HostAppType::eAppMobileClient, L"MobileClient" },
+    { HostAppType::eAppMobileServer, L"MobileServer" }
+};
+
+std::wstring getHostAppTypeName(HostAppType type);
+
+struct HostPlatformInfo
+{
+    HostAppType         HostAppType = HostAppType::eAppUnknown;
+    std::wstring        HostAppVersion = {};
+    std::wstring        UserAgentInformation = {};
 };
 
 // 🔗 Static list of equipment types
 static const std::vector<EquipmentType> EquipmentTypes = {
+    {u"AddInUniversalDriver",      u"AddInUniversalDriver",     EquipmentTypeInfo::Unknown},
     {u"BarcodeScanner",            u"СканерШтрихкода",          EquipmentTypeInfo::BarcodeScanner},
     {u"CardReader",                u"СчитывательМагнитныхКарт", EquipmentTypeInfo::CardReader},
     {u"KKT",                       u"ККТ",                      EquipmentTypeInfo::KKT},
@@ -104,7 +166,7 @@ static const std::vector<EquipmentType> EquipmentTypes = {
     {u"WeighingScales",            u"ЭлектронныеВесы",          EquipmentTypeInfo::WeighingScales},
     {u"LabelPrintingScale",        u"ВесыСПечатьюЭтикеток",     EquipmentTypeInfo::LabelPrintingScale},
     {u"LabelPrinter",              u"ПринтерЭтикеток",          EquipmentTypeInfo::LabelPrinter},
-    {u"RFIDReader",                u"СчитывательRFID",          EquipmentTypeInfo::RFIDReader},
+    {u"RFIDReader",                u"СчитывательRFID",          EquipmentTypeInfo::RFIDReader}
 };
 
 bool isValidEquipmentType(const std::u16string& input);
@@ -128,6 +190,7 @@ enum class DriverOption {
     Facepay,
     LogFullPath,
 	PrintReceiptOnTerminal,
+    ResponseTimeout,
     other
 };
 
@@ -140,13 +203,14 @@ const std::unordered_map<DriverOption, std::wstring> OptionDriverNames = {
     { DriverOption::MerchantId, L"MerchantId" },
     { DriverOption::Facepay, L"Facepay" },
     { DriverOption::LogFullPath, L"LogFullPath" },
-	{ DriverOption::PrintReceiptOnTerminal, L"PrintReceiptOnTerminal" }
+	{ DriverOption::PrintReceiptOnTerminal, L"PrintReceiptOnTerminal" },
+    { DriverOption::ResponseTimeout, L"ResponseTimeout" }
 };
 
 struct DriverParameter {
     std::wstring name;
     std::variant<std::wstring,long,bool> value;
-	TypeParameter type;
+	TypeParameter type = TypeParameter::String;
 };
 
 struct ActionDriver {
@@ -286,19 +350,6 @@ typename std::enable_if<
     return true;
 }
 
-enum class AddinErrorCode : int {
-	None = 1000,
-	Ordinary = 1001,
-	Attention = 1002,
-	Important = 1003,
-	VeryImportant = 1004,
-	Info = 1005,
-	Fail = 1006,
-	MsgBoxAttention = 1007,
-	MsgBoxInfo = 1008,
-	MsgBoxFail = 1009
-};
-
 /**
  * @brief Структура, описывающая параметры терминала.
  */
@@ -314,37 +365,37 @@ struct POSTerminalConfig {
     /**
      * @brief Будет ли терминал самостоятельно печатать квитанции на своем принтере для операций.
      */
-    bool PrintSlipOnTerminal;
+    bool PrintSlipOnTerminal = false;
 
     /**
      * @brief Терминал возвращает короткие слип-чеки, которые будут выводиться в теле фискального чека.
      */
-    bool ShortSlip;
+    bool ShortSlip = false;
 
     /**
      * @brief Терминал поддерживает функцию выдачи наличных денежных средств.
      */
-    bool CashWithdrawal;
+    bool CashWithdrawal = false;
 
     /**
      * @brief Терминал поддерживает оплату электронными сертификатами ФЭС НСПК.
      */
-    bool ElectronicCertificates;
+    bool ElectronicCertificates = false;
 
     /**
      * @brief Терминал поддерживает частичную отмену.
      */
-    bool PartialCancellation;
+    bool PartialCancellation = false;
 
     /**
      * @brief Терминал поддерживает Consumer-Presented QR-операции на стороне эквайреров.
      */
-    bool ConsumerPresentedQR;
+    bool ConsumerPresentedQR = false;
 
     /**
      * @brief Терминал поддерживает получение списка операций по картам.
      */
-    bool ListCardTransactions;
+    bool ListCardTransactions = false;
 
     /**
      * @brief Терминал поддерживает операцию возврата ЭС без карты по BasketID оригинальной операции оплаты.
