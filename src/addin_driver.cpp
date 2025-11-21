@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "addin_driver.h"
+#include "localization_manager.h"
 
 #if defined(OS_MACOS) || defined(OS_LINUX)
 #include <unistd.h>
@@ -41,7 +42,6 @@ CAddInECRDriver::CAddInECRDriver()
 {
     m_iMemory = nullptr;
     m_iConnect = nullptr;
-	m_iConnectEx = nullptr;
 	m_langCode = LanguageCode::RU;
 
 	//std::u16string logDirectory = SysUtils::getLogDriverFilePath();
@@ -58,20 +58,22 @@ CAddInECRDriver::~CAddInECRDriver()
 //---------------------------------------------------------------------------//
 bool CAddInECRDriver::Init(void* pConnection)
 {
-    SysUtils::LogInfo(L"AddIn Init");
+    LOG_INFO_ADD(L"AddIn", L"AddIn Init");
 
     if (!pConnection) return false;
     m_iConnect = static_cast<IAddInDefBase*>(pConnection);
-	m_iConnectEx = dynamic_cast<IAddInDefBaseEx*>(m_iConnect);
+	//m_iConnectEx = static_cast<IAddInDefBaseEx*>(pConnection);
+
 
     if (m_iConnect)
         m_driver->InitDriver();
 
     initializeDriver();
 
-	SysUtils::LogInfo(L"Type platform:" + getHostAppTypeName(m_platformInfo.HostAppType));
-    SysUtils::LogInfo(L"Version platform:" + m_platformInfo.HostAppVersion);
-    SysUtils::LogInfo(L"User agent information:" + m_platformInfo.UserAgentInformation);
+	LOG_INFO_ADD(L"AddIn", L"Init host application information");
+    LOG_INFO_ADD(L"AddIn", L"Type platform:" + getHostAppTypeName(m_platformInfo.HostAppType));
+    LOG_INFO_ADD(L"AddIn", L"Version platform:" + m_platformInfo.HostAppVersion);
+    LOG_INFO_ADD(L"AddIn", L"User agent information:" + m_platformInfo.UserAgentInformation);
 
     return m_iConnect != nullptr;
 }
@@ -89,7 +91,6 @@ void CAddInECRDriver::Done()
 {
 	m_iConnect = nullptr;
 	m_iMemory = nullptr;
-	m_iConnectEx = nullptr;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -338,7 +339,7 @@ void CAddInECRDriver::SetLocale(const WCHAR_T* loc)
 #if !defined( __linux__ ) && !defined(__APPLE__)
     _wsetlocale(LC_ALL, (wchar_t*)loc);
     std::u16string locale = std::u16string(loc);
-	m_langCode = detectLanguage(locale);
+	auto lang = detectLanguage(locale);
 #else
     char* char_locale = ConvertWCharToChar(loc);
     setenv("LANG", char_locale, 1);    // Set environment variable
@@ -347,11 +348,12 @@ void CAddInECRDriver::SetLocale(const WCHAR_T* loc)
     free(char_locale); // Free the allocated memory
     
     std::u16string locale = str_utils::to_u16string(loc);
-    m_langCode = detectLanguage(locale);
+    auto lang = detectLanguage(locale);
     //We convert in char* char_locale
     //also we establish locale
     //setlocale(LC_ALL, char_locale);
 #endif
+	_setLanguageCode(lang);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -361,7 +363,8 @@ void ADDIN_API CAddInECRDriver::SetUserInterfaceLanguageCode(const WCHAR_T* lang
 {
     m_userLang.assign(lang);
     std::u16string locale = std::u16string(lang);
-    m_langCode = detectLanguage(locale);
+    auto _lang = detectLanguage(locale);
+	_setLanguageCode(_lang);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -489,6 +492,23 @@ bool CAddInECRDriver::setBoolValue(tVariant* pvarParamDefValue, const bool flag)
 	}
 	TV_VT(pvarParamDefValue) = VTYPE_BOOL;
 	TV_BOOL(pvarParamDefValue) = flag;
+	return true;
+}
+
+bool CAddInECRDriver::setNullValue(tVariant* pvarParamDefValue)
+{
+    if (!pvarParamDefValue) {
+        return false;
+	}
+	freeValue(pvarParamDefValue);
+	return true;
+}
+
+bool CAddInECRDriver::setIntValue(tVariant* pvarParamDefValue, const int value)
+{
+    tVarInit(pvarParamDefValue);
+    TV_VT(pvarParamDefValue) = VTYPE_INT;
+    TV_INT(pvarParamDefValue) = value;
 	return true;
 }
 
@@ -650,6 +670,11 @@ LanguageCode CAddInECRDriver::getLanguageCode()
     return m_langCode;
 }
 
+void CAddInECRDriver::setDefaultLanguage(LanguageCode lang)
+{
+    _setLanguageCode(lang);
+}
+
 bool CAddInECRDriver::SetParam(tVariant* pvarParamDefValue, const ParamDefault* defaultParam)
 {
 	if (!defaultParam) {
@@ -684,18 +709,19 @@ bool CAddInECRDriver::SetParam(tVariant* pvarParamDefValue, const ParamDefault* 
 
 void CAddInECRDriver::initializeDriver()
 {
+    IAddInDefBaseEx* m_iConnectEx = (IAddInDefBaseEx*)m_iConnect;
     if (m_iConnectEx) {
-        IPlatformInfo* platformInfo = nullptr;
-		void* iPlatform = m_iConnectEx->GetInterface(Interfaces::eIPlatformInfo);
-        if (iPlatform) {
-            IPlatformInfo* platformInfo = static_cast<IPlatformInfo*>(iPlatform);
-		}
-        if (platformInfo) {
-            auto info = platformInfo->GetPlatformInfo();
 
-            switch (info->Application)
-			{
-			    case IPlatformInfo::AppType::eAppThinClient:
+		// Get platform information
+        try
+        {
+            IPlatformInfo* platformInfo = (IPlatformInfo*)m_iConnectEx->GetInterface(Interfaces::eIPlatformInfo);
+            if (platformInfo) {
+                auto info = platformInfo->GetPlatformInfo();
+
+                switch (info->Application)
+                {
+                case IPlatformInfo::AppType::eAppThinClient:
                     m_platformInfo.HostAppType = HostAppType::eAppThickClient;
                     break;
                 case IPlatformInfo::AppType::eAppThickClient:
@@ -716,14 +742,65 @@ void CAddInECRDriver::initializeDriver()
                 case IPlatformInfo::AppType::eAppMobileServer:
                     m_platformInfo.HostAppType = HostAppType::eAppMobileServer;
                     break;
-    			default:
+                default:
                     m_platformInfo.HostAppType = HostAppType::eAppUnknown;
-			}
+                }
 
-			m_platformInfo.HostAppVersion = str_utils::to_wstring(info->AppVersion);
-			m_platformInfo.UserAgentInformation = str_utils::to_wstring(info->UserAgentInformation);
+                m_platformInfo.HostAppVersion = str_utils::to_wstring(info->AppVersion);
+                m_platformInfo.UserAgentInformation = str_utils::to_wstring(info->UserAgentInformation);
+            }
+        }
+        catch (...)
+        {
+            LOG_ERROR_ADD(L"AddIn", L"Failed to get platform information from 1C");
+		}
+        
+		// Get attached information
+        try
+        {
+            IAttachedInfo* attachedInfo = (IAttachedInfo*)m_iConnectEx->GetInterface(Interfaces::eIAttachedInfo);
+            if (attachedInfo) {
+                auto attachedType = attachedInfo->GetAttachedInfo();
+                if (attachedType == IAttachedInfo::eAttachedIsolated) {
+                    m_platformInfo.AttachedType = HostAttachedType::eAttachedIsolated;
+                }
+                else {
+                    m_platformInfo.AttachedType = HostAttachedType::eAttachedNotIsolated;
+                }
+            }
+        }
+        catch (...)
+        {
+            LOG_ERROR_ADD(L"AddIn", L"Failed to get attached information from 1C");
         }
     }
+}
+
+void CAddInECRDriver::freeValue(tVariant* pvarValue)
+{
+    if (!pvarValue)
+        return;
+    if (pvarValue->vt == VTYPE_PWSTR && pvarValue->pwstrVal) {
+        if (m_iMemory) {
+            m_iMemory->FreeMemory(reinterpret_cast<void**>(&pvarValue->pwstrVal));
+            pvarValue->pwstrVal = nullptr;
+            pvarValue->wstrLen = 0;
+        }
+    }
+    else if (pvarValue->vt == VTYPE_PSTR && pvarValue->pstrVal) {
+        if (m_iMemory) {
+            m_iMemory->FreeMemory(reinterpret_cast<void**>(&pvarValue->pstrVal));
+            pvarValue->pstrVal = nullptr;
+            pvarValue->strLen = 0;
+        }
+    }
+	TV_VT(pvarValue) = VTYPE_EMPTY;
+}
+
+void CAddInECRDriver::_setLanguageCode(LanguageCode lang)
+{
+	m_langCode = lang;
+	LocalizationManager::SetLanguageCode(language_to(m_langCode));
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -10,6 +10,9 @@
 #include <functional>
 #include <optional>
 #include <span>
+#include <unordered_map>
+#include <vector>
+#include <memory>
 
 //using GetParamFunc = bool (*)(tVariant* pvarParamDefValue);
 //typedef bool (*CallAsProcFunc)(tVariant* paParams, const long lSizeArray);
@@ -132,6 +135,13 @@ enum class HostAppType : int
     eAppMobileServer,
 };
 
+enum class HostAttachedType : int
+{
+    eAttachedUnknown = -1,
+    eAttachedIsolated = 0,
+    eAttachedNotIsolated
+};
+
 // Mapping names
 static const std::unordered_map<HostAppType, std::wstring> HostAppTypeNames = {
     { HostAppType::eAppUnknown,      L"Unknown" },
@@ -151,6 +161,7 @@ struct HostPlatformInfo
     HostAppType         HostAppType = HostAppType::eAppUnknown;
     std::wstring        HostAppVersion = {};
     std::wstring        UserAgentInformation = {};
+	HostAttachedType    AttachedType = HostAttachedType::eAttachedUnknown;
 };
 
 // 🔗 Static list of equipment types
@@ -171,7 +182,20 @@ static const std::vector<EquipmentType> EquipmentTypes = {
 
 bool isValidEquipmentType(const std::u16string& input);
 LanguageCode detectLanguage(const std::u16string& input);
-std::u16string findEquivalent(const std::u16string& input);
+LanguageCode detectLanguage(const std::wstring& input);
+inline std::u16string language_to(const LanguageCode lang) {
+    switch (lang)
+    {
+    case LanguageCode::EN:
+        return u"en";
+    case LanguageCode::RU:
+        return u"ru";
+    default:
+        break;
+    }
+    return u"";
+}
+std::optional<std::u16string> findEquivalent(const std::u16string& input);
 std::optional<EquipmentTypeInfo> getEquipmentTypeInfo(const std::u16string& input);
 
 enum class TypeParameter {
@@ -573,6 +597,7 @@ std::u16string toXml(const DriverDescription& driver);
 std::u16string toXmlApplication(const DriverDescription& driver);
 std::u16string toXMLTerminalConfig(const POSTerminalConfig& config);
 std::u16string toXMLActions(std::span<const ActionDriver> actions, const LanguageCode currentLang);
+std::unique_ptr<std::unordered_map<std::wstring,std::wstring>> loadLanguageTranslateFromXML(const std::wstring& xml);
 std::wstring generateGUID();
 std::wstring portToWstring(const std::optional<uint16_t>& port);
 std::wstring doubleToAmountString(double value);

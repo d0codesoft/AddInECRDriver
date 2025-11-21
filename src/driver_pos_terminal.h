@@ -104,12 +104,18 @@ protected:
 
     std::optional<std::reference_wrapper<std::unique_ptr<POSTerminalController>>> getDeviceConnection(tVariant* paramDeviceID, std::wstring& deviceId);
 
-    void _handleError(const std::wstring& methodName, const std::wstring& messageError, const bool driverErrorNotify = false, const UiAddinError errorCode = UiAddinError::VeryImportant);
-    inline bool fail(tVariant* pvarRetValue, const std::wstring& context, const std::wstring& errorKey);
+    void _handleError(std::wstring_view methodName, std::wstring_view messageError, std::wstring_view info_msg = {}, const bool driverErrorNotify = false, const UiAddinError errorCode = UiAddinError::VeryImportant);
+    bool fail(tVariant* pvarRetValue,
+        std::wstring_view context,
+        std::wstring_view errorKey,
+        std::wstring_view info_msg = {});
 
 	void _initializeConfigurationTerminal(const std::wstring& id);
 
 private:
+
+    LanguageCode _languageCode();
+	void _setDefaultLanguage(const LanguageCode lang);
 
     IAddInBase* m_addInBase = nullptr;
 
@@ -297,8 +303,6 @@ private:
 	std::vector<ActionDriver> m_actions = {};
 
     SettingDriverPos m_settingDriverPos;
-
-	LanguageCode m_languageCode = LanguageCode::RU;
 
     EquipmentType m_equipmentType = {};
 };

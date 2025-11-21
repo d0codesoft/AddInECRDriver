@@ -396,3 +396,7 @@ tools/__pycache__/
 /tools/.idea
 /lic_key/license.key
 /tools/ECRDriverPOSTerminal_DEBUG.zip
+
+# Cmake build folder
+build/
+CMake/

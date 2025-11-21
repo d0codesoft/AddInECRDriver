@@ -16,6 +16,17 @@ public:
 	static const std::wstring& GetLocalizedString(const std::wstring_view& resourceId);
 	static void SetLanguageCode(const std::u16string& langCode);
 
+    // Add or update a localization entry (resourceId + language code)
+    static void AddLocalization(const std::wstring& resourceId,
+        const std::u16string& langCode,
+        const std::u16string& u_value,
+        const std::wstring& w_value);
+
+    static void AddLocalization(const std::wstring_view& resourceId,
+        const std::u16string_view& langCode,
+        const std::u16string& u_value,
+        const std::wstring& w_value);
+
 private:
 
 	struct langEntry {

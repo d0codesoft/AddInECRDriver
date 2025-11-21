@@ -43,7 +43,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
@@ -209,6 +209,7 @@
     <ClInclude Include="str_utils.h" />
     <ClInclude Include="sys_utils.h" />
     <ClInclude Include="tvariant_helper.h" />
+    <ClInclude Include="xml_pugi_utils.h" />
     <ClInclude Include="сhannel_protocol.h" />
   </ItemGroup>
   <ItemGroup>
@@ -239,6 +240,7 @@
     <ClCompile Include="str_utils.cpp" />
     <ClCompile Include="sys_utils.cpp" />
     <ClCompile Include="tvariant_helper.cpp" />
+    <ClCompile Include="xml_pugi_utils.cpp" />
     <ClCompile Include="сhannel_protocol.cpp" />
   </ItemGroup>
   <ItemGroup>

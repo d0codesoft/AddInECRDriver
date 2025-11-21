@@ -90,6 +90,9 @@
     <ClInclude Include="localization_consts.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="xml_pugi_utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -156,6 +159,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="localization_consts.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="xml_pugi_utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

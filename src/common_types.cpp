@@ -28,6 +28,7 @@
 #include <uuid/uuid.h>
 #endif
 #include <iomanip>
+#include "xml_pugi_utils.h"
 
 std::optional<EquipmentType> findEquipmentByType(EquipmentTypeInfo type)
 {
@@ -83,13 +84,31 @@ LanguageCode detectLanguage(const std::u16string& input) {
     return LanguageCode::Unknown;
 }
 
-// 🏷️ Search for English analogs in Russian
-std::u16string findEquivalent(const std::u16string& input) {
+LanguageCode detectLanguage(const std::wstring& input)
+{
+    static const std::wstring ru_variants[] = { L"ru", L"ru_ru", L"rus_rus" };
+    static const std::wstring en_variants[] = { L"en", L"en_en" };
+
+    std::wstring lower_lang = input;
+    std::transform(lower_lang.begin(), lower_lang.end(), lower_lang.begin(), ::towlower);
+
+    for (const auto& ru : ru_variants) {
+        if (lower_lang == ru) return LanguageCode::RU;
+    }
+    for (const auto& en : en_variants) {
+        if (lower_lang == en) return LanguageCode::EN;
+    }
+
+    return LanguageCode::Unknown;
+}
+
+// Search for English analogs in Russian
+std::optional<std::u16string> findEquivalent(const std::u16string& input) {
     for (const auto& eq : EquipmentTypes) {
         if (eq.english == input) return eq.russian;
         if (eq.russian == input) return eq.english;
     }
-    return u"Not Found";
+    return std::nullopt;
 }
 
 std::optional<EquipmentTypeInfo> getEquipmentTypeInfo(const std::u16string& input)
@@ -147,9 +166,8 @@ std::vector<DriverParameter> ParseParameters(const std::wstring& xmlPath) {
 bool ParseParametersFromXML(std::vector<DriverParameter>& parameters, const std::wstring& xmlSource)
 {
     pugi::xml_document doc;
-
     // 📂 Загрузка XML файла
-    pugi::xml_parse_result result = doc.load_file(xmlSource.c_str(), pugi::parse_default, pugi::encoding_utf8);
+    pugi::xml_parse_result result = doc.load_string(xmlSource.c_str(), pugi::parse_default);
     if (!result) {
         LOG_ERROR_ADD(L"CommonTypes", L"Ошибка загрузки XML: " + str_utils::to_wstring(result.description()));
         return false;
@@ -395,6 +413,56 @@ std::u16string toXMLActions(std::span<const ActionDriver> actions, const Languag
     return str_utils::to_u16string(xml_str);
 }
 
+std::unique_ptr<std::unordered_map<std::wstring, std::wstring>> loadLanguageTranslateFromXML(const std::wstring& xml)
+{
+    auto table = std::make_unique<std::unordered_map<std::wstring, std::wstring>>();
+
+    if (xml.empty()) {
+        LOG_ERROR_ADD(L"CommonTypes", L"Localization XML string is empty");
+        return table;
+    }
+
+    pugi::xml_document doc;
+    pugi::xml_parse_result result = doc.load_string(xml.c_str(), pugi::parse_default);
+    if (!result) {
+        LOG_ERROR_ADD(L"CommonTypes", L"Failed to parse localization XML: " + str_utils::to_wstring(result.description()));
+        return table;
+    }
+
+    pugi::xml_node root = doc.child(L"Localization");
+    if (!root) {
+        LOG_ERROR_ADD(L"CommonTypes", L"No <Localization> root node found");
+        return table;
+    }
+
+    auto is_cyrillic = [](const std::wstring& s) {
+        return std::any_of(s.begin(), s.end(), [](wchar_t ch) {
+            return (ch >= 0x0400 && ch <= 0x04FF) || (ch >= 0x0500 && ch <= 0x052F);
+            });
+        };
+
+    for (pugi::xml_node resNode : root.children(L"Resource")) {
+        pugi::xml_attribute idAttr = resNode.attribute(L"id");
+        if (!idAttr) {
+            LOG_ERROR_ADD(L"CommonTypes", L"Resource node missing id attribute");
+            continue;
+        }
+
+        std::wstring resourceId = idAttr.as_string();
+        std::wstring valueW = resNode.text().as_string();
+
+        if (resourceId.empty()) {
+            LOG_ERROR_ADD(L"CommonTypes", L"Resource id is empty");
+            continue;
+        }
+
+        auto& perLangMap = (*table)[resourceId];
+        perLangMap = std::move(valueW);
+    }
+
+    return table;
+}
+
 std::wstring generateGUID() {
 
     std::wstring guidBuff = {};
@@ -485,34 +553,6 @@ long stringToLong(const std::wstring& str) {
     return 0;
 }
 
-std::optional<long> get_long_attr(const pugi::xml_node& node, const std::wstring& name) {
-    if (!node.attribute(name).empty()) {
-        long long v64 = node.attribute(name).as_llong(0);
-        if (v64 < static_cast<long long>(std::numeric_limits<long>::min()) ||
-            v64 > static_cast<long long>(std::numeric_limits<long>::max())) {
-            LOG_ERROR_ADD(L"CommonTypes",
-                L"Attribute \"" + name + L"\" value out of range for long");
-            return std::nullopt;
-        }
-        return static_cast<long>(v64); // explicit, safe narrowing
-    }
-    return std::nullopt;
-}
-
-std::optional<double> get_double_attr(const pugi::xml_node& node, const std::wstring& name) {
-    if (!node.attribute(name).empty()) {
-        return node.attribute(name).as_double(0.0);
-    }
-	return std::nullopt;
-}
-
-std::wstring get_wstring_attr(const pugi::xml_node& node, const std::wstring& name) {
-    if (!node.attribute(name).empty()) {
-        return node.attribute(name).as_string();
-    }
-	return L"";
-}
-
 bool readPOSTerminalOperationParametersFromXml(const std::wstring& xmlContent, POSTerminalOperationParameters& outParams) {
 	pugi::xml_document doc;
 	pugi::xml_parse_result result = doc.load_string(xmlContent.c_str());
@@ -526,27 +566,27 @@ bool readPOSTerminalOperationParametersFromXml(const std::wstring& xmlContent, P
 		return false;
 	}
 
-	outParams.MerchantNumber = get_long_attr(root, L"MerchantNumber");
-	outParams.UseBiometrics = get_long_attr(root, L"UseBiometrics");
-	outParams.Amount = get_double_attr(root, L"Amount");
-	outParams.AmountOriginalTransaction = get_double_attr(root, L"AmountOriginalTransaction");
-	outParams.AmountCash = get_double_attr(root, L"AmountCash");
-	outParams.Discount = get_double_attr(root, L"Discount");
-	outParams.ElectronicCertificateAmount = get_double_attr(root, L"ElectronicCertificateAmount");
-	outParams.OwnFundsAmount = get_double_attr(root, L"OwnFundsAmount");
-	outParams.AuthorizationType = get_long_attr(root, L"AuthorizationType");
+	outParams.MerchantNumber            = pugi_utils::get_long_attr(root, L"MerchantNumber");
+	outParams.UseBiometrics             = pugi_utils::get_long_attr(root, L"UseBiometrics");
+	outParams.Amount                    = pugi_utils::get_double_attr(root, L"Amount");
+	outParams.AmountOriginalTransaction = pugi_utils::get_double_attr(root, L"AmountOriginalTransaction");
+	outParams.AmountCash                = pugi_utils::get_double_attr(root, L"AmountCash");
+	outParams.Discount                  = pugi_utils::get_double_attr(root, L"Discount");
+	outParams.ElectronicCertificateAmount = pugi_utils::get_double_attr(root, L"ElectronicCertificateAmount");
+	outParams.OwnFundsAmount            = pugi_utils::get_double_attr(root, L"OwnFundsAmount");
+	outParams.AuthorizationType         = pugi_utils::get_long_attr(root, L"AuthorizationType");
 
 	// Optional fields
-	outParams.ConsumerPresentedQR = get_wstring_attr(root, L"ConsumerPresentedQR");
-	outParams.BasketID = get_wstring_attr(root, L"BasketID");
-	auto _op = get_long_attr(root, L"OperationStatus");
+	outParams.ConsumerPresentedQR = pugi_utils::get_wstring_attr(root, L"ConsumerPresentedQR");
+	outParams.BasketID = pugi_utils::get_wstring_attr(root, L"BasketID");
+	auto _op = pugi_utils::get_long_attr(root, L"OperationStatus");
 	if (_op.has_value()) {
 		outParams.OperationStatus = static_cast<POSTerminalIndicatorStatus>(_op.value());
 	}
-	outParams.CardNumber = get_wstring_attr(root, L"CardNumber");
-	outParams.ReceiptNumber = get_wstring_attr(root, L"ReceiptNumber");
-	outParams.RRNCode = get_wstring_attr(root, L"RRNCode");
-	outParams.AuthorizationCode = get_wstring_attr(root, L"AuthorizationCode");
+	outParams.CardNumber            = pugi_utils::get_wstring_attr(root, L"CardNumber");
+	outParams.ReceiptNumber         = pugi_utils::get_wstring_attr(root, L"ReceiptNumber");
+	outParams.RRNCode               = pugi_utils::get_wstring_attr(root, L"RRNCode");
+	outParams.AuthorizationCode     = pugi_utils::get_wstring_attr(root, L"AuthorizationCode");
 
 	return true;
 }

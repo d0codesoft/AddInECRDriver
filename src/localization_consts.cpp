@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "localization_consts.h"
 
-const std::wstring_view IDS_LC_DRIVER_NAME = L"IDS_DRIVER_NAME";
+/*const std::wstring_view IDS_LC_DRIVER_NAME = L"IDS_DRIVER_NAME";
 const std::wstring_view IDS_LC_DRIVER_DESCRIPTION = L"IDS_DRIVER_DESCRIPTION";
 const std::wstring_view IDS_LC_EQUIPMENT_TYPE = L"IDS_EQUIPMENT_TYPE";
 const std::wstring_view IDS_LC_DRIVER_VERSION = L"IDS_DRIVER_VERSION";
@@ -14,5 +14,6 @@ const std::wstring_view IDS_LC_DRIVER_ERROR_CONNECT_TIMEOUT = L"IDS_DRIVER_ERROR
 const std::wstring_view IDS_LC_DRIVER_ERROR_CONNECT_REFUSED = L"IDS_DRIVER_ERROR_CONNECT_REFUSED";
 const std::wstring_view IDS_LC_DRIVER_ERROR_CONNECT_SECURITY = L"IDS_DRIVER_ERROR_CONNECT_SECURITY";
 const std::wstring_view IDS_DRIVER_ERROR_CONNECT_PROTOCOL = L"IDS_DRIVER_ERROR_CONNECT_PROTOCOL";
+*/
 
 /// Define localization constant IDs

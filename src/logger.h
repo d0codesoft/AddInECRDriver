@@ -19,11 +19,11 @@ class Logger
 {
 public:
 
-    static bool initialize(const std::wstring& logNameTemplate, const std::wstring& logDirectory, size_t maxFileSize, size_t maxFileCount);
+    static bool initialize(std::wstring_view logNameTemplate, std::wstring_view logDirectory, size_t maxFileSize, size_t maxFileCount);
 
-    static Logger* getInstance(const std::wstring& channelName);
+    static Logger* getInstance(std::wstring_view channelName);
 
-    explicit Logger(const std::wstring& channelName);
+    explicit Logger(std::wstring_view channelName);
 	~Logger() {
 		removeInstance(mChannelName);
     }
@@ -31,38 +31,38 @@ public:
 	static std::wstring getLogFilePath();
 
 #ifdef NDEBUG
-    void info(const std::wstring& message, const std::wstring& file = L"", int line = 0) {
+    void info(std::wstring_view message, std::wstring_view file = L"", int line = 0) {
         log(L"INFO", message, file, line);
     }
 
-    void warn(const std::wstring& message, const std::wstring& file = L"", int line = 0) {
+    void warn(std::wstring_view message, std::wstring_view file = L"", int line = 0) {
         log(L"WARN", message, file, line);
     }
 
-    void error(const std::wstring& message, const std::wstring& file = L"", int line = 0) {
+    void error(std::wstring_view message, std::wstring_view file = L"", int line = 0) {
         log(L"ERROR", message, file, line);
     }
 #else
-    void info(const std::wstring& message) {
+    void info(std::wstring_view message) {
         log(L"INFO", message);
     }
 
-    void warn(const std::wstring& message) {
+    void warn(std::wstring_view message) {
         log(L"WARN", message);
     }
 
-    void error(const std::wstring& message) {
+    void error(std::wstring_view message) {
         log(L"ERROR", message);
     }
 #endif
 
 private:
-    static void removeInstance(const std::wstring& channelName);
+    static void removeInstance(std::wstring_view channelName);
     static bool initializeFileStream();
     static void rotate_logs();
 
-    void logDebug(const std::wstring& level, const std::wstring& message, const std::wstring& file, int line);
-    void log(const std::wstring& level, const std::wstring& message);
+    void logDebug(std::wstring_view level, std::wstring_view message, std::wstring_view file, int line);
+    void log(std::wstring_view level, std::wstring_view message);
 
     std::wstring mChannelName;
 

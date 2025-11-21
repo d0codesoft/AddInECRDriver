@@ -41,6 +41,8 @@ public:
     virtual bool setStringValue(tVariant* pvarParamDefValue, const std::u16string& source) = 0;
     virtual bool setDoubleValue(tVariant* pvarParamDefValue, const double source) = 0;
     virtual bool setBoolValue(tVariant* pvarParamDefValue, const bool flag) = 0;
+    virtual bool setNullValue(tVariant* pvarParamDefValue) = 0;
+    virtual bool setIntValue(tVariant* pvarParamDefValue, const int value) = 0;
 
 	// Function to save and load value to storage 1C
 	virtual bool saveValue(const std::u16string& key, const std::u16string& value) = 0;
@@ -51,6 +53,7 @@ public:
 	virtual bool loadValue(const std::u16string& key, bool& value) = 0;
 
 	virtual LanguageCode getLanguageCode() = 0;
+    virtual void setDefaultLanguage(LanguageCode lang) = 0;
 };
 
 // Function to check if the variant is a string

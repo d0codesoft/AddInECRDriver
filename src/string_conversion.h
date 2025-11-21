@@ -13,11 +13,6 @@ std::u16string LoadStringResourceFor1C(const std::wstring& resourceId);
 std::wstring LoadStringResource(const std::wstring& resourceId);
 std::u16string LoadStringResourceFor1C(const std::wstring_view& resourceId);
 std::wstring LoadStringResource(const std::wstring_view& resourceId);
-//std::wstring u16stringToWstring(const std::u16string& u16str);
-//std::u16string wstringToU16string(const std::wstring& wstr);
 std::u16string convertDriverDescriptionToJson(const DriverDescription& desc);
-//std::string convertWStringToString(const std::wstring& wstr);
-//std::wstring convertStringToWString(const std::string& str);
-//uint16_t wstringToUint16(const std::wstring& str);
 
 #endif // STRING_CONVERSION_H

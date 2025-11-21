@@ -6,7 +6,6 @@
 #include <regex>
 #include "str_utils.h"
 
-
 std::unordered_map<std::wstring, Logger*> Logger::InstancesLog;
 std::mutex Logger::mutexLog;
 std::filesystem::path Logger::_logDirectory;
@@ -17,7 +16,7 @@ size_t Logger::_maxFileCount;
 bool Logger::isInitialized = false;
 std::filesystem::path Logger::current_log_path = std::filesystem::path(_logDirectory) / _logNameTemplate;
 
-Logger::Logger(const std::wstring& channelName) : mChannelName(channelName) {
+Logger::Logger(std::wstring_view channelName) : mChannelName(channelName) {
 }
 
 std::wstring Logger::getLogFilePath()
@@ -25,10 +24,11 @@ std::wstring Logger::getLogFilePath()
 	return Logger::current_log_path;
 }
 
-void Logger::removeInstance(const std::wstring& channelName)
+void Logger::removeInstance(std::wstring_view channelName)
 {
+    std::wstring channelStr(channelName);
     std::lock_guard<std::mutex> lock(mutexLog);
-    Logger::InstancesLog.erase(channelName);
+    Logger::InstancesLog.erase(channelStr);
 	if (Logger::InstancesLog.empty()) {
 		if (_LogFile.is_open()) {
             _LogFile.close();
@@ -112,7 +112,7 @@ void Logger::rotate_logs()
     fs::rename(Logger::current_log_path, fs::path(_logDirectory) / (log_prefix + L".1"));
 }
 
-void Logger::logDebug(const std::wstring& level, const std::wstring& message, const std::wstring& file, int line)
+void Logger::logDebug(std::wstring_view level, std::wstring_view message, std::wstring_view file, int line)
 {
 	if (!isInitialized) {
 		if (!initializeFileStream()) {
@@ -140,7 +140,7 @@ void Logger::logDebug(const std::wstring& level, const std::wstring& message, co
     }
 }
 
-void Logger::log(const std::wstring& level, const std::wstring& message)
+void Logger::log(std::wstring_view level, std::wstring_view message)
 {
     if (!isInitialized) {
         if (!initializeFileStream()) {
@@ -166,7 +166,7 @@ void Logger::log(const std::wstring& level, const std::wstring& message)
     }
 }
 
-bool Logger::initialize(const std::wstring& logNameTemplate, const std::wstring& logDirectory, size_t maxFileSize, size_t maxFileCount)
+bool Logger::initialize(std::wstring_view logNameTemplate, std::wstring_view logDirectory, size_t maxFileSize, size_t maxFileCount)
 {
     bool _initialized = false;
 
@@ -203,12 +203,13 @@ bool Logger::initialize(const std::wstring& logNameTemplate, const std::wstring&
     return _initialized;
 }
 
-Logger* Logger::getInstance(const std::wstring& channelName) {
+Logger* Logger::getInstance(std::wstring_view channelName) {
+	std::wstring channelStr(channelName);
     std::lock_guard<std::mutex> lock(mutexLog);
-    auto it = Logger::InstancesLog.find(channelName);
+    auto it = Logger::InstancesLog.find(channelStr);
     if (it == Logger::InstancesLog.end()) {
-        auto logger = new Logger(channelName);
-        Logger::InstancesLog[channelName] = logger;
+        auto logger = new Logger(channelStr);
+        Logger::InstancesLog[channelStr] = logger;
         return logger;
     }
     return it->second;

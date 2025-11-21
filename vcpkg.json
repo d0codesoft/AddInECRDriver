@@ -1,0 +1,12 @@
+{
+  "name": "posterminal",
+  "version-string": "1.0.0",
+  "dependencies": [
+      "boost-system",
+      "boost-asio",
+      "boost-thread",
+      "boost-beast",
+      "openssl"
+  ],
+  "builtin-baseline": "782419385291ae2db643c928314efe626853c702"
+}
