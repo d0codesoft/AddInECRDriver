@@ -210,7 +210,7 @@
     <ClInclude Include="sys_utils.h" />
     <ClInclude Include="tvariant_helper.h" />
     <ClInclude Include="xml_pugi_utils.h" />
-    <ClInclude Include="сhannel_protocol.h" />
+    <ClInclude Include="channel_protocol.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="addin_driver.cpp" />
@@ -241,7 +241,7 @@
     <ClCompile Include="sys_utils.cpp" />
     <ClCompile Include="tvariant_helper.cpp" />
     <ClCompile Include="xml_pugi_utils.cpp" />
-    <ClCompile Include="сhannel_protocol.cpp" />
+    <ClCompile Include="channel_protocol.cpp" />
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="test_connect.testscript">

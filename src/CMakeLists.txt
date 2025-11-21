@@ -153,7 +153,7 @@ if(WIN32)
         _WINDOWS
         _USRDLL
         $<$<CONFIG:Debug>:_DEBUG>
-        $<$<CONFIG:Release>:NDEBUG>
+		$<$<CONFIG:Release>:NDEBUG>
     )
 elseif(APPLE)
     # macOS frameworks if needed (placeholder)
@@ -188,30 +188,81 @@ elseif(UNIX)
 endif()
 
 # Warning level & common compile options
-if(MSVC)
+if (MSVC)
+    # Компиляция
     target_compile_options(${lib_name} PRIVATE
-        /W4
-        /permissive-
+        /W4            # повышенный warning level (VS сам даёт /W3)
+        /permissive-   # строгий стандарт C++
+        /Zc:inline      # стандартное поведение inline
         /Zc:preprocessor
-        /Zc:inline
-        /Zc:__cplusplus
-        /Zc:throwingNew
+        /Zc:forScope
         /utf-8
-        $<$<CONFIG:Release>:/Oi>
-        $<$<CONFIG:Release>:/Gy>
+        /std:c++20
+        /FC            # показать полный путь к файлам в ошибках
+        /diagnostics:column
+        $<$<CONFIG:Release>:/O2>
+        $<$<CONFIG:Debug>:/Od /RTC1>
     )
 
+    # Параметры исключений / runtime
+    target_compile_options(${lib_name} PRIVATE /EHsc)
+
+    # Runtime library
+    set_property(TARGET ${lib_name} PROPERTY
+        MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
+    )
+
+    # Линковка
     target_link_options(${lib_name} PRIVATE
-        $<$<CONFIG:Release>:/OPT:REF>
-        $<$<CONFIG:Release>:/OPT:ICF>
+        /DLL
+        /MANIFEST
+        /MANIFESTUAC:NO
+        /INCREMENTAL
+        /SUBSYSTEM:WINDOWS
+        /MACHINE:X64
+        /ERRORREPORT:PROMPT
+        $<$<CONFIG:Release>:/OPT:REF /OPT:ICF>
     )
 else()
-    target_compile_options(${lib_name} PRIVATE
-        -Wall -Wextra -Wpedantic
-        $<$<CONFIG:Release>:-O3>
-        $<$<CONFIG:RelWithDebInfo>:-O2 -g>
-        $<$<CONFIG:Debug>:-O0 -g>
-    )
+	target_compile_options(${lib_name} PRIVATE
+		# Базовые предупреждения
+		-Wall
+		-Wextra
+		-Wpedantic
+
+		# Дополнительные полезные
+		-Wconversion
+		-Wsign-conversion
+		-Wshadow
+		-Wformat=2
+		-Wnull-dereference
+		-Wdouble-promotion
+		-Woverloaded-virtual
+		-Wimplicit-fallthrough
+		-Wunused
+		-Wuninitialized
+
+		# PIC для shared библиотек на Linux/macOS
+		-fPIC
+
+		# C++20 — для GCC/Clang это безопасно
+		-std=c++20
+
+		# Контроль UB
+		$<$<AND:$<COMPILE_LANG_AND_ID:CXX,GNU>,$<CONFIG:Debug>>:-fsanitize=undefined>
+		$<$<AND:$<COMPILE_LANG_AND_ID:CXX,GNU>,$<CONFIG:Debug>>:-fsanitize=address>
+		$<$<AND:$<COMPILE_LANG_AND_ID:CXX,Clang>,$<CONFIG:Debug>>:-fsanitize=undefined>
+		$<$<AND:$<COMPILE_LANG_AND_ID:CXX,Clang>,$<CONFIG:Debug>>:-fsanitize=address>
+
+		# RTTI и исключения
+		-frtti
+		-fexceptions
+
+		# Режимы конфигурации
+		$<$<CONFIG:Release>:-O3 -DNDEBUG>
+		$<$<CONFIG:RelWithDebInfo>:-O2 -g>
+		$<$<CONFIG:Debug>:-O0 -g -DDEBUG>
+	)
 endif()
 
 # Interprocedural optimization / LTO (guarded by compiler support)

@@ -72,7 +72,7 @@
     <ClInclude Include="str_utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="сhannel_protocol.h">
+    <ClInclude Include="channel_protocol.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="tvariant_helper.h">
@@ -143,7 +143,7 @@
     <ClCompile Include="str_utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="сhannel_protocol.cpp">
+    <ClCompile Include="channel_protocol.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="tvariant_helper.cpp">
