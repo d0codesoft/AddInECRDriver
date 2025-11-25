@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #ifndef IADDINBASE_H
 #define IADDINBASE_H

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <string>
 
 const std::wstring PROTOCOL_VERSION = L"1.0";

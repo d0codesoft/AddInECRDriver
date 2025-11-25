@@ -1,4 +1,4 @@
-#include "pch.h"
+п»ї#include "pch.h"
 #include "localization_manager.h"
 #include "localization_consts.h"
 
@@ -13,16 +13,16 @@ std::unordered_map<
 > LocalizationManager::localization_map = {
     {std::wstring{IDS_LC_DRIVER_NAME}, std::unordered_map<std::u16string, LocalizationManager::langEntry>{
         {u"en", { u"ECR Driver PrivatBank", L"ECR Driver PrivatBank"} },
-        {u"ru", { u"ECR Driver ПриватБанк", L"ECR Driver ПриватБанк"} },
-        {u"uk", { u"ECR Driver ПриватБанк", L"ECR Driver ПриватБанк"} }
+        {u"ru", { u"ECR Driver РџСЂРёРІР°С‚Р‘Р°РЅРє", L"ECR Driver РџСЂРёРІР°С‚Р‘Р°РЅРє"} },
+        {u"uk", { u"ECR Driver РџСЂРёРІР°С‚Р‘Р°РЅРє", L"ECR Driver РџСЂРёРІР°С‚Р‘Р°РЅРє"} }
     }},
     {std::wstring{IDS_LC_DRIVER_DESCRIPTION}, std::unordered_map<std::u16string, LocalizationManager::langEntry>{
         {u"en", { u"Driver for connecting a payment terminal via ECR protocol PrivatBank protocol (JSON based)",
                   L"Driver for connecting a payment terminal via ECR protocol PrivatBank protocol (JSON based)" }},
-        {u"ru", { u"Драйвер подключения платежного терминала по протоколу ECR протокол ПриватБанк (JSON based)",
-                  L"Драйвер подключения платежного терминала по протоколу ECR протокол ПриватБанк (JSON based)" }},
-        {u"uk", { u"Драйвер підключення платіжного терміналу по протоколу ECR протокол ПриватБанк (JSON based)",
-                  L"Драйвер підключення платіжного терміналу по протоколу ECR протокол ПриватБанк (JSON based)" }}
+        {u"ru", { u"Р”СЂР°Р№РІРµСЂ РїРѕРґРєР»СЋС‡РµРЅРёСЏ РїР»Р°С‚РµР¶РЅРѕРіРѕ С‚РµСЂРјРёРЅР°Р»Р° РїРѕ РїСЂРѕС‚РѕРєРѕР»Сѓ ECR РїСЂРѕС‚РѕРєРѕР» РџСЂРёРІР°С‚Р‘Р°РЅРє (JSON based)",
+                  L"Р”СЂР°Р№РІРµСЂ РїРѕРґРєР»СЋС‡РµРЅРёСЏ РїР»Р°С‚РµР¶РЅРѕРіРѕ С‚РµСЂРјРёРЅР°Р»Р° РїРѕ РїСЂРѕС‚РѕРєРѕР»Сѓ ECR РїСЂРѕС‚РѕРєРѕР» РџСЂРёРІР°С‚Р‘Р°РЅРє (JSON based)" }},
+        {u"uk", { u"Р”СЂР°Р№РІРµСЂ РїС–РґРєР»СЋС‡РµРЅРЅСЏ РїР»Р°С‚С–Р¶РЅРѕРіРѕ С‚РµСЂРјС–РЅР°Р»Сѓ РїРѕ РїСЂРѕС‚РѕРєРѕР»Сѓ ECR РїСЂРѕС‚РѕРєРѕР» РџСЂРёРІР°С‚Р‘Р°РЅРє (JSON based)",
+                  L"Р”СЂР°Р№РІРµСЂ РїС–РґРєР»СЋС‡РµРЅРЅСЏ РїР»Р°С‚С–Р¶РЅРѕРіРѕ С‚РµСЂРјС–РЅР°Р»Сѓ РїРѕ РїСЂРѕС‚РѕРєРѕР»Сѓ ECR РїСЂРѕС‚РѕРєРѕР» РџСЂРёРІР°С‚Р‘Р°РЅРє (JSON based)" }}
     }},
     {std::wstring{IDS_LC_EQUIPMENT_TYPE}, std::unordered_map<std::u16string, LocalizationManager::langEntry>{
         {u"en", { u"POSTerminal", L"POSTerminal" }},
@@ -47,10 +47,10 @@ std::unordered_map<
     {std::wstring{IDS_LC_DRIVER_ENVIRONMENT_INFORMATION}, std::unordered_map<std::u16string, LocalizationManager::langEntry>{
         {u"en", { u"PrivatBank ECR payment terminal connection driver (JSON-based)\r\nThe package includes executable driver SCODE_ERCDriver.dll",
                   L"PrivatBank ECR payment terminal connection driver (JSON-based)\r\nThe package includes executable driver SCODE_ERCDriver.dll"}},
-        {u"ru", { u"Драйвер подключения платежного терминала по протоколу ECR ПриватБанк (JSON-based)\r\nСостав пакета входит файл драйвера SCODE_ERCDriver.dll",
-                  L"Драйвер подключения платежного терминала по протоколу ECR ПриватБанк (JSON-based)\r\nСостав пакета входит файл драйвера SCODE_ERCDriver.dll"}},
-        {u"uk", { u"Драйвер підключення платіжного терміналу за протоколом ECR ПриватБанк (JSON-based)\r\nСклад пакета входить файл драйверу SCODE_ERCDriver.dll",
-                  L"Драйвер підключення платіжного терміналу за протоколом ECR ПриватБанк (JSON-based)\r\nСклад пакета входить файл драйверу SCODE_ERCDriver.dll"}}
+        {u"ru", { u"Р”СЂР°Р№РІРµСЂ РїРѕРґРєР»СЋС‡РµРЅРёСЏ РїР»Р°С‚РµР¶РЅРѕРіРѕ С‚РµСЂРјРёРЅР°Р»Р° РїРѕ РїСЂРѕС‚РѕРєРѕР»Сѓ ECR РџСЂРёРІР°С‚Р‘Р°РЅРє (JSON-based)\r\nРЎРѕСЃС‚Р°РІ РїР°РєРµС‚Р° РІС…РѕРґРёС‚ С„Р°Р№Р» РґСЂР°Р№РІРµСЂР° SCODE_ERCDriver.dll",
+                  L"Р”СЂР°Р№РІРµСЂ РїРѕРґРєР»СЋС‡РµРЅРёСЏ РїР»Р°С‚РµР¶РЅРѕРіРѕ С‚РµСЂРјРёРЅР°Р»Р° РїРѕ РїСЂРѕС‚РѕРєРѕР»Сѓ ECR РџСЂРёРІР°С‚Р‘Р°РЅРє (JSON-based)\r\nРЎРѕСЃС‚Р°РІ РїР°РєРµС‚Р° РІС…РѕРґРёС‚ С„Р°Р№Р» РґСЂР°Р№РІРµСЂР° SCODE_ERCDriver.dll"}},
+        {u"uk", { u"Р”СЂР°Р№РІРµСЂ РїС–РґРєР»СЋС‡РµРЅРЅСЏ РїР»Р°С‚С–Р¶РЅРѕРіРѕ С‚РµСЂРјС–РЅР°Р»Сѓ Р·Р° РїСЂРѕС‚РѕРєРѕР»РѕРј ECR РџСЂРёРІР°С‚Р‘Р°РЅРє (JSON-based)\r\nРЎРєР»Р°Рґ РїР°РєРµС‚Р° РІС…РѕРґРёС‚СЊ С„Р°Р№Р» РґСЂР°Р№РІРµСЂСѓ SCODE_ERCDriver.dll",
+                  L"Р”СЂР°Р№РІРµСЂ РїС–РґРєР»СЋС‡РµРЅРЅСЏ РїР»Р°С‚С–Р¶РЅРѕРіРѕ С‚РµСЂРјС–РЅР°Р»Сѓ Р·Р° РїСЂРѕС‚РѕРєРѕР»РѕРј ECR РџСЂРёРІР°С‚Р‘Р°РЅРє (JSON-based)\r\nРЎРєР»Р°Рґ РїР°РєРµС‚Р° РІС…РѕРґРёС‚СЊ С„Р°Р№Р» РґСЂР°Р№РІРµСЂСѓ SCODE_ERCDriver.dll"}}
     }},
     {std::wstring{IDS_LC_DRIVER_NAME_ADDIN}, std::unordered_map<std::u16string, LocalizationManager::langEntry>{
         {u"en", { u"ECRDriverPOS", L"ECRDriverPOS" }},
@@ -59,78 +59,78 @@ std::unordered_map<
     }},
     {std::wstring{IDS_LC_DRIVER_ERROR_CONNECT_TERMINAL}, std::unordered_map<std::u16string, LocalizationManager::langEntry>{
         {u"en", { u"Failed to connect to POS terminal", L"Failed to connect to POS terminal" }},
-        {u"ru", { u"Не удалось подключиться к POS-терминалу", L"Не удалось подключиться к POS-терминалу" }},
-        {u"uk", { u"Не вдалося підключитися до POS-терміналу", L"Не вдалося підключитися до POS-терміналу" }}
+        {u"ru", { u"РќРµ СѓРґР°Р»РѕСЃСЊ РїРѕРґРєР»СЋС‡РёС‚СЊСЃСЏ Рє POS-С‚РµСЂРјРёРЅР°Р»Сѓ", L"РќРµ СѓРґР°Р»РѕСЃСЊ РїРѕРґРєР»СЋС‡РёС‚СЊСЃСЏ Рє POS-С‚РµСЂРјРёРЅР°Р»Сѓ" }},
+        {u"uk", { u"РќРµ РІРґР°Р»РѕСЃСЏ РїС–РґРєР»СЋС‡РёС‚РёСЃСЏ РґРѕ POS-С‚РµСЂРјС–РЅР°Р»Сѓ", L"РќРµ РІРґР°Р»РѕСЃСЏ РїС–РґРєР»СЋС‡РёС‚РёСЃСЏ РґРѕ POS-С‚РµСЂРјС–РЅР°Р»Сѓ" }}
     }},
     {std::wstring{IDS_LC_DRIVER_ERROR_CONNECT_TIMEOUT}, std::unordered_map<std::u16string, LocalizationManager::langEntry>{
         {u"en", { u"Connection POS terminal timeout", L"Connection POS terminal timeout" }},
-        {u"ru", { u"Тайм-аут подключения к POS-терминалу", L"Тайм-аут подключения к POS-терминалу" }},
-        {u"uk", { u"Тайм-аут підключення", L"Тайм-аут підключення" }}
+        {u"ru", { u"РўР°Р№Рј-Р°СѓС‚ РїРѕРґРєР»СЋС‡РµРЅРёСЏ Рє POS-С‚РµСЂРјРёРЅР°Р»Сѓ", L"РўР°Р№Рј-Р°СѓС‚ РїРѕРґРєР»СЋС‡РµРЅРёСЏ Рє POS-С‚РµСЂРјРёРЅР°Р»Сѓ" }},
+        {u"uk", { u"РўР°Р№Рј-Р°СѓС‚ РїС–РґРєР»СЋС‡РµРЅРЅСЏ", L"РўР°Р№Рј-Р°СѓС‚ РїС–РґРєР»СЋС‡РµРЅРЅСЏ" }}
     }},
     {std::wstring{IDS_DRIVER_ERROR_CONNECT_PROTOCOL}, std::unordered_map<std::u16string, LocalizationManager::langEntry>{
         {u"en", { u"Protocol negotiation failed", L"Protocol negotiation failed" }},
-        {u"ru", { u"Ошибка согласования протокола", L"Ошибка согласования протокола" }},
-        {u"uk", { u"Помилка узгодження протоколу", L"Помилка узгодження протоколу" }}
+        {u"ru", { u"РћС€РёР±РєР° СЃРѕРіР»Р°СЃРѕРІР°РЅРёСЏ РїСЂРѕС‚РѕРєРѕР»Р°", L"РћС€РёР±РєР° СЃРѕРіР»Р°СЃРѕРІР°РЅРёСЏ РїСЂРѕС‚РѕРєРѕР»Р°" }},
+        {u"uk", { u"РџРѕРјРёР»РєР° СѓР·РіРѕРґР¶РµРЅРЅСЏ РїСЂРѕС‚РѕРєРѕР»Сѓ", L"РџРѕРјРёР»РєР° СѓР·РіРѕРґР¶РµРЅРЅСЏ РїСЂРѕС‚РѕРєРѕР»Сѓ" }}
     }},
     {std::wstring{IDS_DRIVER_ERROR_DEVICEID_IDENTEFIER}, std::unordered_map<std::u16string, LocalizationManager::langEntry>{
         {u"en", { u"Invalid Device ID identifier", L"Invalid Device ID identifier" }},
-        {u"ru", { u"Недействительный идентификатор устройства", L"Недействительный идентификатор устройства" }},
-        {u"uk", { u"Недійсний ідентифікатор пристрою", L"Недійсний ідентифікатор пристрою" }}
+        {u"ru", { u"РќРµРґРµР№СЃС‚РІРёС‚РµР»СЊРЅС‹Р№ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ СѓСЃС‚СЂРѕР№СЃС‚РІР°", L"РќРµРґРµР№СЃС‚РІРёС‚РµР»СЊРЅС‹Р№ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ СѓСЃС‚СЂРѕР№СЃС‚РІР°" }},
+        {u"uk", { u"РќРµРґС–Р№СЃРЅРёР№ С–РґРµРЅС‚РёС„С–РєР°С‚РѕСЂ РїСЂРёСЃС‚СЂРѕСЋ", L"РќРµРґС–Р№СЃРЅРёР№ С–РґРµРЅС‚РёС„С–РєР°С‚РѕСЂ РїСЂРёСЃС‚СЂРѕСЋ" }}
     }},
     {std::wstring{IDS_DRIVER_ERROR_EQUIPMENTTYPE_IDENTEFIER}, std::unordered_map<std::u16string, LocalizationManager::langEntry>{
         {u"en", { u"Invalid Equipment type", L"Invalid Equipment type" }},
-        {u"ru", { u"Недопустимый тип оборудования", L"Недопустимый тип оборудования" }},
-        {u"uk", { u"Недійсний тип обладнання", L"Недійсний тип обладнання" }}
+        {u"ru", { u"РќРµРґРѕРїСѓСЃС‚РёРјС‹Р№ С‚РёРї РѕР±РѕСЂСѓРґРѕРІР°РЅРёСЏ", L"РќРµРґРѕРїСѓСЃС‚РёРјС‹Р№ С‚РёРї РѕР±РѕСЂСѓРґРѕРІР°РЅРёСЏ" }},
+        {u"uk", { u"РќРµРґС–Р№СЃРЅРёР№ С‚РёРї РѕР±Р»Р°РґРЅР°РЅРЅСЏ", L"РќРµРґС–Р№СЃРЅРёР№ С‚РёРї РѕР±Р»Р°РґРЅР°РЅРЅСЏ" }}
     }},
     {std::wstring{IDS_DRIVER_ERROR_CONNECTION_PARAMETERS}, std::unordered_map<std::u16string, LocalizationManager::langEntry>{
         {u"en", { u"Invalid connection parameters", L"Invalid connection parameters" }},
-        {u"ru", { u"Недопустимые параметры соедениия", L"Недопустимые параметры соедениия" }},
-        {u"uk", { u"Неприпустимі параметри з'єднання", L"Неприпустимі параметри з'єднання" }}
+        {u"ru", { u"РќРµРґРѕРїСѓСЃС‚РёРјС‹Рµ РїР°СЂР°РјРµС‚СЂС‹ СЃРѕРµРґРµРЅРёРёСЏ", L"РќРµРґРѕРїСѓСЃС‚РёРјС‹Рµ РїР°СЂР°РјРµС‚СЂС‹ СЃРѕРµРґРµРЅРёРёСЏ" }},
+        {u"uk", { u"РќРµРїСЂРёРїСѓСЃС‚РёРјС– РїР°СЂР°РјРµС‚СЂРё Р·'С”РґРЅР°РЅРЅСЏ", L"РќРµРїСЂРёРїСѓСЃС‚РёРјС– РїР°СЂР°РјРµС‚СЂРё Р·'С”РґРЅР°РЅРЅСЏ" }}
     }},
     {std::wstring{IDS_DRIVER_ERROR_INVALID_ACTION_NAME}, std::unordered_map<std::u16string, LocalizationManager::langEntry>{
         {u"en", { u"Invalid driver action name", L"Invalid driver action name" }},
-        {u"ru", { u"Недопустимое имя действия драйвера", L"Недопустимое имя действия драйвера" }},
-        {u"uk", { u"Неприпустиме ім'я дії драйвера", L"Неприпустиме ім'я дії драйвера" }}
+        {u"ru", { u"РќРµРґРѕРїСѓСЃС‚РёРјРѕРµ РёРјСЏ РґРµР№СЃС‚РІРёСЏ РґСЂР°Р№РІРµСЂР°", L"РќРµРґРѕРїСѓСЃС‚РёРјРѕРµ РёРјСЏ РґРµР№СЃС‚РІРёСЏ РґСЂР°Р№РІРµСЂР°" }},
+        {u"uk", { u"РќРµРїСЂРёРїСѓСЃС‚РёРјРµ С–Рј'СЏ РґС–С— РґСЂР°Р№РІРµСЂР°", L"РќРµРїСЂРёРїСѓСЃС‚РёРјРµ С–Рј'СЏ РґС–С— РґСЂР°Р№РІРµСЂР°" }}
     }},
     {std::wstring{IDS_DRIVER_ERROR_NOT_FOUND_ACTION_NAME}, std::unordered_map<std::u16string, LocalizationManager::langEntry>{
         {u"en", { u"Not found driver action name", L"Invalid driver action name" }},
-        {u"ru", { u"Не найдено действие драйвера", L"Не найдено действие драйвера" }},
-        {u"uk", { u"Не знайдена дія драйвера", L"Не знайдена дія драйвера" }}
+        {u"ru", { u"РќРµ РЅР°Р№РґРµРЅРѕ РґРµР№СЃС‚РІРёРµ РґСЂР°Р№РІРµСЂР°", L"РќРµ РЅР°Р№РґРµРЅРѕ РґРµР№СЃС‚РІРёРµ РґСЂР°Р№РІРµСЂР°" }},
+        {u"uk", { u"РќРµ Р·РЅР°Р№РґРµРЅР° РґС–СЏ РґСЂР°Р№РІРµСЂР°", L"РќРµ Р·РЅР°Р№РґРµРЅР° РґС–СЏ РґСЂР°Р№РІРµСЂР°" }}
     }},
     {std::wstring{IDS_DRIVER_ERROR_INVALID_LANGUAGE_CODE}, std::unordered_map<std::u16string, LocalizationManager::langEntry>{
         {u"en", { u"Invalid language code", L"Invalid language code" }},
-        {u"ru", { u"Неверный код языка", L"Неверный код языка" }},
-        {u"uk", { u"Помилковий код мови", L"Помилковий код мови" }}
+        {u"ru", { u"РќРµРІРµСЂРЅС‹Р№ РєРѕРґ СЏР·С‹РєР°", L"РќРµРІРµСЂРЅС‹Р№ РєРѕРґ СЏР·С‹РєР°" }},
+        {u"uk", { u"РџРѕРјРёР»РєРѕРІРёР№ РєРѕРґ РјРѕРІРё", L"РџРѕРјРёР»РєРѕРІРёР№ РєРѕРґ РјРѕРІРё" }}
     }},
     {std::wstring{IDS_DRIVER_ERROR_UNSUPPORTED_LANGUAGE_CODE}, std::unordered_map<std::u16string, LocalizationManager::langEntry>{
         {u"en", { u"Driver unsupported language code", L"Driver unsupported language code" }},
-        {u"ru", { u"Язык не поддерживается", L"Язык не поддерживается" }},
-        {u"uk", { u"Мова не підтримується", L"Мова не підтримується" }}
+        {u"ru", { u"РЇР·С‹Рє РЅРµ РїРѕРґРґРµСЂР¶РёРІР°РµС‚СЃСЏ", L"РЇР·С‹Рє РЅРµ РїРѕРґРґРµСЂР¶РёРІР°РµС‚СЃСЏ" }},
+        {u"uk", { u"РњРѕРІР° РЅРµ РїС–РґС‚СЂРёРјСѓС”С‚СЊСЃСЏ", L"РњРѕРІР° РЅРµ РїС–РґС‚СЂРёРјСѓС”С‚СЊСЃСЏ" }}
     }},
     {std::wstring{IDS_DRIVER_ERROR_INVALID_LOCALIZATION_PATTERN}, std::unordered_map<std::u16string, LocalizationManager::langEntry>{
         {u"en", { u"Invalid localization pattern", L"Invalid localization pattern" }},
-        {u"ru", { u"Неверный параметр локализации", L"Неверный параметр локализации" }},
-        {u"uk", { u"Неправильний параметр локалізації", L"Неправильний параметр локалізації" }}
+        {u"ru", { u"РќРµРІРµСЂРЅС‹Р№ РїР°СЂР°РјРµС‚СЂ Р»РѕРєР°Р»РёР·Р°С†РёРё", L"РќРµРІРµСЂРЅС‹Р№ РїР°СЂР°РјРµС‚СЂ Р»РѕРєР°Р»РёР·Р°С†РёРё" }},
+        {u"uk", { u"РќРµРїСЂР°РІРёР»СЊРЅРёР№ РїР°СЂР°РјРµС‚СЂ Р»РѕРєР°Р»С–Р·Р°С†С–С—", L"РќРµРїСЂР°РІРёР»СЊРЅРёР№ РїР°СЂР°РјРµС‚СЂ Р»РѕРєР°Р»С–Р·Р°С†С–С—" }}
     }},
     { std::wstring{IDS_DRIVER_ERROR_INVALID_OPERATION_PARAMETERS}, std::unordered_map<std::u16string, LocalizationManager::langEntry>{
         {u"en", { u"Invalid operation parameters", L"Invalid operation parameters" }},
-        {u"ru", { u"Неверные параметры операции", L"Неверные параметры операции" }},
-        {u"uk", { u"Помилкові параметри операції", L"Помилкові параметри операції" }}
+        {u"ru", { u"РќРµРІРµСЂРЅС‹Рµ РїР°СЂР°РјРµС‚СЂС‹ РѕРїРµСЂР°С†РёРё", L"РќРµРІРµСЂРЅС‹Рµ РїР°СЂР°РјРµС‚СЂС‹ РѕРїРµСЂР°С†РёРё" }},
+        {u"uk", { u"РџРѕРјРёР»РєРѕРІС– РїР°СЂР°РјРµС‚СЂРё РѕРїРµСЂР°С†С–С—", L"РџРѕРјРёР»РєРѕРІС– РїР°СЂР°РјРµС‚СЂРё РѕРїРµСЂР°С†С–С—" }}
     }},
     { std::wstring{IDS_DRIVER_ERROR_INVALID_RESULT_TERMINAL}, std::unordered_map<std::u16string, LocalizationManager::langEntry>{
         {u"en", { u"Invalid result from POS Terminal", L"Invalid result from POS Terminal" }},
-        {u"ru", { u"Неверные параметры ответа POS Терминала", L"Неверные параметры ответа POS Терминала" }},
-        {u"uk", { u"Помилкові параметри відповіді POS Термінала", L"Помилкові параметри відповіді POS Термінала" }}
+        {u"ru", { u"РќРµРІРµСЂРЅС‹Рµ РїР°СЂР°РјРµС‚СЂС‹ РѕС‚РІРµС‚Р° POS РўРµСЂРјРёРЅР°Р»Р°", L"РќРµРІРµСЂРЅС‹Рµ РїР°СЂР°РјРµС‚СЂС‹ РѕС‚РІРµС‚Р° POS РўРµСЂРјРёРЅР°Р»Р°" }},
+        {u"uk", { u"РџРѕРјРёР»РєРѕРІС– РїР°СЂР°РјРµС‚СЂРё РІС–РґРїРѕРІС–РґС– POS РўРµСЂРјС–РЅР°Р»Р°", L"РџРѕРјРёР»РєРѕРІС– РїР°СЂР°РјРµС‚СЂРё РІС–РґРїРѕРІС–РґС– POS РўРµСЂРјС–РЅР°Р»Р°" }}
     } },
     { std::wstring{IDS_DRIVER_ERROR_INVALID_OPERATION_TERMINAL}, std::unordered_map<std::u16string, LocalizationManager::langEntry>{
         {u"en", { u"Invalid operation POS Terminal", L"Invalid operation POS Terminal" }},
-        {u"ru", { u"Ошибка выполнения операции POS Терминалом", L"Ошибка выполнения операции POS Терминалом" }},
-        {u"uk", { u"Помилка виконання операції POS Терміналом", L"Помилка виконання операції POS Терміналом" }}
+        {u"ru", { u"РћС€РёР±РєР° РІС‹РїРѕР»РЅРµРЅРёСЏ РѕРїРµСЂР°С†РёРё POS РўРµСЂРјРёРЅР°Р»РѕРј", L"РћС€РёР±РєР° РІС‹РїРѕР»РЅРµРЅРёСЏ РѕРїРµСЂР°С†РёРё POS РўРµСЂРјРёРЅР°Р»РѕРј" }},
+        {u"uk", { u"РџРѕРјРёР»РєР° РІРёРєРѕРЅР°РЅРЅСЏ РѕРїРµСЂР°С†С–С— POS РўРµСЂРјС–РЅР°Р»РѕРј", L"РџРѕРјРёР»РєР° РІРёРєРѕРЅР°РЅРЅСЏ РѕРїРµСЂР°С†С–С— POS РўРµСЂРјС–РЅР°Р»РѕРј" }}
     } },
     { std::wstring{IDS_DRIVER_ERROR_OPERATION_NOT_SUPPORTED}, std::unordered_map<std::u16string, LocalizationManager::langEntry>{
         {u"en", { u"Operation not supported", L"Operation not supported" }},
-        {u"ru", { u"Не поддерживаемая операция", L"Не поддерживаемая операция" }},
-        {u"uk", { u"Не підтримувана операція", L"Не підтримувана операція" }}
+        {u"ru", { u"РќРµ РїРѕРґРґРµСЂР¶РёРІР°РµРјР°СЏ РѕРїРµСЂР°С†РёСЏ", L"РќРµ РїРѕРґРґРµСЂР¶РёРІР°РµРјР°СЏ РѕРїРµСЂР°С†РёСЏ" }},
+        {u"uk", { u"РќРµ РїС–РґС‚СЂРёРјСѓРІР°РЅР° РѕРїРµСЂР°С†С–СЏ", L"РќРµ РїС–РґС‚СЂРёРјСѓРІР°РЅР° РѕРїРµСЂР°С†С–СЏ" }}
     } },
     //
 };

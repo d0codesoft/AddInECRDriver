@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "common_main.h"
 #include <string>
 #include "string_conversion.h"

@@ -1,4 +1,4 @@
-#pragma once
+п»ї#pragma once
 
 #ifndef DRIVERPOSTERMINAL_H
 #define DRIVERPOSTERMINAL_H
@@ -11,10 +11,10 @@
 #include "interface_connection.h"
 #include "setting_driver_pos.h"
 #include "license_manager.h"
-#include "сhannel_protocol.h"
+#include "channel_protocol.h"
 #include "connection_types.h"
 
-const std::wstring DRIVER_VERSION = L"1.0.0"; // Объявление константы версии драйвера
+const std::wstring DRIVER_VERSION = L"1.0.0"; // РћР±СЉСЏРІР»РµРЅРёРµ РєРѕРЅСЃС‚Р°РЅС‚С‹ РІРµСЂСЃРёРё РґСЂР°Р№РІРµСЂР°
 //using ParameterMap = std::unordered_map<std::wstring, std::variant<std::wstring, int, bool>>;
 
 
@@ -122,170 +122,170 @@ private:
 	std::u16string m_lastError = u"";
 
     std::vector<MethodName> m_MethodNames = {
-        IDriver1CUniBase::createMethod(0, u"GetInterfaceRevision", u"ПолучитьРевизиюИнтерфейса",
-            u"Возвращает поддерживаемую версию требований для данного типа оборудования",
+        IDriver1CUniBase::createMethod(0, u"GetInterfaceRevision", u"РџРѕР»СѓС‡РёС‚СЊР РµРІРёР·РёСЋРРЅС‚РµСЂС„РµР№СЃР°",
+            u"Р’РѕР·РІСЂР°С‰Р°РµС‚ РїРѕРґРґРµСЂР¶РёРІР°РµРјСѓСЋ РІРµСЂСЃРёСЋ С‚СЂРµР±РѕРІР°РЅРёР№ РґР»СЏ РґР°РЅРЅРѕРіРѕ С‚РёРїР° РѕР±РѕСЂСѓРґРѕРІР°РЅРёСЏ",
             true, 0, std::bind(&DriverPOSTerminal::GetInterfaceRevision, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
-        IDriver1CUniBase::createMethod(1, u"GetDescription", u"ПолучитьОписание",
-            u"Возвращает информацию о драйвере",
+        IDriver1CUniBase::createMethod(1, u"GetDescription", u"РџРѕР»СѓС‡РёС‚СЊРћРїРёСЃР°РЅРёРµ",
+            u"Р’РѕР·РІСЂР°С‰Р°РµС‚ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ РґСЂР°Р№РІРµСЂРµ",
             true, 1, std::bind(&DriverPOSTerminal::GetDescription, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
-        IDriver1CUniBase::createMethod(2, u"GetLastError", u"ПолучитьОшибку",
-            u"Возвращает код и описание последней произошедшей ошибки",
+        IDriver1CUniBase::createMethod(2, u"GetLastError", u"РџРѕР»СѓС‡РёС‚СЊРћС€РёР±РєСѓ",
+            u"Р’РѕР·РІСЂР°С‰Р°РµС‚ РєРѕРґ Рё РѕРїРёСЃР°РЅРёРµ РїРѕСЃР»РµРґРЅРµР№ РїСЂРѕРёР·РѕС€РµРґС€РµР№ РѕС€РёР±РєРё",
             true, 1, std::bind(&DriverPOSTerminal::GetLastError, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
         // END Implementing methods from IDriver1CUniBase
 		
         // START Implementing methods from DriverPosTerminal methods version standart 4.4
-        IDriver1CUniBase::createMethod(3, u"EquipmentParameters", u"ПараметрыОборудования",
-            u"Возвращает список параметров настройки драйвера и их типы, значения по умолчанию и возможные значения",
+        IDriver1CUniBase::createMethod(3, u"EquipmentParameters", u"РџР°СЂР°РјРµС‚СЂС‹РћР±РѕСЂСѓРґРѕРІР°РЅРёСЏ",
+            u"Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РїР°СЂР°РјРµС‚СЂРѕРІ РЅР°СЃС‚СЂРѕР№РєРё РґСЂР°Р№РІРµСЂР° Рё РёС… С‚РёРїС‹, Р·РЅР°С‡РµРЅРёСЏ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ Рё РІРѕР·РјРѕР¶РЅС‹Рµ Р·РЅР°С‡РµРЅРёСЏ",
             true, 2, std::bind(&DriverPOSTerminal::EquipmentParameters, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
-        IDriver1CUniBase::createMethod(4, u"ConnectEquipment", u"ПодключитьОборудование",
-            u"Подключает оборудование с текущими значениями параметров. Возвращает идентификатор подключенного экземпляра устройства",
+        IDriver1CUniBase::createMethod(4, u"ConnectEquipment", u"РџРѕРґРєР»СЋС‡РёС‚СЊРћР±РѕСЂСѓРґРѕРІР°РЅРёРµ",
+            u"РџРѕРґРєР»СЋС‡Р°РµС‚ РѕР±РѕСЂСѓРґРѕРІР°РЅРёРµ СЃ С‚РµРєСѓС‰РёРјРё Р·РЅР°С‡РµРЅРёСЏРјРё РїР°СЂР°РјРµС‚СЂРѕРІ. Р’РѕР·РІСЂР°С‰Р°РµС‚ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ РїРѕРґРєР»СЋС‡РµРЅРЅРѕРіРѕ СЌРєР·РµРјРїР»СЏСЂР° СѓСЃС‚СЂРѕР№СЃС‚РІР°",
             true, 3, std::bind(&DriverPOSTerminal::ConnectEquipment, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
-        IDriver1CUniBase::createMethod(5, u"DisconnectEquipment", u"ОтключитьОборудование",
-            u"Отключает оборудование",
+        IDriver1CUniBase::createMethod(5, u"DisconnectEquipment", u"РћС‚РєР»СЋС‡РёС‚СЊРћР±РѕСЂСѓРґРѕРІР°РЅРёРµ",
+            u"РћС‚РєР»СЋС‡Р°РµС‚ РѕР±РѕСЂСѓРґРѕРІР°РЅРёРµ",
             true, 1, std::bind(&DriverPOSTerminal::DisconnectEquipment, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
-        IDriver1CUniBase::createMethod(6, u"EquipmentTest", u"ТестированиеОборудования",
-            u"Выполняет пробное подключение и опрос устройства с текущими значениями параметров, установленными функцией «УстановитьПараметр». При успешном выполнении подключения в описании возвращается информация об устройстве",
+        IDriver1CUniBase::createMethod(6, u"EquipmentTest", u"РўРµСЃС‚РёСЂРѕРІР°РЅРёРµРћР±РѕСЂСѓРґРѕРІР°РЅРёСЏ",
+            u"Р’С‹РїРѕР»РЅСЏРµС‚ РїСЂРѕР±РЅРѕРµ РїРѕРґРєР»СЋС‡РµРЅРёРµ Рё РѕРїСЂРѕСЃ СѓСЃС‚СЂРѕР№СЃС‚РІР° СЃ С‚РµРєСѓС‰РёРјРё Р·РЅР°С‡РµРЅРёСЏРјРё РїР°СЂР°РјРµС‚СЂРѕРІ, СѓСЃС‚Р°РЅРѕРІР»РµРЅРЅС‹РјРё С„СѓРЅРєС†РёРµР№ В«РЈСЃС‚Р°РЅРѕРІРёС‚СЊРџР°СЂР°РјРµС‚СЂВ». РџСЂРё СѓСЃРїРµС€РЅРѕРј РІС‹РїРѕР»РЅРµРЅРёРё РїРѕРґРєР»СЋС‡РµРЅРёСЏ РІ РѕРїРёСЃР°РЅРёРё РІРѕР·РІСЂР°С‰Р°РµС‚СЃСЏ РёРЅС„РѕСЂРјР°С†РёСЏ РѕР± СѓСЃС‚СЂРѕР№СЃС‚РІРµ",
             true, 4, std::bind(&DriverPOSTerminal::EquipmentTest, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
-        IDriver1CUniBase::createMethod(7, u"EquipmentAutoSetup", u"АвтонастройкаОборудования",
-            u"Выполняет авто-настройку оборудования. Драйвер может показывать технологическое окно, в котором производится автонастройка оборудования. В случае успеха драйвер возвращает параметры подключения оборудования, установленные в результате авто-настройки",
+        IDriver1CUniBase::createMethod(7, u"EquipmentAutoSetup", u"РђРІС‚РѕРЅР°СЃС‚СЂРѕР№РєР°РћР±РѕСЂСѓРґРѕРІР°РЅРёСЏ",
+            u"Р’С‹РїРѕР»РЅСЏРµС‚ Р°РІС‚Рѕ-РЅР°СЃС‚СЂРѕР№РєСѓ РѕР±РѕСЂСѓРґРѕРІР°РЅРёСЏ. Р”СЂР°Р№РІРµСЂ РјРѕР¶РµС‚ РїРѕРєР°Р·С‹РІР°С‚СЊ С‚РµС…РЅРѕР»РѕРіРёС‡РµСЃРєРѕРµ РѕРєРЅРѕ, РІ РєРѕС‚РѕСЂРѕРј РїСЂРѕРёР·РІРѕРґРёС‚СЃСЏ Р°РІС‚РѕРЅР°СЃС‚СЂРѕР№РєР° РѕР±РѕСЂСѓРґРѕРІР°РЅРёСЏ. Р’ СЃР»СѓС‡Р°Рµ СѓСЃРїРµС…Р° РґСЂР°Р№РІРµСЂ РІРѕР·РІСЂР°С‰Р°РµС‚ РїР°СЂР°РјРµС‚СЂС‹ РїРѕРґРєР»СЋС‡РµРЅРёСЏ РѕР±РѕСЂСѓРґРѕРІР°РЅРёСЏ, СѓСЃС‚Р°РЅРѕРІР»РµРЅРЅС‹Рµ РІ СЂРµР·СѓР»СЊС‚Р°С‚Рµ Р°РІС‚Рѕ-РЅР°СЃС‚СЂРѕР№РєРё",
             true, 5, std::bind(&DriverPOSTerminal::EquipmentAutoSetup, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
-        IDriver1CUniBase::createMethod(8, u"SetApplicationInformation", u"УстановитьИнформациюПриложения",
-            u"Метод передает в драйвер информацию о приложении, в котором используется данный драйвер",
+        IDriver1CUniBase::createMethod(8, u"SetApplicationInformation", u"РЈСЃС‚Р°РЅРѕРІРёС‚СЊРРЅС„РѕСЂРјР°С†РёСЋРџСЂРёР»РѕР¶РµРЅРёСЏ",
+            u"РњРµС‚РѕРґ РїРµСЂРµРґР°РµС‚ РІ РґСЂР°Р№РІРµСЂ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ РїСЂРёР»РѕР¶РµРЅРёРё, РІ РєРѕС‚РѕСЂРѕРј РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ РґР°РЅРЅС‹Р№ РґСЂР°Р№РІРµСЂ",
             true, 1, std::bind(&DriverPOSTerminal::SetApplicationInformation, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
-        IDriver1CUniBase::createMethod(9, u"GetAdditionalActions", u"ПолучитьДополнительныеДействия",
-            u"Получает список действий, которые будут отображаться как дополнительные пункты меню в форме настройки оборудования, доступной администратору. Если действий не предусмотрено, возвращает пустую строку",
+        IDriver1CUniBase::createMethod(9, u"GetAdditionalActions", u"РџРѕР»СѓС‡РёС‚СЊР”РѕРїРѕР»РЅРёС‚РµР»СЊРЅС‹РµР”РµР№СЃС‚РІРёСЏ",
+            u"РџРѕР»СѓС‡Р°РµС‚ СЃРїРёСЃРѕРє РґРµР№СЃС‚РІРёР№, РєРѕС‚РѕСЂС‹Рµ Р±СѓРґСѓС‚ РѕС‚РѕР±СЂР°Р¶Р°С‚СЊСЃСЏ РєР°Рє РґРѕРїРѕР»РЅРёС‚РµР»СЊРЅС‹Рµ РїСѓРЅРєС‚С‹ РјРµРЅСЋ РІ С„РѕСЂРјРµ РЅР°СЃС‚СЂРѕР№РєРё РѕР±РѕСЂСѓРґРѕРІР°РЅРёСЏ, РґРѕСЃС‚СѓРїРЅРѕР№ Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂСѓ. Р•СЃР»Рё РґРµР№СЃС‚РІРёР№ РЅРµ РїСЂРµРґСѓСЃРјРѕС‚СЂРµРЅРѕ, РІРѕР·РІСЂР°С‰Р°РµС‚ РїСѓСЃС‚СѓСЋ СЃС‚СЂРѕРєСѓ",
             true, 1, std::bind(&DriverPOSTerminal::GetAdditionalActions, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
-        IDriver1CUniBase::createMethod(10, u"DoAdditionalAction", u"ВыполнитьДополнительноеДействие",
-            u"Команда на выполнение дополнительного действия с определенным именем",
+        IDriver1CUniBase::createMethod(10, u"DoAdditionalAction", u"Р’С‹РїРѕР»РЅРёС‚СЊР”РѕРїРѕР»РЅРёС‚РµР»СЊРЅРѕРµР”РµР№СЃС‚РІРёРµ",
+            u"РљРѕРјР°РЅРґР° РЅР° РІС‹РїРѕР»РЅРµРЅРёРµ РґРѕРїРѕР»РЅРёС‚РµР»СЊРЅРѕРіРѕ РґРµР№СЃС‚РІРёСЏ СЃ РѕРїСЂРµРґРµР»РµРЅРЅС‹Рј РёРјРµРЅРµРј",
             true, 1, std::bind(&DriverPOSTerminal::DoAdditionalAction, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
-        IDriver1CUniBase::createMethod(11, u"GetLocalizationPattern", u"ПолучитьШаблонЛокализации",
-            u"Возвращает шаблон локализации, содержащий идентификаторы тестовых ресурсов для последующего заполнения",
+        IDriver1CUniBase::createMethod(11, u"GetLocalizationPattern", u"РџРѕР»СѓС‡РёС‚СЊРЁР°Р±Р»РѕРЅР›РѕРєР°Р»РёР·Р°С†РёРё",
+            u"Р’РѕР·РІСЂР°С‰Р°РµС‚ С€Р°Р±Р»РѕРЅ Р»РѕРєР°Р»РёР·Р°С†РёРё, СЃРѕРґРµСЂР¶Р°С‰РёР№ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂС‹ С‚РµСЃС‚РѕРІС‹С… СЂРµСЃСѓСЂСЃРѕРІ РґР»СЏ РїРѕСЃР»РµРґСѓСЋС‰РµРіРѕ Р·Р°РїРѕР»РЅРµРЅРёСЏ",
             true, 1, std::bind(&DriverPOSTerminal::GetLocalizationPattern, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
-        IDriver1CUniBase::createMethod(12, u"SetLocalization", u"УстановитьЛокализацию",
-            u"Устанавливает для драйвера код языка для текущего пользователя и шаблон локализации для текущего пользователя",
+        IDriver1CUniBase::createMethod(12, u"SetLocalization", u"РЈСЃС‚Р°РЅРѕРІРёС‚СЊР›РѕРєР°Р»РёР·Р°С†РёСЋ",
+            u"РЈСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ РґР»СЏ РґСЂР°Р№РІРµСЂР° РєРѕРґ СЏР·С‹РєР° РґР»СЏ С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ Рё С€Р°Р±Р»РѕРЅ Р»РѕРєР°Р»РёР·Р°С†РёРё РґР»СЏ С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ",
 			true, 2, std::bind(&DriverPOSTerminal::SetLocalization, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
-        IDriver1CUniBase::createMethod(13, u"GetParameters", u"ПолучитьПараметры",
-			u"Возвращает список параметров настройки драйвера и их типы, значения по умолчанию и возможные значения",
+        IDriver1CUniBase::createMethod(13, u"GetParameters", u"РџРѕР»СѓС‡РёС‚СЊРџР°СЂР°РјРµС‚СЂС‹",
+			u"Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РїР°СЂР°РјРµС‚СЂРѕРІ РЅР°СЃС‚СЂРѕР№РєРё РґСЂР°Р№РІРµСЂР° Рё РёС… С‚РёРїС‹, Р·РЅР°С‡РµРЅРёСЏ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ Рё РІРѕР·РјРѕР¶РЅС‹Рµ Р·РЅР°С‡РµРЅРёСЏ",
 			true, 1, std::bind(&DriverPOSTerminal::GetParameters, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
-		IDriver1CUniBase::createMethod(14, u"SetParameter", u"УстановитьПараметр",
-			u"Установка значения параметра по имени",
+		IDriver1CUniBase::createMethod(14, u"SetParameter", u"РЈСЃС‚Р°РЅРѕРІРёС‚СЊРџР°СЂР°РјРµС‚СЂ",
+			u"РЈСЃС‚Р°РЅРѕРІРєР° Р·РЅР°С‡РµРЅРёСЏ РїР°СЂР°РјРµС‚СЂР° РїРѕ РёРјРµРЅРё",
 			true, 2, std::bind(&DriverPOSTerminal::SetParameter, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
-        IDriver1CUniBase::createMethod(15, u"Open", u"Подключить",
-			u"Подключает оборудование с текущими значениями параметров, установленных функцией «УстановитьПараметр». Возвращает идентификатор подключенного экземпляра устройства",
+        IDriver1CUniBase::createMethod(15, u"Open", u"РџРѕРґРєР»СЋС‡РёС‚СЊ",
+			u"РџРѕРґРєР»СЋС‡Р°РµС‚ РѕР±РѕСЂСѓРґРѕРІР°РЅРёРµ СЃ С‚РµРєСѓС‰РёРјРё Р·РЅР°С‡РµРЅРёСЏРјРё РїР°СЂР°РјРµС‚СЂРѕРІ, СѓСЃС‚Р°РЅРѕРІР»РµРЅРЅС‹С… С„СѓРЅРєС†РёРµР№ В«РЈСЃС‚Р°РЅРѕРІРёС‚СЊРџР°СЂР°РјРµС‚СЂВ». Р’РѕР·РІСЂР°С‰Р°РµС‚ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ РїРѕРґРєР»СЋС‡РµРЅРЅРѕРіРѕ СЌРєР·РµРјРїР»СЏСЂР° СѓСЃС‚СЂРѕР№СЃС‚РІР°",
 			true, 1, std::bind(&DriverPOSTerminal::Open, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
-		IDriver1CUniBase::createMethod(16, u"Close", u"Отключить",
-			u"Отключает оборудование",
+		IDriver1CUniBase::createMethod(16, u"Close", u"РћС‚РєР»СЋС‡РёС‚СЊ",
+			u"РћС‚РєР»СЋС‡Р°РµС‚ РѕР±РѕСЂСѓРґРѕРІР°РЅРёРµ",
 			true, 1, std::bind(&DriverPOSTerminal::Close, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
-        IDriver1CUniBase::createMethod(17, u"DeviceTest", u"ТестУстройства",
-			u"Выполняет пробное подключение и опрос устройства с текущими значениями параметров, установленными функцией «УстановитьПараметр». При успешном выполнении подключения в описании возвращается информация об устройстве",
+        IDriver1CUniBase::createMethod(17, u"DeviceTest", u"РўРµСЃС‚РЈСЃС‚СЂРѕР№СЃС‚РІР°",
+			u"Р’С‹РїРѕР»РЅСЏРµС‚ РїСЂРѕР±РЅРѕРµ РїРѕРґРєР»СЋС‡РµРЅРёРµ Рё РѕРїСЂРѕСЃ СѓСЃС‚СЂРѕР№СЃС‚РІР° СЃ С‚РµРєСѓС‰РёРјРё Р·РЅР°С‡РµРЅРёСЏРјРё РїР°СЂР°РјРµС‚СЂРѕРІ, СѓСЃС‚Р°РЅРѕРІР»РµРЅРЅС‹РјРё С„СѓРЅРєС†РёРµР№ В«РЈСЃС‚Р°РЅРѕРІРёС‚СЊРџР°СЂР°РјРµС‚СЂВ». РџСЂРё СѓСЃРїРµС€РЅРѕРј РІС‹РїРѕР»РЅРµРЅРёРё РїРѕРґРєР»СЋС‡РµРЅРёСЏ РІ РѕРїРёСЃР°РЅРёРё РІРѕР·РІСЂР°С‰Р°РµС‚СЃСЏ РёРЅС„РѕСЂРјР°С†РёСЏ РѕР± СѓСЃС‚СЂРѕР№СЃС‚РІРµ",
 			true, 2, std::bind(&DriverPOSTerminal::DeviceTest, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
-		IDriver1CUniBase::createMethod(18, u"TerminalParameters", u"ПараметрыТерминала",
-			u"Возвращает параметры работы терминала",
+		IDriver1CUniBase::createMethod(18, u"TerminalParameters", u"РџР°СЂР°РјРµС‚СЂС‹РўРµСЂРјРёРЅР°Р»Р°",
+			u"Р’РѕР·РІСЂР°С‰Р°РµС‚ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р±РѕС‚С‹ С‚РµСЂРјРёРЅР°Р»Р°",
 			true, 2, std::bind(&DriverPOSTerminal::TerminalParameters, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
-		IDriver1CUniBase::createMethod(19, u"Pay", u"Оплатить",
-			u"Метод осуществляет оплату",
+		IDriver1CUniBase::createMethod(19, u"Pay", u"РћРїР»Р°С‚РёС‚СЊ",
+			u"РњРµС‚РѕРґ РѕСЃСѓС‰РµСЃС‚РІР»СЏРµС‚ РѕРїР»Р°С‚Сѓ",
 			true, 4, std::bind(&DriverPOSTerminal::Pay, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
-		IDriver1CUniBase::createMethod(20, u"PayByPaymentCard", u"ОплатитьПлатежнойКартой",
-			u"Метод осуществляет авторизацию оплаты по карте",
+		IDriver1CUniBase::createMethod(20, u"PayByPaymentCard", u"РћРїР»Р°С‚РёС‚СЊРџР»Р°С‚РµР¶РЅРѕР№РљР°СЂС‚РѕР№",
+			u"РњРµС‚РѕРґ РѕСЃСѓС‰РµСЃС‚РІР»СЏРµС‚ Р°РІС‚РѕСЂРёР·Р°С†РёСЋ РѕРїР»Р°С‚С‹ РїРѕ РєР°СЂС‚Рµ",
 			true, 7, std::bind(&DriverPOSTerminal::PayByPaymentCard, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
-        IDriver1CUniBase::createMethod(21, u"ReturnPaymentByPaymentCard", u"ВернутьПлатежПоПлатежнойКарте",
-			u"Метод осуществляет возврат платежа по карте",
+        IDriver1CUniBase::createMethod(21, u"ReturnPaymentByPaymentCard", u"Р’РµСЂРЅСѓС‚СЊРџР»Р°С‚РµР¶РџРѕРџР»Р°С‚РµР¶РЅРѕР№РљР°СЂС‚Рµ",
+			u"РњРµС‚РѕРґ РѕСЃСѓС‰РµСЃС‚РІР»СЏРµС‚ РІРѕР·РІСЂР°С‚ РїР»Р°С‚РµР¶Р° РїРѕ РєР°СЂС‚Рµ",
 			true, 7, std::bind(&DriverPOSTerminal::ReturnPaymentByPaymentCard, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
-		IDriver1CUniBase::createMethod(22, u"ReturnPayment", u"ВернутьПлатеж",
-			u"Метод осуществляет возврат платежа",
+		IDriver1CUniBase::createMethod(22, u"ReturnPayment", u"Р’РµСЂРЅСѓС‚СЊРџР»Р°С‚РµР¶",
+			u"РњРµС‚РѕРґ РѕСЃСѓС‰РµСЃС‚РІР»СЏРµС‚ РІРѕР·РІСЂР°С‚ РїР»Р°С‚РµР¶Р°",
 			true, 4, std::bind(&DriverPOSTerminal::ReturnPayment, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
-		IDriver1CUniBase::createMethod(23, u"CancelPayment", u"ОтменитьПлатеж",
-			u"Метод осуществляет отмену. Допускается частичная отмена, на сумму меньшую оригинальной операции, если терминал поддерживает данную операцию",
+		IDriver1CUniBase::createMethod(23, u"CancelPayment", u"РћС‚РјРµРЅРёС‚СЊРџР»Р°С‚РµР¶",
+			u"РњРµС‚РѕРґ РѕСЃСѓС‰РµСЃС‚РІР»СЏРµС‚ РѕС‚РјРµРЅСѓ. Р”РѕРїСѓСЃРєР°РµС‚СЃСЏ С‡Р°СЃС‚РёС‡РЅР°СЏ РѕС‚РјРµРЅР°, РЅР° СЃСѓРјРјСѓ РјРµРЅСЊС€СѓСЋ РѕСЂРёРіРёРЅР°Р»СЊРЅРѕР№ РѕРїРµСЂР°С†РёРё, РµСЃР»Рё С‚РµСЂРјРёРЅР°Р» РїРѕРґРґРµСЂР¶РёРІР°РµС‚ РґР°РЅРЅСѓСЋ РѕРїРµСЂР°С†РёСЋ",
 			true, 4, std::bind(&DriverPOSTerminal::CancelPayment, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
-		IDriver1CUniBase::createMethod(24, u"CancelPaymentByPaymentCard", u"ОтменитьПлатежПоПлатежнойКарте",
-			u"Метод осуществляет отмену платежа по карте",
+		IDriver1CUniBase::createMethod(24, u"CancelPaymentByPaymentCard", u"РћС‚РјРµРЅРёС‚СЊРџР»Р°С‚РµР¶РџРѕРџР»Р°С‚РµР¶РЅРѕР№РљР°СЂС‚Рµ",
+			u"РњРµС‚РѕРґ РѕСЃСѓС‰РµСЃС‚РІР»СЏРµС‚ РѕС‚РјРµРЅСѓ РїР»Р°С‚РµР¶Р° РїРѕ РєР°СЂС‚Рµ",
 			true, 7, std::bind(&DriverPOSTerminal::CancelPaymentByPaymentCard, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
-		IDriver1CUniBase::createMethod(25, u"Authorisation", u"Преавторизация",
-			u"Метод осуществляет преавторизацию – блокирование суммы на счете",
+		IDriver1CUniBase::createMethod(25, u"Authorisation", u"РџСЂРµР°РІС‚РѕСЂРёР·Р°С†РёСЏ",
+			u"РњРµС‚РѕРґ РѕСЃСѓС‰РµСЃС‚РІР»СЏРµС‚ РїСЂРµР°РІС‚РѕСЂРёР·Р°С†РёСЋ вЂ“ Р±Р»РѕРєРёСЂРѕРІР°РЅРёРµ СЃСѓРјРјС‹ РЅР° СЃС‡РµС‚Рµ",
 			true, 4, std::bind(&DriverPOSTerminal::Authorisation, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
-		IDriver1CUniBase::createMethod(26, u"AuthorisationByPaymentCard", u"ПреавторизацияПоПлатежнойКарте",
-			u"Метод осуществляет пре-авторизацию – блокирование суммы на счете карты",
+		IDriver1CUniBase::createMethod(26, u"AuthorisationByPaymentCard", u"РџСЂРµР°РІС‚РѕСЂРёР·Р°С†РёСЏРџРѕРџР»Р°С‚РµР¶РЅРѕР№РљР°СЂС‚Рµ",
+			u"РњРµС‚РѕРґ РѕСЃСѓС‰РµСЃС‚РІР»СЏРµС‚ РїСЂРµ-Р°РІС‚РѕСЂРёР·Р°С†РёСЋ вЂ“ Р±Р»РѕРєРёСЂРѕРІР°РЅРёРµ СЃСѓРјРјС‹ РЅР° СЃС‡РµС‚Рµ РєР°СЂС‚С‹",
 			true, 7, std::bind(&DriverPOSTerminal::AuthorisationByPaymentCard, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
-		IDriver1CUniBase::createMethod(27, u"AuthConfirmation", u"ЗавершитьПреавторизацию",
-			u"Метод завершает преавторизацию – списывает сумму со счета",
+		IDriver1CUniBase::createMethod(27, u"AuthConfirmation", u"Р—Р°РІРµСЂС€РёС‚СЊРџСЂРµР°РІС‚РѕСЂРёР·Р°С†РёСЋ",
+			u"РњРµС‚РѕРґ Р·Р°РІРµСЂС€Р°РµС‚ РїСЂРµР°РІС‚РѕСЂРёР·Р°С†РёСЋ вЂ“ СЃРїРёСЃС‹РІР°РµС‚ СЃСѓРјРјСѓ СЃРѕ СЃС‡РµС‚Р°",
 			true, 4, std::bind(&DriverPOSTerminal::AuthConfirmation, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
-		IDriver1CUniBase::createMethod(28, u"AuthConfirmationByPaymentCard", u"ЗавершитьПреавторизациюПоПлатежнойКарте",
-			u"Метод завершает пре-авторизацию – списывает сумму со счета карты",
+		IDriver1CUniBase::createMethod(28, u"AuthConfirmationByPaymentCard", u"Р—Р°РІРµСЂС€РёС‚СЊРџСЂРµР°РІС‚РѕСЂРёР·Р°С†РёСЋРџРѕРџР»Р°С‚РµР¶РЅРѕР№РљР°СЂС‚Рµ",
+			u"РњРµС‚РѕРґ Р·Р°РІРµСЂС€Р°РµС‚ РїСЂРµ-Р°РІС‚РѕСЂРёР·Р°С†РёСЋ вЂ“ СЃРїРёСЃС‹РІР°РµС‚ СЃСѓРјРјСѓ СЃРѕ СЃС‡РµС‚Р° РєР°СЂС‚С‹",
 			true, 7, std::bind(&DriverPOSTerminal::AuthConfirmationByPaymentCard, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
-		IDriver1CUniBase::createMethod(29, u"CancelAuthorisation", u"ОтменитьПреавторизацию",
-			u"Метод отменяет преавторизацию – разблокирует сумму на счете",
+		IDriver1CUniBase::createMethod(29, u"CancelAuthorisation", u"РћС‚РјРµРЅРёС‚СЊРџСЂРµР°РІС‚РѕСЂРёР·Р°С†РёСЋ",
+			u"РњРµС‚РѕРґ РѕС‚РјРµРЅСЏРµС‚ РїСЂРµР°РІС‚РѕСЂРёР·Р°С†РёСЋ вЂ“ СЂР°Р·Р±Р»РѕРєРёСЂСѓРµС‚ СЃСѓРјРјСѓ РЅР° СЃС‡РµС‚Рµ",
 			true, 4, std::bind(&DriverPOSTerminal::CancelAuthorisation, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
-		IDriver1CUniBase::createMethod(30, u"CancelAuthorisationByPaymentCard", u"ОтменитьПреавторизациюПоПлатежнойКарте",
-			u"Метод завершает пре-авторизацию – списывает сумму со счета карты",
+		IDriver1CUniBase::createMethod(30, u"CancelAuthorisationByPaymentCard", u"РћС‚РјРµРЅРёС‚СЊРџСЂРµР°РІС‚РѕСЂРёР·Р°С†РёСЋРџРѕРџР»Р°С‚РµР¶РЅРѕР№РљР°СЂС‚Рµ",
+			u"РњРµС‚РѕРґ Р·Р°РІРµСЂС€Р°РµС‚ РїСЂРµ-Р°РІС‚РѕСЂРёР·Р°С†РёСЋ вЂ“ СЃРїРёСЃС‹РІР°РµС‚ СЃСѓРјРјСѓ СЃРѕ СЃС‡РµС‚Р° РєР°СЂС‚С‹",
 			true, 7, std::bind(&DriverPOSTerminal::CancelAuthorisationByPaymentCard, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
-		IDriver1CUniBase::createMethod(31, u"PayWithCashWithdrawal", u"ОплатаCВыдачейНаличных",
-        	u"Метод осуществляет операцию оплаты с выдачей наличных денежных средств. Операция выдачи наличных не является самостоятельной операцией и сопровождается обязательной оплатой по карте.",
+		IDriver1CUniBase::createMethod(31, u"PayWithCashWithdrawal", u"РћРїР»Р°С‚Р°CР’С‹РґР°С‡РµР№РќР°Р»РёС‡РЅС‹С…",
+        	u"РњРµС‚РѕРґ РѕСЃСѓС‰РµСЃС‚РІР»СЏРµС‚ РѕРїРµСЂР°С†РёСЋ РѕРїР»Р°С‚С‹ СЃ РІС‹РґР°С‡РµР№ РЅР°Р»РёС‡РЅС‹С… РґРµРЅРµР¶РЅС‹С… СЃСЂРµРґСЃС‚РІ. РћРїРµСЂР°С†РёСЏ РІС‹РґР°С‡Рё РЅР°Р»РёС‡РЅС‹С… РЅРµ СЏРІР»СЏРµС‚СЃСЏ СЃР°РјРѕСЃС‚РѕСЏС‚РµР»СЊРЅРѕР№ РѕРїРµСЂР°С†РёРµР№ Рё СЃРѕРїСЂРѕРІРѕР¶РґР°РµС‚СЃСЏ РѕР±СЏР·Р°С‚РµР»СЊРЅРѕР№ РѕРїР»Р°С‚РѕР№ РїРѕ РєР°СЂС‚Рµ.",
 			true, 4, std::bind(&DriverPOSTerminal::PayWithCashWithdrawal, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
-        IDriver1CUniBase::createMethod(32, u"PayByPaymentCardWithCashWithdrawal", u"ОплатаКартойCВыдачейНаличных",
-				u"Метод завершает пре-авторизацию – списывает сумму со счета карты",
+        IDriver1CUniBase::createMethod(32, u"PayByPaymentCardWithCashWithdrawal", u"РћРїР»Р°С‚Р°РљР°СЂС‚РѕР№CР’С‹РґР°С‡РµР№РќР°Р»РёС‡РЅС‹С…",
+				u"РњРµС‚РѕРґ Р·Р°РІРµСЂС€Р°РµС‚ РїСЂРµ-Р°РІС‚РѕСЂРёР·Р°С†РёСЋ вЂ“ СЃРїРёСЃС‹РІР°РµС‚ СЃСѓРјРјСѓ СЃРѕ СЃС‡РµС‚Р° РєР°СЂС‚С‹",
 				true, 4, std::bind(&DriverPOSTerminal::PayByPaymentCardWithCashWithdrawal, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
-		IDriver1CUniBase::createMethod(33, u"PurchaseWithEnrollment", u"ПокупкаСЗачислением",
-			u"Метод осуществляет покупки с зачислением денежных средств на карту клиента",
+		IDriver1CUniBase::createMethod(33, u"PurchaseWithEnrollment", u"РџРѕРєСѓРїРєР°РЎР—Р°С‡РёСЃР»РµРЅРёРµРј",
+			u"РњРµС‚РѕРґ РѕСЃСѓС‰РµСЃС‚РІР»СЏРµС‚ РїРѕРєСѓРїРєРё СЃ Р·Р°С‡РёСЃР»РµРЅРёРµРј РґРµРЅРµР¶РЅС‹С… СЃСЂРµРґСЃС‚РІ РЅР° РєР°СЂС‚Сѓ РєР»РёРµРЅС‚Р°",
 			true, 4, std::bind(&DriverPOSTerminal::PurchaseWithEnrollment, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
-		IDriver1CUniBase::createMethod(34, u"GetCardParametrs", u"ПолучитьПараметрыКарты",
-			u"Получает параметры карты",
+		IDriver1CUniBase::createMethod(34, u"GetCardParametrs", u"РџРѕР»СѓС‡РёС‚СЊРџР°СЂР°РјРµС‚СЂС‹РљР°СЂС‚С‹",
+			u"РџРѕР»СѓС‡Р°РµС‚ РїР°СЂР°РјРµС‚СЂС‹ РєР°СЂС‚С‹",
 			true, 8, std::bind(&DriverPOSTerminal::GetCardParametrs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
-		IDriver1CUniBase::createMethod(35, u"PayCertificate", u"ОплатитьСертификатом",
-			u"Метод осуществляет оплату с применением электронного сертификата ФЭС НСПК",
+		IDriver1CUniBase::createMethod(35, u"PayCertificate", u"РћРїР»Р°С‚РёС‚СЊРЎРµСЂС‚РёС„РёРєР°С‚РѕРј",
+			u"РњРµС‚РѕРґ РѕСЃСѓС‰РµСЃС‚РІР»СЏРµС‚ РѕРїР»Р°С‚Сѓ СЃ РїСЂРёРјРµРЅРµРЅРёРµРј СЌР»РµРєС‚СЂРѕРЅРЅРѕРіРѕ СЃРµСЂС‚РёС„РёРєР°С‚Р° Р¤Р­РЎ РќРЎРџРљ",
 			true, 4, std::bind(&DriverPOSTerminal::PayCertificate, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
-		IDriver1CUniBase::createMethod(36, u"ReturnCertificate", u"ВернутьСертификатом",
-			u"Метод осуществляет возврат оплаты с применением электронного сертификата ФЭС НСПК",
+		IDriver1CUniBase::createMethod(36, u"ReturnCertificate", u"Р’РµСЂРЅСѓС‚СЊРЎРµСЂС‚РёС„РёРєР°С‚РѕРј",
+			u"РњРµС‚РѕРґ РѕСЃСѓС‰РµСЃС‚РІР»СЏРµС‚ РІРѕР·РІСЂР°С‚ РѕРїР»Р°С‚С‹ СЃ РїСЂРёРјРµРЅРµРЅРёРµРј СЌР»РµРєС‚СЂРѕРЅРЅРѕРіРѕ СЃРµСЂС‚РёС„РёРєР°С‚Р° Р¤Р­РЎ РќРЎРџРљ",
 			true, 4, std::bind(&DriverPOSTerminal::ReturnCertificate, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
-		IDriver1CUniBase::createMethod(37, u"EmergencyReversal", u"АварийнаяОтменаОперации",
-			u"Метод отменяет последнюю транзакцию",
+		IDriver1CUniBase::createMethod(37, u"EmergencyReversal", u"РђРІР°СЂРёР№РЅР°СЏРћС‚РјРµРЅР°РћРїРµСЂР°С†РёРё",
+			u"РњРµС‚РѕРґ РѕС‚РјРµРЅСЏРµС‚ РїРѕСЃР»РµРґРЅСЋСЋ С‚СЂР°РЅР·Р°РєС†РёСЋ",
 			true, 1, std::bind(&DriverPOSTerminal::EmergencyReversal, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
-		IDriver1CUniBase::createMethod(38, u"GetOperationByCards", u"ПолучитьОперацииПоКартам",
-			u"Получение отчета содержащего операции по картам за день",
+		IDriver1CUniBase::createMethod(38, u"GetOperationByCards", u"РџРѕР»СѓС‡РёС‚СЊРћРїРµСЂР°С†РёРёРџРѕРљР°СЂС‚Р°Рј",
+			u"РџРѕР»СѓС‡РµРЅРёРµ РѕС‚С‡РµС‚Р° СЃРѕРґРµСЂР¶Р°С‰РµРіРѕ РѕРїРµСЂР°С†РёРё РїРѕ РєР°СЂС‚Р°Рј Р·Р° РґРµРЅСЊ",
 			true, 2, std::bind(&DriverPOSTerminal::GetOperationByCards, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
-		IDriver1CUniBase::createMethod(39, u"Settlement", u"ИтогиДняПоКартам",
-			u"Производится сверка итогов дня",
+		IDriver1CUniBase::createMethod(39, u"Settlement", u"РС‚РѕРіРёР”РЅСЏРџРѕРљР°СЂС‚Р°Рј",
+			u"РџСЂРѕРёР·РІРѕРґРёС‚СЃСЏ СЃРІРµСЂРєР° РёС‚РѕРіРѕРІ РґРЅСЏ",
 			true, 2, std::bind(&DriverPOSTerminal::Settlement, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
 
-		IDriver1CUniBase::createMethod(40, u"PrintSlipOnTerminal", u"ПечатьКвитанцийНаТерминале",
-			u"Возвращает будет ли терминал самостоятельно печатать квитанции нас воем принтере для операций",
+		IDriver1CUniBase::createMethod(40, u"PrintSlipOnTerminal", u"РџРµС‡Р°С‚СЊРљРІРёС‚Р°РЅС†РёР№РќР°РўРµСЂРјРёРЅР°Р»Рµ",
+			u"Р’РѕР·РІСЂР°С‰Р°РµС‚ Р±СѓРґРµС‚ Р»Рё С‚РµСЂРјРёРЅР°Р» СЃР°РјРѕСЃС‚РѕСЏС‚РµР»СЊРЅРѕ РїРµС‡Р°С‚Р°С‚СЊ РєРІРёС‚Р°РЅС†РёРё РЅР°СЃ РІРѕРµРј РїСЂРёРЅС‚РµСЂРµ РґР»СЏ РѕРїРµСЂР°С†РёР№",
 			true, 0, std::bind(&DriverPOSTerminal::PrintSlipOnTerminal, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
     };
 

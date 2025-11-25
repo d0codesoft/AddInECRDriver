@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "localization_consts.h"
 
 /*const std::wstring_view IDS_LC_DRIVER_NAME = L"IDS_DRIVER_NAME";

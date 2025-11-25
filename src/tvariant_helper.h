@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #ifndef TVARIANT_HELPER_H
 #define TVARIANT_HELPER_H

@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "manager_hwid.h"
 #ifdef _WIN32
 #define _WIN32_DCOM
@@ -80,7 +80,7 @@ std::vector<std::string> get_macos_signals() {
     auto hwUUID = get_io_registry_value(CFSTR(kIOPlatformUUIDKey));
     if (!hwUUID.empty()) out.push_back(hwUUID);
 
-    // Platform serial number � may not be available in sandbox
+    // Platform serial number — may not be available in sandbox
     auto sn = get_io_registry_value(CFSTR(kIOPlatformSerialNumberKey));
     if (!sn.empty()) out.push_back(sn);
 

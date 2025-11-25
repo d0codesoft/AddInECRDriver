@@ -1,4 +1,4 @@
-#include "pch.h"
+п»ї#include "pch.h"
 #include "setting_driver_pos.h"
 #include <pugixml.hpp>
 #include <sstream>
@@ -10,13 +10,13 @@
 SettingDriverPos::SettingDriverPos()
     : m_settings({
     {
-        L"Параметри", // PageCaption
+        L"РџР°СЂР°РјРµС‚СЂРё", // PageCaption
         {
             {   // Group Connection parameters
-                L"Параметри підключення",
+                L"РџР°СЂР°РјРµС‚СЂРё РїС–РґРєР»СЋС‡РµРЅРЅСЏ",
                 {
                     { OptionDriverNames.at(DriverOption::ConnectionType), 
-                        L"Тип підключення", L"Виберіть тип підключення", L"Number", L"", L"0", false,
+                        L"РўРёРї РїС–РґРєР»СЋС‡РµРЅРЅСЏ", L"Р’РёР±РµСЂС–С‚СЊ С‚РёРї РїС–РґРєР»СЋС‡РµРЅРЅСЏ", L"Number", L"", L"0", false,
                      { 
                          { getConnectionTypeIndex(ConnectionType::TCP), getConnectionTypeName(ConnectionType::TCP) }, 
                          { getConnectionTypeIndex(ConnectionType::COM), getConnectionTypeName(ConnectionType::COM) }, 
@@ -24,36 +24,36 @@ SettingDriverPos::SettingDriverPos()
                       }
                     },
                     { OptionDriverNames.at(DriverOption::Address), 
-                        L"Адреса підключення", L"Введіть адресу сервера", L"String", L"", L"", false, {}
+                        L"РђРґСЂРµСЃР° РїС–РґРєР»СЋС‡РµРЅРЅСЏ", L"Р’РІРµРґС–С‚СЊ Р°РґСЂРµСЃСѓ СЃРµСЂРІРµСЂР°", L"String", L"", L"", false, {}
                     },
                     { OptionDriverNames.at(DriverOption::Port), 
-                        L"Порт", L"Введіть номер порту", L"Number", L"", L"2000", false, {}
+                        L"РџРѕСЂС‚", L"Р’РІРµРґС–С‚СЊ РЅРѕРјРµСЂ РїРѕСЂС‚Сѓ", L"Number", L"", L"2000", false, {}
                     },
                     { OptionDriverNames.at(DriverOption::ResponseTimeout),
-                        L"Час очікування відповіді (сек.)", L"Введіть кількіть секунд", L"Number", L"", L"30", false, {}
+                        L"Р§Р°СЃ РѕС‡С–РєСѓРІР°РЅРЅСЏ РІС–РґРїРѕРІС–РґС– (СЃРµРє.)", L"Р’РІРµРґС–С‚СЊ РєС–Р»СЊРєС–С‚СЊ СЃРµРєСѓРЅРґ", L"Number", L"", L"30", false, {}
                     }
-                    //{L"Speed", L"Скорость подключения", L"Укажите скорость соединения.", L"Number", L"", L"9600", false, {}}
+                    //{L"Speed", L"РЎРєРѕСЂРѕСЃС‚СЊ РїРѕРґРєР»СЋС‡РµРЅРёСЏ", L"РЈРєР°Р¶РёС‚Рµ СЃРєРѕСЂРѕСЃС‚СЊ СЃРѕРµРґРёРЅРµРЅРёСЏ.", L"Number", L"", L"9600", false, {}}
                 }
             },
 			{   // Group payement parameters
-				L"Параметри оплати",
+				L"РџР°СЂР°РјРµС‚СЂРё РѕРїР»Р°С‚Рё",
 				{
 					{ OptionDriverNames.at(DriverOption::Facepay), 
-                        L"Дозволити оплату через FacePay24", L"", L"Boolean", L"", L"false", false,{}},
+                        L"Р”РѕР·РІРѕР»РёС‚Рё РѕРїР»Р°С‚Сѓ С‡РµСЂРµР· FacePay24", L"", L"Boolean", L"", L"false", false,{}},
 					{ OptionDriverNames.at(DriverOption::MerchantId), 
-                        L"Код мерчанта", L"Код мерчанта", L"Number", L"", L"", false,{}},
+                        L"РљРѕРґ РјРµСЂС‡Р°РЅС‚Р°", L"РљРѕРґ РјРµСЂС‡Р°РЅС‚Р°", L"Number", L"", L"", false,{}},
                     { OptionDriverNames.at(DriverOption::PrintReceiptOnTerminal),
-                        L"Друкувати чек на терміналі", L"Друкувати чек на терміналі", L"Boolean", L"", L"false", false,{}},
+                        L"Р”СЂСѓРєСѓРІР°С‚Рё С‡РµРє РЅР° С‚РµСЂРјС–РЅР°Р»С–", L"Р”СЂСѓРєСѓРІР°С‚Рё С‡РµРє РЅР° С‚РµСЂРјС–РЅР°Р»С–", L"Boolean", L"", L"false", false,{}},
                 }
 			},
 			{   // Logging parameters
-				L"Логування",
+				L"Р›РѕРіСѓРІР°РЅРЅСЏ",
 				{
 					{ OptionDriverNames.at(DriverOption::LogFullPath), 
-                        L"Поточний файл лога", L"", L"String", L"", L"", true, {}
+                        L"РџРѕС‚РѕС‡РЅРёР№ С„Р°Р№Р» Р»РѕРіР°", L"", L"String", L"", L"", true, {}
                     },
 					{ OptionDriverNames.at(DriverOption::LogLevel), 
-                        L"Рівень логування", L"Виберіть рівень логування", L"Number", L"", L"0", false,
+                        L"Р С–РІРµРЅСЊ Р»РѕРіСѓРІР°РЅРЅСЏ", L"Р’РёР±РµСЂС–С‚СЊ СЂС–РІРµРЅСЊ Р»РѕРіСѓРІР°РЅРЅСЏ", L"Number", L"", L"0", false,
 					    {
                          { getLogLevelIndex(LogLevel::Error), getLogLevelName(LogLevel::Error) },
                          { getLogLevelIndex(LogLevel::Debug), getLogLevelName(LogLevel::Debug) }
@@ -62,11 +62,11 @@ SettingDriverPos::SettingDriverPos()
 				}
 			},
             {   // Group licensing
-                L"Ліцензування",
+                L"Р›С–С†РµРЅР·СѓРІР°РЅРЅСЏ",
                 {
-                    {L"DriverVersion", L"Версія драйвера", L"", L"String", L"", L"1.0.0", true, {}},
-                    {L"LicenseStatus", L"Статус ліцензії", L"", L"String", L"", L"Не активована", true, {}},
-                    {L"LicenseKey", L"Ключ ліцензії", L"Введіть ключ ліцензії", L"String", L"", L"", false, {} }
+                    {L"DriverVersion", L"Р’РµСЂСЃС–СЏ РґСЂР°Р№РІРµСЂР°", L"", L"String", L"", L"1.0.0", true, {}},
+                    {L"LicenseStatus", L"РЎС‚Р°С‚СѓСЃ Р»С–С†РµРЅР·С–С—", L"", L"String", L"", L"РќРµ Р°РєС‚РёРІРѕРІР°РЅР°", true, {}},
+                    {L"LicenseKey", L"РљР»СЋС‡ Р»С–С†РµРЅР·С–С—", L"Р’РІРµРґС–С‚СЊ РєР»СЋС‡ Р»С–С†РµРЅР·С–С—", L"String", L"", L"", false, {} }
                 }
             }
         }

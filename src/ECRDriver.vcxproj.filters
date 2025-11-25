@@ -51,9 +51,6 @@
     <ClInclude Include="string_conversion.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="sys_utils.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="interface_connection.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -120,9 +117,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="string_conversion.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="sys_utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="interface_connection.cpp">

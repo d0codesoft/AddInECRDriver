@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #ifndef STR_UTILS_H
 #define STR_UTILS_H

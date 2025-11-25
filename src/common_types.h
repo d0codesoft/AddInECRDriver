@@ -13,6 +13,7 @@
 #include <unordered_map>
 #include <vector>
 #include <memory>
+#include "connection_types.h"
 
 //using GetParamFunc = bool (*)(tVariant* pvarParamDefValue);
 //typedef bool (*CallAsProcFunc)(tVariant* paParams, const long lSizeArray);
@@ -275,15 +276,15 @@ bool toFacepayValue(const T& value) {
 template <typename T>
 int toLogLevel(const T& value) {
 	if constexpr (std::is_same<T, std::wstring>::value) {
-		return value == L"1" ? LogLevel::Debug : LogLevel::Error;
+		return value == L"1" ? static_cast<int>(LogLevel::Debug) : static_cast<int>(LogLevel::Error);
 	}
 	else if constexpr  (std::is_same<T, long>::value) {
-		return value == 1 ? LogLevel::Debug : LogLevel::Error;
+		return value == 1 ? static_cast<int>(LogLevel::Debug) : static_cast<int>(LogLevel::Error);
 	}
 	else if constexpr (std::is_same<T, bool>::value) {
-		return value ? LogLevel::Debug : LogLevel::Error;
+		return value ? static_cast<int>(LogLevel::Debug) : static_cast<int>(LogLevel::Error);
 	}
-	return LogLevel::Error;
+	return static_cast<int>(LogLevel::Error);
 }
 
 std::vector<DriverParameter> ParseParameters(const std::wstring& xmlPath);

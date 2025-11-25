@@ -1,4 +1,4 @@
-#include "pch.h"
+п»ї#include "pch.h"
 #include "channel_protocol.h"
 #include "str_utils.h"
 
@@ -556,7 +556,7 @@ bool POSTerminalController::_identifyTerminal()
 std::vector<uint8_t> JsonChannelProtocol::encodeRequest(POSTerminalOperationParameters& op)
 {
 	jsoncons::json json;
-	// Вложенный объект "params"
+	// Р’Р»РѕР¶РµРЅРЅС‹Р№ РѕР±СЉРµРєС‚ "params"
 	jsoncons::json params_json;
 
 	switch  (op.OperationType) {
@@ -619,7 +619,7 @@ std::vector<uint8_t> JsonChannelProtocol::encodeRequest(sendData& op)
 	json["method"] = op.method;
 	json["step"] = op.step;
 
-	// Вложенный объект "params"
+	// Р’Р»РѕР¶РµРЅРЅС‹Р№ РѕР±СЉРµРєС‚ "params"
 	jsoncons::json params_json;
 
 	for (const auto& [key, value] : op.params) {
@@ -637,7 +637,7 @@ std::vector<uint8_t> JsonChannelProtocol::encodeRequest(sendData& op)
 		}
 	}
 
-	// Вставляем "params" как объект в основной JSON
+	// Р’СЃС‚Р°РІР»СЏРµРј "params" РєР°Рє РѕР±СЉРµРєС‚ РІ РѕСЃРЅРѕРІРЅРѕР№ JSON
 	json["params"] = params_json;
 
 	std::string jsonString = json.to_string();

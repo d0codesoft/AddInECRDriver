@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "addin_driver.h"
 #include "localization_manager.h"
 
@@ -23,16 +23,11 @@
 #include <filesystem>
 #include <iostream>
 #include "interface_pos_terminal.h"
-#include "sys_utils.h"
 #include "driver_pos_terminal.h"
 #include "logger.h"
 #include "str_utils.h"
 
 #define BASE_ERRNO     7
-
-#ifdef WIN32
-#pragma setlocale("ru-RU")
-#endif
 
 static AppCapabilities g_capabilities = eAppCapabilities3;
 

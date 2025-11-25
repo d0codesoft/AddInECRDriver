@@ -1,4 +1,4 @@
-#pragma once
+п»ї#pragma once
 #include <optional>
 #include <unordered_map>
 #include <fstream>
@@ -11,16 +11,16 @@ class IStorage {
 public:
     virtual ~IStorage() = default;
 
-    // Сохранить значение по ключу
+    // РЎРѕС…СЂР°РЅРёС‚СЊ Р·РЅР°С‡РµРЅРёРµ РїРѕ РєР»СЋС‡Сѓ
     virtual bool Save(const std::string& key, const std::string& value) = 0;
 
-    // Получить значение по ключу
+    // РџРѕР»СѓС‡РёС‚СЊ Р·РЅР°С‡РµРЅРёРµ РїРѕ РєР»СЋС‡Сѓ
     virtual std::optional<std::string> Load(const std::string& key) const = 0;
 
-    // Удалить значение по ключу
+    // РЈРґР°Р»РёС‚СЊ Р·РЅР°С‡РµРЅРёРµ РїРѕ РєР»СЋС‡Сѓ
     virtual bool Remove(const std::string& key) = 0;
 
-    // Очистить все значения
+    // РћС‡РёСЃС‚РёС‚СЊ РІСЃРµ Р·РЅР°С‡РµРЅРёСЏ
     virtual void Clear() = 0;
 };
 

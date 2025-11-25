@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "interface_connection.h"
 #include <jsoncons/json.hpp>

@@ -1,4 +1,4 @@
-#pragma once
+п»ї#pragma once
 
 #ifndef ADDINECRCOMMONSCFUNCTIONS_H
 #define ADDINECRCOMMONSCFUNCTIONS_H
@@ -7,12 +7,12 @@
 #include "AddInDefBase.h"
 #include "addin_driver.h"
 
-// Определяем экспорт для разных ОС
+// РћРїСЂРµРґРµР»СЏРµРј СЌРєСЃРїРѕСЂС‚ РґР»СЏ СЂР°Р·РЅС‹С… РћРЎ
 //#ifdef _WIN32
 //	#ifdef LIB_EXPORTS
-//		#define LIB_API __declspec(dllexport)    //  Windows (при сборке DLL)
+//		#define LIB_API __declspec(dllexport)    //  Windows (РїСЂРё СЃР±РѕСЂРєРµ DLL)
 //	#else
-//		#define LIB_API __declspec(dllimport)   // Windows (при использовании DLL)
+//		#define LIB_API __declspec(dllimport)   // Windows (РїСЂРё РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРё DLL)
 //	#endif
 //#else
 //	#define LIB_API __attribute__((visibility("default"))) // Linux/macOS

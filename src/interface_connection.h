@@ -4,8 +4,11 @@
 #include <optional>
 #include <span>
 #include <boost/asio.hpp>
+#include <boost/asio/ssl.hpp>
 #include <boost/beast.hpp>
 #include <boost/beast/websocket.hpp>
+#include <boost/beast/websocket/ssl.hpp>
+#include <boost/beast/ssl.hpp>
 #include "connection_types.h"
 
 #ifndef INTERFACECONNECTION_H
@@ -91,9 +94,16 @@ private:
 };
 
 // 🔄 COM connection
-class TcpConnection : public IConnection, public std::enable_shared_from_this<TcpConnection> {
+class TcpConnection : 
+    public IConnection, 
+    public std::enable_shared_from_this<TcpConnection> 
+{
 public:
-    TcpConnection() : socket_(io_context_), strand_(boost::asio::make_strand(io_context_)) {}
+    TcpConnection() : 
+        io_context_(),
+        socket_(io_context_)
+    {
+    }
 
     bool connect(const std::string& host, std::optional<uint16_t> port) override;
 
@@ -125,12 +135,13 @@ public:
 
 private:
     using WorkGuard = boost::asio::executor_work_guard<boost::asio::io_context::executor_type>;
+    using Strand = boost::asio::strand<boost::asio::io_context::executor_type>;
 
     void startIoThreadIfNeeded_();
     void stopIoThread_();
 
-	boost::asio::io_context io_context_; ///< Boost.Asio I/O context
-    boost::asio::strand<boost::asio::any_io_executor> strand_;
+    boost::asio::io_context io_context_;
+    Strand strand_{ boost::asio::make_strand(io_context_) };
 	boost::asio::ip::tcp::socket socket_; ///< Boost.Asio TCP socket
 
 	std::array<char, 4096> read_buf_{}; ///< Buffer for reading data
@@ -153,8 +164,16 @@ private:
 class WebSocketConnection : public IConnection, public std::enable_shared_from_this<WebSocketConnection> {
 public:
     WebSocketConnection()
-        : resolver_(ioc_), ws_(ioc_) {
+        : ioc_()
+        , strand_(boost::asio::make_strand(ioc_))
+        , ssl_ctx_(boost::asio::ssl::context::tlsv13_client)
+        , resolver_(ioc_)
+        , ws_(strand_, ssl_ctx_)       
+    {
+        ssl_ctx_.set_default_verify_paths();
+        ssl_ctx_.set_verify_mode(boost::asio::ssl::verify_peer);
     }
+
 
     bool connect(const std::string& host, std::optional<uint16_t> port) override;
 
@@ -179,14 +198,17 @@ public:
 	}
 
     void startListening(std::function<void(std::vector<uint8_t>)> callback) override {
-		// Not implemented
+        (void)callback; // silence C4100 until implemented
 		throw std::runtime_error("Not implemented");
     }
 
 private:
     boost::asio::io_context ioc_;
-    boost::asio::ip::tcp::resolver resolver_;
-    boost::beast::websocket::stream<boost::asio::ip::tcp::socket> ws_;
+    boost::asio::ssl::context ssl_ctx_{ boost::asio::ssl::context::tlsv13_client };
+    boost::asio::strand<boost::asio::io_context::executor_type> strand_;
+    boost::asio::ip::tcp::resolver resolver_; // For DNS resolution
+    boost::beast::websocket::stream<boost::asio::ssl::stream<boost::asio::ip::tcp::socket>> ws_;
+
     bool connected_ = false;
 	std::atomic<bool> keepAlive_{ true };
 	std::chrono::milliseconds reconnectDelay_{ 5000 };
@@ -195,8 +217,7 @@ private:
 class ComConnection : public IConnection, public std::enable_shared_from_this<ComConnection> {
 public:
     ComConnection();
-	ComConnection(const std::string& port, uint32_t baud_rate = 9600);
-    bool connect(const std::string& port, std::optional<uint16_t> baudRate) override {
+    bool connect(const std::string& host, std::optional<uint16_t> port) override {
 		return false;
     }
     void disconnect() override {

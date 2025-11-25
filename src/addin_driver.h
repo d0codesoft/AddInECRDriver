@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #ifndef ADDINECRCOMMONSC_H
 #define ADDINECRCOMMONSC_H

@@ -1,4 +1,4 @@
-#pragma once
+п»ї#pragma once
 
 #ifndef LOGGER_H
 #define LOGGER_H
@@ -8,6 +8,7 @@
 #include <fstream>
 #include <unordered_map>
 #include <memory>
+#include <filesystem>
 
 const std::wstring log_prefix = L"ecr_driver";
 const std::wstring log_extension = L".log";
@@ -29,6 +30,9 @@ public:
     }
 
 	static std::wstring getLogFilePath();
+
+    static std::wstring get_full_path(const std::wstring& path);
+    static std::wstring getLogDriverFilePath();
 
 #ifdef NDEBUG
     void info(std::wstring_view message, std::wstring_view file = L"", int line = 0) {
@@ -111,8 +115,8 @@ private:
 #endif // LOGGER_H
 
 
-// Пример использования:
+// РџСЂРёРјРµСЂ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёСЏ:
 // auto& networkLogger = Logger::getInstance("Network");
-// LOG_INFO(networkLogger, "Подключение установлено к серверу {}", "192.168.1.1");
+// LOG_INFO(networkLogger, "РџРѕРґРєР»СЋС‡РµРЅРёРµ СѓСЃС‚Р°РЅРѕРІР»РµРЅРѕ Рє СЃРµСЂРІРµСЂСѓ {}", "192.168.1.1");
 // auto& fileLogger = Logger::getInstance("File");
-// LOG_ERROR(fileLogger, "Ошибка записи файла {}", "output.txt");
+// LOG_ERROR(fileLogger, "РћС€РёР±РєР° Р·Р°РїРёСЃРё С„Р°Р№Р»Р° {}", "output.txt");

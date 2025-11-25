@@ -1,10 +1,29 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "logger.h"
 #include "string_conversion.h"
 #include <mutex>
 #include <filesystem>
 #include <regex>
 #include "str_utils.h"
+#include <sstream>
+#include <iomanip>
+
+#if defined(CURRENT_OS_WINDOWS)
+#include <windows.h>
+#include <shlobj.h>
+#elif defined(CURRENT_OS_MACOS) || defined(CURRENT_OS_LINUX)
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
+#include <stdlib.h>
+#include <signal.h>
+#include <time.h>
+#include <errno.h>
+#include <iconv.h>
+#include <locale.h>
+#else
+#include <clocale>
+#endif
 
 std::unordered_map<std::wstring, Logger*> Logger::InstancesLog;
 std::mutex Logger::mutexLog;
@@ -22,6 +41,63 @@ Logger::Logger(std::wstring_view channelName) : mChannelName(channelName) {
 std::wstring Logger::getLogFilePath()
 {
 	return Logger::current_log_path;
+}
+
+std::wstring Logger::get_full_path(const std::wstring& path)
+{
+    std::wstring path_folder = getLogDriverFilePath();
+    std::wstring full = path_folder + path;
+
+    try {
+        std::filesystem::path dir(path_folder);
+        if (!std::filesystem::exists(dir)) {
+            std::filesystem::create_directories(dir);
+        }
+    }
+    catch (const std::filesystem::filesystem_error& e) {
+        std::cerr << "Filesystem error: " << e.what() << std::endl;
+        return {};
+    }
+    catch (const std::exception& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return {};
+    }
+    return full;
+}
+
+std::wstring Logger::getLogDriverFilePath()
+{
+    std::wstring logPath;
+
+#if defined(_WIN32) || defined(_WIN64)
+    wchar_t path[MAX_PATH];
+    if (SUCCEEDED(SHGetFolderPathW(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, path))) {
+        logPath.assign(path);
+        if (logPath.back() != L'\\') {
+            logPath += L"\\";
+        }
+        logPath += L"AddInECRDriver\\logs";
+    }
+#elif defined(__linux__) || defined(__APPLE__)
+    const char* homeDir = getenv("HOME");
+    if (!homeDir) {
+        homeDir = getpwuid(getuid())->pw_dir;
+    }
+    logPath = homeDir;
+    logPath += "/.addinecrdriver/logs";
+#endif
+
+    try {
+        std::filesystem::path dir(logPath);
+        if (!std::filesystem::exists(dir)) {
+            std::filesystem::create_directories(dir);
+        }
+    }
+    catch (const std::filesystem::filesystem_error& e) {
+		std::cout << "Filesystem error: " << e.what() << std::endl;
+    }
+
+    return logPath;
 }
 
 void Logger::removeInstance(std::wstring_view channelName)
@@ -68,12 +144,11 @@ void Logger::rotate_logs()
         fs::create_directory(_logDirectory);
     }
 
-	// Test current log file size
-    //fs::path current_log_path = fs::path(_logDirectory) / (log_prefix + L".log");
-    if (!fs::exists(Logger::current_log_path) || (fs::exists(Logger::current_log_path) && fs::file_size(Logger::current_log_path) < _maxFileSize)) {
+    if (!fs::exists(Logger::current_log_path) ||
+        (fs::exists(Logger::current_log_path) && fs::file_size(Logger::current_log_path) < _maxFileSize)) {
         return;
     }
-
+	
 	// Find all log files in the directory
     for (const auto& entry : fs::directory_iterator(_logDirectory)) {
         if (fs::is_regular_file(entry.path())) {
@@ -84,12 +159,18 @@ void Logger::rotate_logs()
     }
 
 	// Sort log files by number
-    std::sort(log_files.begin(), log_files.end(), [&](const fs::path& a, const fs::path& b) {
-        std::wsmatch match_a, match_b;
-        std::wstring filename_a = a.filename().wstring();
-        std::regex_match(filename_a, match_a, log_pattern);
-        std::regex_match(filename_a, match_b, log_pattern);
-        return std::stoi(match_a[1]) < std::stoi(match_b[1]);
+    std::sort(log_files.begin(), log_files.end(),
+        [&](const fs::path& a, const fs::path& b) {
+            std::wsmatch match_a, match_b;
+            const std::wstring filename_a = a.filename().wstring();
+            const std::wstring filename_b = b.filename().wstring();
+            std::regex_match(filename_a, match_a, log_pattern);
+            std::regex_match(filename_b, match_b, log_pattern);
+            // Guard: if pattern fails, fallback to lexical compare
+            if (match_a.size() < 2 || match_b.size() < 2) {
+                return filename_a < filename_b;
+            }
+            return std::stoi(match_a[1]) < std::stoi(match_b[1]);
         });
 
 	// If the number of log files exceeds the limit, delete the oldest
@@ -101,11 +182,12 @@ void Logger::rotate_logs()
 	// Rename log files
     for (auto it = log_files.rbegin(); it != log_files.rend(); ++it) {
         std::wsmatch match;
-        std::wstring filename_a = it->filename().wstring();
-        std::regex_match(filename_a, match, log_pattern);
-        int current_number = std::stoi(match[1]);
-        fs::path new_path = it->parent_path() / (log_prefix + L"." + std::to_wstring(current_number + 1));
-        fs::rename(*it, new_path);
+        const std::wstring filename = it->filename().wstring();
+        if (std::regex_match(filename, match, log_pattern) && match.size() >= 2) {
+            int current_number = std::stoi(match[1]);
+            fs::path new_path = it->parent_path() / (log_prefix + L"." + std::to_wstring(current_number + 1));
+            fs::rename(*it, new_path);
+        }
     }
 
 	// Rename current log file

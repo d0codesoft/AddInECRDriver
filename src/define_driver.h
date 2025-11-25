@@ -1,9 +1,9 @@
-#pragma once
+п»ї#pragma once
 
 #ifndef DEFINEDRIVER_H
 #define DEFINEDRIVER_H
 
-// Определение версии драйвера подключаемого оборудования
+// РћРїСЂРµРґРµР»РµРЅРёРµ РІРµСЂСЃРёРё РґСЂР°Р№РІРµСЂР° РїРѕРґРєР»СЋС‡Р°РµРјРѕРіРѕ РѕР±РѕСЂСѓРґРѕРІР°РЅРёСЏ
 #define DRIVER_REQUIREMENTS_VERSION_4_4  4004
 #define DRIVER_REQUIREMENTS_VERSION_4_3  4003
 #define DRIVER_REQUIREMENTS_VERSION_4_1  4001
@@ -18,7 +18,7 @@
 #define DRIVER_REQUIREMENTS_VERSION_2_5  2005
 #define DRIVER_REQUIREMENTS_VERSION_2_4  2004
 
-// Выбор текущей версии драйвера (можно изменить в зависимости от требований)
+// Р’С‹Р±РѕСЂ С‚РµРєСѓС‰РµР№ РІРµСЂСЃРёРё РґСЂР°Р№РІРµСЂР° (РјРѕР¶РЅРѕ РёР·РјРµРЅРёС‚СЊ РІ Р·Р°РІРёСЃРёРјРѕСЃС‚Рё РѕС‚ С‚СЂРµР±РѕРІР°РЅРёР№)
 #ifndef DRIVER_REQUIREMENTS_VERSION
 #define DRIVER_REQUIREMENTS_VERSION DRIVER_REQUIREMENTS_VERSION_3_4
 #endif

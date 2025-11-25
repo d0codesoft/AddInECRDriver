@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #ifndef DRIVER1CBASE_H
 #define DRIVER1CBASE_H

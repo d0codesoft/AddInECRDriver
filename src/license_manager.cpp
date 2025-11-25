@@ -7,9 +7,30 @@
 #include <openssl/pem.h>
 #include <openssl/err.h>
 #include <vector>
+#include <iomanip>
 #include <pugixml.hpp>
 #include "str_utils.h"
 #include "logger.h"
+
+namespace {
+    // Parse ISO 8601 UTC format: YYYY-MM-DDThh:mm:ssZ
+    std::optional<std::chrono::system_clock::time_point> parse_iso_utc(const std::wstring& iso) {
+        if (iso.empty()) return std::nullopt;
+        std::tm tm{};
+        std::wistringstream iss(iso);
+        iss >> std::get_time(&tm, L"%Y-%m-%dT%H:%M:%SZ");
+        if (iss.fail()) {
+            return std::nullopt;
+        }
+#if defined(_WIN32)
+        time_t tt = _mkgmtime(&tm);
+#else
+        time_t tt = timegm(&tm);
+#endif
+        if (tt == -1) return std::nullopt;
+        return std::chrono::system_clock::from_time_t(tt);
+    }
+}
 
 // Helper function to convert a byte vector to a base64 string
 std::string Base64Encode(const std::vector<unsigned char>& data) {
@@ -169,24 +190,17 @@ bool LicenseManager::SetLicense(const std::wstring& licenseKey) {
     if (!VerifyLicenseData(licenseKey, decryptedData)) return false;
 
     try {
-        // Convert std::wstring to std::string (jsoncons expects UTF-8)
-        std::string utf8Data = str_utils::to_string(decryptedData);
-
-        // Parse JSON using jsoncons
         jsoncons::wjson json = jsoncons::wjson::parse(decryptedData);
 
         if (json.contains(L"expiration_date")) {
             std::wstring expirationDateStr = json[L"expiration_date"].as<std::wstring>();
 
-            std::tm tm = {};
-            std::wistringstream ss(expirationDateStr);
-            std::chrono::sys_time<std::chrono::seconds> tp;
-            ss >> std::chrono::parse(L"%Y-%m-%dT%H:%M:%SZ", tp);
+            auto tpOpt = parse_iso_utc(expirationDateStr);
+            if (!tpOpt) return false;
 
-            if (ss.fail() || ss.bad()) return false;  // More robust failure check
+            if (std::chrono::system_clock::now() > *tpOpt) return false;
 
-            if (std::chrono::system_clock::now() > tp) return false;
-
+            expirationDate = *tpOpt;
             storedLicenseKey = licenseKey;
             return true;
         }

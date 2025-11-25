@@ -1,4 +1,4 @@
-#pragma once
+п»ї#pragma once
 
 #ifndef LICENSE_MANAGER_H
 #define LICENSE_MANAGER_H
@@ -11,33 +11,33 @@
 
 class LicenseManager {
 public:
-    // Установить лицензионный ключ (устанавливает и проверяет его)
+    // РЈСЃС‚Р°РЅРѕРІРёС‚СЊ Р»РёС†РµРЅР·РёРѕРЅРЅС‹Р№ РєР»СЋС‡ (СѓСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ Рё РїСЂРѕРІРµСЂСЏРµС‚ РµРіРѕ)
     bool SetLicense(const std::wstring& licenseKey);
 
-    // Получить текущий статус лицензии
+    // РџРѕР»СѓС‡РёС‚СЊ С‚РµРєСѓС‰РёР№ СЃС‚Р°С‚СѓСЃ Р»РёС†РµРЅР·РёРё
     inline bool IsLicenseValid() const;
 
-    // Получить сохранённый лицензионный ключ
+    // РџРѕР»СѓС‡РёС‚СЊ СЃРѕС…СЂР°РЅС‘РЅРЅС‹Р№ Р»РёС†РµРЅР·РёРѕРЅРЅС‹Р№ РєР»СЋС‡
     std::optional<std::wstring> GetLicense() const;
 
-    // Получить дату окончания лицензии
+    // РџРѕР»СѓС‡РёС‚СЊ РґР°С‚Сѓ РѕРєРѕРЅС‡Р°РЅРёСЏ Р»РёС†РµРЅР·РёРё
     std::optional<std::chrono::system_clock::time_point> GetExpirationDate() const;
 
-    // Функция проверки лицензии (проверка подписи RSA)
+    // Р¤СѓРЅРєС†РёСЏ РїСЂРѕРІРµСЂРєРё Р»РёС†РµРЅР·РёРё (РїСЂРѕРІРµСЂРєР° РїРѕРґРїРёСЃРё RSA)
     bool VerifyLicenseData(const std::wstring& signedData, const std::wstring& originalData) const;
 	bool isDemoMode() const;
 	std::wstring getDemoModeDescription() const;
 
 private:
-    std::wstring storedLicenseKey;  // Хранение лицензии
-    std::chrono::system_clock::time_point expirationDate; // Дата окончания лицензии
+    std::wstring storedLicenseKey;  // РҐСЂР°РЅРµРЅРёРµ Р»РёС†РµРЅР·РёРё
+    std::chrono::system_clock::time_point expirationDate; // Р”Р°С‚Р° РѕРєРѕРЅС‡Р°РЅРёСЏ Р»РёС†РµРЅР·РёРё
 
 	std::wstring getOpenSSLErrorString() const;
 
-    // Функция дешифрования (RSA)
+    // Р¤СѓРЅРєС†РёСЏ РґРµС€РёС„СЂРѕРІР°РЅРёСЏ (RSA)
     bool DecryptLicenseData(const std::wstring& encryptedData, std::wstring& decryptedData) const;
 
-    // Симуляция закрытого и открытого ключа
+    // РЎРёРјСѓР»СЏС†РёСЏ Р·Р°РєСЂС‹С‚РѕРіРѕ Рё РѕС‚РєСЂС‹С‚РѕРіРѕ РєР»СЋС‡Р°
     static const std::string GetPublicKey();
 
     EVP_PKEY* LoadPublicKey() const;

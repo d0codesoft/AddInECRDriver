@@ -1,28 +1,28 @@
-#include "pch.h"
+п»ї#include "pch.h"
 #include "protocol_consts.h"
 
 // Ukrainian descriptions for response codes
 const std::wstring ProtocolResponseDescription(UINT code) noexcept {
 	switch (code) {
 	case PROTOCOL_RESPONSE_CODE_GENERAL_ERROR:
-		return L"Загальна помилка";
+		return L"Р—Р°РіР°Р»СЊРЅР° РїРѕРјРёР»РєР°";
 	case PROTOCOL_RESPONSE_CODE_CANCELED_BY_USER:
-		return L"Операцію скасовано користувачем";
+		return L"РћРїРµСЂР°С†С–СЋ СЃРєР°СЃРѕРІР°РЅРѕ РєРѕСЂРёСЃС‚СѓРІР°С‡РµРј";
 	case PROTOCOL_RESPONSE_CODE_EMV_DECLINE:
-		return L"Відхилено EMV";
+		return L"Р’С–РґС…РёР»РµРЅРѕ EMV";
 	case PROTOCOL_RESPONSE_CODE_TRANSACTION_LOG_FULL:
-		return L"Журнал транзакцій заповнений. Необхідно закрити журнал";
+		return L"Р–СѓСЂРЅР°Р» С‚СЂР°РЅР·Р°РєС†С–Р№ Р·Р°РїРѕРІРЅРµРЅРёР№. РќРµРѕР±С…С–РґРЅРѕ Р·Р°РєСЂРёС‚Рё Р¶СѓСЂРЅР°Р»";
 	case PROTOCOL_RESPONSE_CODE_NO_HOST_CONNECTION:
-		return L"Немає з’єднання з хостом";
+		return L"РќРµРјР°С” Р·вЂ™С”РґРЅР°РЅРЅСЏ Р· С…РѕСЃС‚РѕРј";
 	case PROTOCOL_RESPONSE_CODE_NO_PAPER:
-		return L"Немає паперу в принтері";
+		return L"РќРµРјР°С” РїР°РїРµСЂСѓ РІ РїСЂРёРЅС‚РµСЂС–";
 	case PROTOCOL_RESPONSE_CODE_CRYPTO_KEYS_ERROR:
-		return L"Помилка криптографічних ключів";
+		return L"РџРѕРјРёР»РєР° РєСЂРёРїС‚РѕРіСЂР°С„С–С‡РЅРёС… РєР»СЋС‡С–РІ";
 	case PROTOCOL_RESPONSE_CODE_CARD_READER_NOT_CONNECTED:
-		return L"Зчитувач картки не підключено";
+		return L"Р—С‡РёС‚СѓРІР°С‡ РєР°СЂС‚РєРё РЅРµ РїС–РґРєР»СЋС‡РµРЅРѕ";
 	case PROTOCOL_RESPONSE_CODE_ALREADY_COMPLETE:
-		return L"Транзакцію вже завершено";
+		return L"РўСЂР°РЅР·Р°РєС†С–СЋ РІР¶Рµ Р·Р°РІРµСЂС€РµРЅРѕ";
 	default:
-		return L"Невідомий код відповіді";
+		return L"РќРµРІС–РґРѕРјРёР№ РєРѕРґ РІС–РґРїРѕРІС–РґС–";
 	}
 }

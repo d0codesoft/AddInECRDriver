@@ -207,7 +207,6 @@
     <ClInclude Include="storage_manager.h" />
     <ClInclude Include="string_conversion.h" />
     <ClInclude Include="str_utils.h" />
-    <ClInclude Include="sys_utils.h" />
     <ClInclude Include="tvariant_helper.h" />
     <ClInclude Include="xml_pugi_utils.h" />
     <ClInclude Include="channel_protocol.h" />
@@ -238,7 +237,6 @@
     <ClCompile Include="storage_manager.cpp" />
     <ClCompile Include="string_conversion.cpp" />
     <ClCompile Include="str_utils.cpp" />
-    <ClCompile Include="sys_utils.cpp" />
     <ClCompile Include="tvariant_helper.cpp" />
     <ClCompile Include="xml_pugi_utils.cpp" />
     <ClCompile Include="channel_protocol.cpp" />

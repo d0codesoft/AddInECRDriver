@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "connection_types.h"
 
 std::wstring getConnectionTypeIndex(ConnectionType type)

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <span>
 #include "common_types.h"

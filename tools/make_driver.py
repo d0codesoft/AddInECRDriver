@@ -100,8 +100,8 @@ def main():
         raise FileNotFoundError("Configuration file not found: config.ini")
 
     parser = argparse.ArgumentParser(description="Creating a driver file for download in the 1C configuration 8.3.")
-    parser.add_argument("-build_type", choices=["DEBUG", "RELEASE"], default="DEBUG",
-                        help="Тип сборки (DEBUG или RELEASE)")
+    parser.add_argument("-build_type", choices=["Debug", "Release"], default="Debug",
+                        help="Тип сборки (Debug или Release)")
     parser.add_argument("-build_dir", help="dll build file catalog")
     parser.add_argument("-output_dir", nargs='?', default=os.getcwd(), help="Directory for saving the output archive (default is the current directory)")
 

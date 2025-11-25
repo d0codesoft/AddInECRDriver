@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #ifndef LOCALIZATION_CONSTS_H
 #define LOCALIZATION_CONSTS_H
 

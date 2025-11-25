@@ -6,7 +6,6 @@
 #include "driver_pos_terminal.h"
 #include "interface_pos_terminal.h"
 #include "string_conversion.h"
-#include "sys_utils.h"
 #include "str_utils.h"
 #include "setting_driver_pos.h"
 #include "logger.h"

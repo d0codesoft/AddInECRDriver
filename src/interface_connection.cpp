@@ -1,4 +1,4 @@
-#include "pch.h"
+п»ї#include "pch.h"
 #include "interface_connection.h"
 #include "string_conversion.h"
 #include "logger.h"
@@ -14,7 +14,7 @@ bool TcpConnection::connect(const std::string& host, std::optional<uint16_t> por
 		LOG_INFO_ADD(L"TcpConnection", L"Start connection : " + str_utils::to_wstring(host) + L" port: " + portToWstring(port));
 
         io_context_.restart();
-        startIoThreadIfNeeded_(); // запуск фонового потока io_context
+        startIoThreadIfNeeded_(); // Р·Р°РїСѓСЃРє С„РѕРЅРѕРІРѕРіРѕ РїРѕС‚РѕРєР° io_context
 
         boost::asio::ip::tcp::resolver resolver(io_context_);
 		auto port_ = port.value_or(2000);
@@ -99,7 +99,7 @@ void TcpConnection::startListening(std::function<void(std::vector<uint8_t>)> cal
                 self->startListening(callback);
             }
             else if (ec == boost::asio::error::eof) {
-                // peer closed connection — can notify/log if needed
+                // peer closed connection вЂ” can notify/log if needed
                 LOG_INFO_ADD(L"TcpConnection", L"Connection closed by peer");
             }
             else if (ec == boost::asio::error::operation_aborted) {
@@ -128,7 +128,7 @@ void TcpConnection::setReconnectDelay(std::chrono::milliseconds delay)
 void TcpConnection::startIoThreadIfNeeded_()
 {
     if (!ioThread_.joinable()) {
-        workGuard_.emplace(io_context_.get_executor());     // держит io_context живым
+        workGuard_.emplace(io_context_.get_executor());     // РґРµСЂР¶РёС‚ io_context Р¶РёРІС‹Рј
         ioThread_ = std::thread([this] {
             try {
                 io_context_.run();
@@ -140,7 +140,7 @@ void TcpConnection::startIoThreadIfNeeded_()
 
 void TcpConnection::stopIoThread_()
 {
-    workGuard_.reset();             // разрешаем run() завершиться
+    workGuard_.reset();             // СЂР°Р·СЂРµС€Р°РµРј run() Р·Р°РІРµСЂС€РёС‚СЊСЃСЏ
     io_context_.stop();
     if (ioThread_.joinable()) {
         ioThread_.join();
@@ -154,8 +154,8 @@ void TcpConnection::stopIoThread_()
 
 bool WebSocketConnection::connect(const std::string& host, std::optional<uint16_t> port) {
     try {
-        auto resolved = resolver_.resolve(host, port ? std::to_string(*port) : "2000");
-        boost::asio::connect(ws_.next_layer(), resolved);
+        auto const results = resolver_.resolve(host, port ? std::to_string(*port) : "2000");
+        boost::asio::connect(ws_.next_layer().next_layer(), results);
 
         ws_.handshake(host, "/");
         connected_ = true;
@@ -215,13 +215,6 @@ ComConnection::ComConnection()
 {
     this->port = "COM1";
 	this->baud_rate_ = 9600;
-}
-
-ComConnection::ComConnection(const std::string& port, uint32_t baud_rate)
-	: serial_(io_context_)
-{
-	this->port = port;
-	this->baud_rate_ = baud_rate;
 }
 
 void ComConnection::startListening(std::function<void(std::vector<uint8_t>)> callback)

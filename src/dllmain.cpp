@@ -1,6 +1,5 @@
-// dllmain.cpp : Defines the entry point for the DLL application.
+﻿// dllmain.cpp : Defines the entry point for the DLL application.
 #include "pch.h"
-#include "sys_utils.h"
 #include "logger.h"
 
 #if !defined(OS_LINUX) && !defined(OS_MACOS)
@@ -13,10 +12,9 @@ BOOL APIENTRY DllMain( HMODULE hModule,
     switch (ul_reason_for_call)
     {
     case DLL_PROCESS_ATTACH: {
-		auto logDir = SysUtils::getLogDriverFilePath();
+		auto logDir = Logger::getLogDriverFilePath();
 		LOGGER_INITIALIZE_DEFAULT(logDir);
 		LOG_INFO_ADD(L"Driver", L"Driver loaded");
-        SysUtils::g_hModule = hModule;
         break;
     }
     case DLL_THREAD_ATTACH:

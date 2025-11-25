@@ -1,4 +1,4 @@
-# Cross‑platform CMakeLists.txt for ecr_driver_terminal
+﻿# Cross‑platform CMakeLists.txt for ecr_driver_terminal
 # Converted from a Windows/MSVC centric configuration to a portable one.
 # Retains MSVC-specific optimizations while enabling Linux/macOS builds.
 
@@ -29,9 +29,9 @@ set(Header_Files
     storage_manager.h
     str_utils.h
     string_conversion.h
-    sys_utils.h
     tvariant_helper.h
-    сhannel_protocol.h # WARNING: leading 'с' is Cyrillic; consider renaming to 'c'
+    channel_protocol.h
+    xml_pugi_utils.h
 )
 set(Source_Files
     addin_driver.cpp
@@ -53,9 +53,9 @@ set(Source_Files
     storage_manager.cpp
     str_utils.cpp
     string_conversion.cpp
-    sys_utils.cpp
     tvariant_helper.cpp
-    сhannel_protocol.cpp
+    channel_protocol.cpp
+    xml_pugi_utils.cpp
 )
 source_group("Header Files" FILES ${Header_Files})
 source_group("Source Files" FILES ${Source_Files})
@@ -75,20 +75,42 @@ if(MSVC AND COMMAND use_props)
     use_props(${lib_name} "${CMAKE_CONFIGURATION_TYPES}" "${DEFAULT_CXX_PROPS}")
 endif()
 
+
+# Get platform name
+if(WIN32)
+    set(platform_name "win")
+elseif(APPLE)
+    set(platform_name "mac")
+elseif(UNIX)
+    set(platform_name "linux")
+endif()
+
+# Define architecture bits
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    set(arch_bits "64")
+else()
+    set(arch_bits "32")
+endif()
+
+# Make output name consistent
 set_target_properties(${lib_name} PROPERTIES
-    FOLDER "ecr"
-    # Config-specific output naming (Debug vs Release)
-    OUTPUT_NAME "$<IF:$<CONFIG:Debug>,ECR_Driver_PT_dbg,ECR_Driver_PT>"
+    FOLDER "ECRDriver"
+    PREFIX ""
+    OUTPUT_NAME "ECR_Driver_PT_${platform_name}${arch_bits}"
 )
 
-# Architecture suffix for Windows builds, if you still need distinct names
-if(WIN32)
-    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-		set_property(TARGET ${lib_name} PROPERTY OUTPUT_NAME "${lib_name}_win64")
-	else()
-		set_property(TARGET ${lib_name} PROPERTY OUTPUT_NAME "${lib_name}_win32")
-	endif()
-endif()
+# Platform-specific output names
+#if(WIN32)
+#    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+#        set_property(TARGET ${lib_name} PROPERTY OUTPUT_NAME "${lib_name}_win64")
+#    else()
+#        set_property(TARGET ${lib_name} PROPERTY OUTPUT_NAME "${lib_name}_win32")
+#    endif()
+#elseif(APPLE)
+#    set_property(TARGET ${lib_name} PROPERTY OUTPUT_NAME "${lib_name}_mac_64")
+#elseif(UNIX) # Linux and other Unix (non-macOS)
+#    set_property(TARGET ${lib_name} PROPERTY OUTPUT_NAME "${lib_name}_linux_64")
+#endif()
 
 # Position independent code (PIC) for shared libs on Unix
 if(UNIX AND NOT APPLE)
@@ -101,7 +123,7 @@ if(MSVC)
 endif()
 
 # Include directories (PUBLIC if headers used by consumers)
-target_include_directories(${lib_name} PUBLIC
+target_include_directories(${lib_name} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/../include"
     "${CMAKE_CURRENT_SOURCE_DIR}/../include/pugixml"
     "${CMAKE_CURRENT_SOURCE_DIR}/../include/vncomp"
@@ -116,7 +138,7 @@ if(USE_SYSTEM_BOOST)
     find_package(boost 1.89 CONFIG REQUIRED)
 
     # Link libraries
-    target_link_libraries(${lib_name} PUBLIC
+    target_link_libraries(${lib_name} PRIVATE
         Boost::boost
     )
 
@@ -128,24 +150,45 @@ if(USE_SYSTEM_BOOST)
 else()
     # Fallback: manual local Boost (header-only + staged libs)
     target_include_directories(${lib_name} PUBLIC
-        "${CMAKE_CURRENT_SOURCE_DIR}/../../boost"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../boost"
     )
     if(WIN32)
         target_link_directories(${lib_name} PRIVATE
-            "$<$<CONFIG:Debug>:${CMAKE_CURRENT_SOURCE_DIR}/../../boost/stage/lib>"
+            "$<$<CONFIG:Debug>:${CMAKE_CURRENT_SOURCE_DIR}/../boost/stage/lib>"
         )
     endif()
 endif()
 
 # OpenSSL (cross-platform)
 find_package(OpenSSL REQUIRED)
-target_link_libraries(${lib_name} PUBLIC OpenSSL::SSL OpenSSL::Crypto)
+target_link_libraries(${lib_name} PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+
+add_library(pugixml STATIC
+    ${CMAKE_SOURCE_DIR}/include/pugixml/pugixml.cpp
+    ${CMAKE_SOURCE_DIR}/include/pugixml/pugixml.hpp
+)
+
+target_include_directories(pugixml PUBLIC
+    ${CMAKE_SOURCE_DIR}/include/pugixml
+)
+
+target_compile_definitions(pugixml PUBLIC
+    PUGIXML_WCHAR_MODE
+    PUGIXML_STATIC
+)
+
+# Link pugixml into your driver
+target_link_libraries(${lib_name} PRIVATE pugixml)
+
+#find_package(pugixml CONFIG REQUIRED)
+#target_link_libraries(${lib_name} PRIVATE pugixml)
 
 # Platform-specific system libraries
 if(WIN32)
     target_link_libraries(${lib_name} PRIVATE
         ws2_32
         crypt32
+        wbemuuid
     )
     target_compile_definitions(${lib_name} PRIVATE
         UNICODE _UNICODE
@@ -191,17 +234,18 @@ endif()
 if (MSVC)
     # Компиляция
     target_compile_options(${lib_name} PRIVATE
-        /W4            # повышенный warning level (VS сам даёт /W3)
-        /permissive-   # строгий стандарт C++
-        /Zc:inline      # стандартное поведение inline
+        /W4 
+        /permissive 
+        /Zc:inline
         /Zc:preprocessor
         /Zc:forScope
         /utf-8
         /std:c++20
-        /FC            # показать полный путь к файлам в ошибках
+        /FC            
         /diagnostics:column
         $<$<CONFIG:Release>:/O2>
-        $<$<CONFIG:Debug>:/Od /RTC1>
+        $<$<CONFIG:Debug>:/Od>
+        $<$<CONFIG:Debug>:/RTC1>
     )
 
     # Параметры исключений / runtime
@@ -229,11 +273,8 @@ else()
 		-Wall
 		-Wextra
 		-Wpedantic
-
 		# Дополнительные полезные
-		-Wconversion
 		-Wsign-conversion
-		-Wshadow
 		-Wformat=2
 		-Wnull-dereference
 		-Wdouble-promotion
@@ -259,10 +300,32 @@ else()
 		-fexceptions
 
 		# Режимы конфигурации
-		$<$<CONFIG:Release>:-O3 -DNDEBUG>
-		$<$<CONFIG:RelWithDebInfo>:-O2 -g>
-		$<$<CONFIG:Debug>:-O0 -g -DDEBUG>
+		$<$<CONFIG:Release>:-O3>
+		$<$<CONFIG:Release>:-DNDEBUG>
+		$<$<CONFIG:RelWithDebInfo>:-O2>
+		$<$<CONFIG:RelWithDebInfo>:-g>
+		$<$<CONFIG:Debug>:-O0>
+		$<$<CONFIG:Debug>:-g>
+		$<$<CONFIG:Debug>:-DDEBUG>
 	)
+endif()
+
+# Add this near your target definition for the sanitizer build only
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  # If you drive ld.lld directly or the driver doesn't inject libs, add them explicitly:
+  execute_process(
+    COMMAND ${CMAKE_CXX_COMPILER} -print-resource-dir
+    OUTPUT_VARIABLE CLANG_RESOURCE_DIR
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+  set(CLANG_RT_DIR "${CLANG_RESOURCE_DIR}/lib/windows")
+
+  target_link_directories(${lib_name} PRIVATE "${CLANG_RT_DIR}")
+  target_link_libraries(${lib_name}
+    PRIVATE
+      clang_rt.asan_dynamic-x86_64
+      clang_rt.ubsan_standalone-x86_64
+  )
 endif()
 
 # Interprocedural optimization / LTO (guarded by compiler support)
@@ -293,23 +356,23 @@ if(NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 # Post-build Python packaging (cross-platform path & gated on existence)
-option(ENABLE_DRIVER_PACKAGING "Run driver packaging script after build" ON)
-if(ENABLE_DRIVER_PACKAGING)
-    find_package(Python3 COMPONENTS Interpreter)
-    if(Python3_Interpreter_FOUND)
-        add_custom_command(TARGET ${lib_name} POST_BUILD
-            COMMAND ${Python3_EXECUTABLE}
-                "${CMAKE_SOURCE_DIR}/tools/make_driver.py"
-                -build_type "$<CONFIG>"
-                -build_dir "${output_root}/$<CONFIG>"
-                -output_dir "${CMAKE_SOURCE_DIR}/tools"
-            COMMENT "Packaging ecr_driver_terminal for 1C AddIn"
-            VERBATIM
-        )
-    else()
-        message(WARNING "Python3 interpreter not found; packaging skipped.")
-    endif()
-endif()
+#option(ENABLE_DRIVER_PACKAGING "Run driver packaging script after build" ON)
+#if(ENABLE_DRIVER_PACKAGING)
+#    find_package(Python3 COMPONENTS Interpreter)
+#    if(Python3_Interpreter_FOUND)
+#        add_custom_command(TARGET ${lib_name} POST_BUILD
+#            COMMAND ${Python3_EXECUTABLE}
+#                "${CMAKE_SOURCE_DIR}/tools/make_driver.py"
+#                -build_type "$<CONFIG>"
+#                -build_dir "${output_root}/$<CONFIG>"
+#                -output_dir "${CMAKE_SOURCE_DIR}/tools"
+#            COMMENT "Packaging ecr_driver_terminal for 1C AddIn"
+#            VERBATIM
+#        )
+#    else()
+#        message(WARNING "Python3 interpreter not found; packaging skipped.")
+#    endif()
+#endif()
 
 # Optional: export an interface for consumers
 add_library(ecr_driver_terminal::ecr ALIAS ${lib_name})

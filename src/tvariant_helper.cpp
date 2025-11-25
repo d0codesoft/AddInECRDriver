@@ -1,7 +1,9 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "tvariant_helper.h"
 #include "str_utils.h"
 #include <string>
+#include <sstream>
+#include <iomanip>
 
 std::optional<std::wstring> VariantHelper::getStringValue(const tVariant& var) {
     switch (TV_VT(&var))
