@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #ifndef ADDINDEFBASE_H
 #define ADDINDEFBASE_H
@@ -31,16 +31,57 @@ public:
     }
 };
 
-class AddInDefBaseStub : public IAddInDefBase {
+class MsgBoxStub : public IMsgBox {
+public:
+    bool ADDIN_API Confirm(const WCHAR_T* queryText, tVariant* retVal) override {
+        std::string text = str_utils::to_string(queryText);
+        std::cout << "[IMsgBox Confirm] " << text << std::endl;
+        // Variant handling omitted (tVariant layout unknown). Caller may inspect retVal.
+        return true;
+    }
+
+    bool ADDIN_API Alert(const WCHAR_T* text) override {
+        std::string msg = str_utils::to_string(text);
+        std::cout << "[IMsgBox Alert] " << msg << std::endl;
+        return true;
+    }
+};
+
+class PlatformInfoStub : public IPlatformInfo {
+public:
+    PlatformInfoStub() {
+        static const WCHAR_T version[] = u"8.3.27";
+        static const WCHAR_T ua[] = u"1C8.3";
+        m_info.AppVersion = version;
+        m_info.UserAgentInformation = ua;
+        m_info.Application = IPlatformInfo::eAppThinClient;
+    }
+
+    const AppInfo* ADDIN_API GetPlatformInfo() override {
+        return &m_info;
+    }
+
+private:
+    AppInfo m_info{};
+};
+
+class AttachedInfoStub : public IAttachedInfo {
+public:
+    const AttachedType ADDIN_API GetAttachedInfo() override {
+        return eAttachedIsolated;
+    }
+};
+
+class AddInDefBaseStub : public IAddInDefBaseEx {
 public:
     bool ADDIN_API AddError(unsigned short wcode, const WCHAR_T* source,
         const WCHAR_T* descr, long scode) override {
 
-        // Êîíâåðòàöèÿ WCHAR_T* â std::wstring ñ èñïîëüçîâàíèåì ICU
+        // ÐšÐ¾Ð½Ð²ÐµÑ€Ñ‚Ð°Ñ†Ð¸Ñ WCHAR_T* Ð² std::wstring Ñ Ð¸ÑÐ¿Ð¾Ð»ÑŒÐ·Ð¾Ð²Ð°Ð½Ð¸ÐµÐ¼ ICU
         std::string sourceStr = str_utils::to_string(source);
         std::string descrStr = str_utils::to_string(descr);
 
-        // Âûâîä ñîîáùåíèÿ îá îøèáêå â êîíñîëü
+        // Ð’Ñ‹Ð²Ð¾Ð´ ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ñ Ð¾Ð± Ð¾ÑˆÐ¸Ð±ÐºÐµ Ð² ÐºÐ¾Ð½ÑÐ¾Ð»ÑŒ
         std::cout << "Error Code: " << wcode << "\n"
             << "Source: " << sourceStr << "\n"
             << "Description: " << descrStr << "\n"
@@ -51,21 +92,21 @@ public:
 
     bool ADDIN_API Read(WCHAR_T* wszPropName, tVariant* pVal, long* pErrCode,
         WCHAR_T** errDescriptor) override {
-        // Çàãëóøêà: âîçâðàùàåò false
+        // Ð—Ð°Ð³Ð»ÑƒÑˆÐºÐ°: Ð²Ð¾Ð·Ð²Ñ€Ð°Ñ‰Ð°ÐµÑ‚ false
         return false;
     }
 
     bool ADDIN_API Write(WCHAR_T* wszPropName, tVariant* pVar) override {
-        // Çàãëóøêà: âîçâðàùàåò false
+        // Ð—Ð°Ð³Ð»ÑƒÑˆÐºÐ°: Ð²Ð¾Ð·Ð²Ñ€Ð°Ñ‰Ð°ÐµÑ‚ false
         return false;
     }
 
     bool ADDIN_API RegisterProfileAs(WCHAR_T* wszProfileName) override {
 
-        // Êîíâåðòàöèÿ WCHAR_T* â std::wstring ñ èñïîëüçîâàíèåì ICU
+        // ÐšÐ¾Ð½Ð²ÐµÑ€Ñ‚Ð°Ñ†Ð¸Ñ WCHAR_T* Ð² std::wstring Ñ Ð¸ÑÐ¿Ð¾Ð»ÑŒÐ·Ð¾Ð²Ð°Ð½Ð¸ÐµÐ¼ ICU
         std::string profileUni = str_utils::to_string(wszProfileName);
 
-        // Âûâîä ñîîáùåíèÿ î ðåãèñòðàöèè ïðîôèëÿ â êîíñîëü
+        // Ð’Ñ‹Ð²Ð¾Ð´ ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ñ Ð¾ Ñ€ÐµÐ³Ð¸ÑÑ‚Ñ€Ð°Ñ†Ð¸Ð¸ Ð¿Ñ€Ð¾Ñ„Ð¸Ð»Ñ Ð² ÐºÐ¾Ð½ÑÐ¾Ð»ÑŒ
         std::cout << "Profile registered as: " << profileUni << std::endl;
 
         return true;
@@ -93,7 +134,7 @@ public:
     }
 
     void ADDIN_API CleanEventBuffer() override {
-        // Çàãëóøêà: íè÷åãî íå äåëàåò
+        // Ð—Ð°Ð³Ð»ÑƒÑˆÐºÐ°: Ð½Ð¸Ñ‡ÐµÐ³Ð¾ Ð½Ðµ Ð´ÐµÐ»Ð°ÐµÑ‚
     }
 
     bool ADDIN_API SetStatusLine(WCHAR_T* wszStatusLine) override {
@@ -104,12 +145,36 @@ public:
     }
 
     void ADDIN_API ResetStatusLine() override {
-        // Çàãëóøêà: íè÷åãî íå äåëàåò
+        // Ð—Ð°Ð³Ð»ÑƒÑˆÐºÐ°: Ð½Ð¸Ñ‡ÐµÐ³Ð¾ Ð½Ðµ Ð´ÐµÐ»Ð°ÐµÑ‚
     }
 
+    
+    IInterface* ADDIN_API GetInterface(Interfaces iface) override {
+        switch (iface) {
+        case eIMsgBox:
+            return &m_msgBox;
+        case eIPlatformInfo:
+            return &m_platformInfo;
+#if defined(__ANDROID__)
+        case eIAndroidComponentHelper:
+            // Not implemented stub
+            return nullptr;
+#endif
+        case eIAttachedInfo:
+            return &m_attachedInfo;
+        default:
+            return nullptr;
+        }
+    }
 private:
 
     long m_eventBufferDepth = 5;
+    
+    MsgBoxStub       m_msgBox;
+    PlatformInfoStub m_platformInfo;
+    AttachedInfoStub m_attachedInfo;
 };
+
+
 
 #endif // ADDINDEFBASE_H

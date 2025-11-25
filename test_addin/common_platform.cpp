@@ -1,4 +1,4 @@
-#include "common_platform.h"
+п»ї#include "common_platform.h"
 #include <iomanip>
 
 void printConsole(const std::wstring& text) {
@@ -6,7 +6,7 @@ void printConsole(const std::wstring& text) {
     DWORD written;
     WriteConsoleW(GetStdHandle(STD_OUTPUT_HANDLE), text.c_str(), static_cast<DWORD>(text.size()), &written, NULL);
 #else
-    // На Linux/macOS можно просто использовать std::wcout
+    // РќР° Linux/macOS РјРѕР¶РЅРѕ РїСЂРѕСЃС‚Рѕ РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ std::wcout
     std::wcout << text;
 #endif
 }
@@ -71,11 +71,8 @@ std::wstring getVariantValue(const tVariant& variant)
         wss << TV_DATE(&variant) << L" (date)";
         break;
     case VTYPE_TM:
-        auto val = TV_JOIN(&variant, tmVal);
-        wss << std::put_time(&val, L"%c") << L" (time)";
-        break;
-    default:
-        wss << L"";
+        auto _tmVal = variant.tmVal;
+        wss << std::put_time(&_tmVal, L"%c") << L" (time)";
         break;
     }
     return wss.str();
