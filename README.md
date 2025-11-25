@@ -1,4 +1,4 @@
-# Внешняя компонента 1С AddIn для POS Терминала (Эквайрингового терминала)
+﻿# Внешняя компонента 1С AddIn для POS Терминала (Эквайрингового терминала)
 # Утилита тестирования AddIn 1C 8
 
 **Находится в процессе разработки**
@@ -120,12 +120,57 @@ testaddin file_name.dll --deviceType POSTerminal --script my_test.testscript
 - **Функции** выполняются, а их результаты сохраняются в переменные для дальнейшей проверки (пока не сохраняются, но будут).
 
 ## Установка
-1. Клонируйте репозиторий:
-   ```sh
-   git clone https://github.com/d0codesoft/AddInECRDriver.git
-   ```
-2. Соберите проект mkdir build && cd build && cmake ..
-3. Запустите тесты с помощью `testaddin`.
+
+### ✅ 1. Windows (MSYS2 Clang64)
+Установите [MSYS2](https://www.msys2.org) и откройте **Clang64 shell**, затем выполните:
+
+```bash
+pacman -S --needed     mingw-w64-clang-x86_64-toolchain     mingw-w64-clang-x86_64-cmake     mingw-w64-clang-x86_64-ninja     mingw-w64-clang-x86_64-openssl
+```
+---
+
+### ✅ 2. Linux (Ubuntu/Debian)
+```bash
+sudo apt update
+sudo apt install -y build-essential cmake ninja-build libssl-dev
+```
+---
+
+### ✅ 3. macOS (Homebrew)
+```bash
+brew install llvm cmake ninja openssl
+export CC=clang
+export CXX=clang++
+```
+---
+
+## 3. Конфигурация и сборка (пример **Release**)
+
+### 🔹 Windows (MSYS2 Clang64 + Ninja)
+```bash
+cmake -S . -B build -G "Ninja"     -DCMAKE_BUILD_TYPE=Release     -DVCPKG_TARGET_TRIPLET=x64-mingw-static     -DUSE_SYSTEM_BOOST=ON     -DENABLE_TEST_ADDIN=OFF
+
+cmake --build build
+```
+---
+
+### 🔹 Linux
+```bash
+cmake -S . -B build -G Ninja     -DCMAKE_BUILD_TYPE=Release     -DUSE_SYSTEM_BOOST=ON     -DENABLE_TEST_ADDIN=OFF
+
+cmake --build build
+```
+---
+
+### 🔹 macOS
+```bash
+cmake -S . -B build -G Ninja     -DCMAKE_BUILD_TYPE=Release     -DUSE_SYSTEM_BOOST=ON     -DENABLE_TEST_ADDIN=OFF
+
+cmake --build build
+```
+---
+
+**Примечание:** Для Windows используйте MSYS2 Clang64 и Ninja. Для Linux и macOS используйте соответствующие настройки для вашей платформы.
 
 ## Участие в разработке
 Приветствуются предложения и pull request'ы для улучшения утилиты!
