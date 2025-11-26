@@ -8,10 +8,10 @@
 #include <sstream>
 #include <iomanip>
 
-#if defined(CURRENT_OS_WINDOWS)
+#if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
 #include <shlobj.h>
-#elif defined(CURRENT_OS_MACOS) || defined(CURRENT_OS_LINUX)
+#else
 #include <unistd.h>
 #include <sys/types.h>
 #include <pwd.h>
@@ -19,10 +19,7 @@
 #include <signal.h>
 #include <time.h>
 #include <errno.h>
-#include <iconv.h>
 #include <locale.h>
-#else
-#include <clocale>
 #endif
 
 std::unordered_map<std::wstring, Logger*> Logger::InstancesLog;
@@ -83,8 +80,13 @@ std::wstring Logger::getLogDriverFilePath()
     if (!homeDir) {
         homeDir = getpwuid(getuid())->pw_dir;
     }
-    logPath = homeDir;
-    logPath += "/.addinecrdriver/logs";
+    // Convert UTF-8 (most *nix) char* to wide string
+    std::wstring homeWide = str_utils::to_wstring(std::string(homeDir));
+    logPath = homeWide;
+    if (!logPath.empty() && logPath.back() != L'/') {
+        logPath += L"/";
+    }
+    logPath += L".addinecrdriver/logs";
 #endif
 
     try {
@@ -207,9 +209,13 @@ void Logger::logDebug(std::wstring_view level, std::wstring_view message, std::w
     auto now_c = std::chrono::system_clock::to_time_t(now);
     std::wstringstream ss;
 
-    std::tm tm;
-	// Test if the conversion was successful
-    if (localtime_s(&tm, &now_c) == 0) { 
+    std::tm tm{};
+#if defined(_WIN32) || defined(_WIN64)
+    if (localtime_s(&tm, &now_c) == 0)
+#else
+    if (localtime_r(&now_c, &tm) != nullptr)
+#endif
+    {
         ss << std::put_time(&tm, L"%Y-%m-%d %H:%M:%S")
             << L" [" << mChannelName << L"] "
             << L"(" << file << L":" << line << L") "
@@ -235,8 +241,13 @@ void Logger::log(std::wstring_view level, std::wstring_view message)
     auto now_c = std::chrono::system_clock::to_time_t(now);
     std::wstringstream ss;
 
-    std::tm tm;
-    if (localtime_s(&tm, &now_c) == 0) {
+    std::tm tm{};
+#if defined(_WIN32) || defined(_WIN64)
+    if (localtime_s(&tm, &now_c) == 0)
+#else
+    if (localtime_r(&now_c, &tm) != nullptr)
+#endif
+    {
         ss << std::put_time(&tm, L"%Y-%m-%d %H:%M:%S")
             << L" [" << mChannelName << L"] "
             << level << L": " << message << std::endl;
