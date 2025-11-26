@@ -1,0 +1,101 @@
+﻿name: Build POS Terminal Driver
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-22.04, macos-14]
+        build_type: [Release]
+
+    env:
+      # Force Release (single-config generators) — multi-config still uses --config
+      BUILD_TYPE: ${{ matrix.build_type }}
+      # Toggle if system Boost with CMake CONFIG is unavailable
+      USE_SYSTEM_BOOST: ON
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ----- OS specific dependencies -----
+      - name: Install dependencies (Linux)
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake ninja-build \
+            libssl-dev libboost-dev
+      - name: Install dependencies (macOS)
+        if: startsWith(matrix.os, 'macos')
+        run: |
+          brew update
+            # cmake & ninja usually preinstalled, ensure anyway
+          brew install cmake ninja openssl boost
+          echo "OPENSSL_ROOT_DIR=$(brew --prefix openssl)" >> $GITHUB_ENV
+      - name: Install dependencies (Windows)
+        if: startsWith(matrix.os, 'windows')
+        shell: pwsh
+        run: |
+          choco install -y llvm cmake ninja openssl.light
+          # Optional Boost (may not provide CMake CONFIG named 'boost')
+          choco install -y boost-msvc-14.3 || echo "Boost install skipped"
+          echo "Using clang (configured in CMakeLists.txt)"
+
+      # (Optional) Cache CMake build to speed up subsequent runs
+      - name: Cache build
+        uses: actions/cache@v4
+        with:
+            path: build
+            key: ${{ runner.os }}-build-${{ matrix.build_type }}-${{ hashFiles('CMakeLists.txt', 'src/CMakeLists.txt') }}
+            restore-keys: |
+              ${{ runner.os }}-build-${{ matrix.build_type }}-
+
+      - name: Configure
+        run: |
+          cmake -S . -B build \
+            -G "Ninja" \
+            -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+            -DUSE_SYSTEM_BOOST=${USE_SYSTEM_BOOST}
+
+      - name: Build
+        run: cmake --build build --config ${BUILD_TYPE} --parallel
+
+      - name: Collect artifact
+        shell: bash
+        run: |
+          mkdir -p dist/${{ matrix.os }}
+          # Output root defined in src/CMakeLists.txt: bin/<CMAKE_SYSTEM_NAME>/<CONFIG>
+          SYS_DIR="$(uname -s)"
+          # Map Darwin to macOS directory name if needed
+          if [[ "$SYS_DIR" == "Darwin" ]]; then SYS_DIR="Darwin"; fi
+          # Copy built shared library (names: ECR_Driver_PT_win64.dll / ECR_Driver_PT_linux64.so / ECR_Driver_PT_mac64.dylib)
+          find "bin" -type f \( -name "ECR_Driver_PT_*64.dll" -o -name "ECR_Driver_PT_*64.so" -o -name "ECR_Driver_PT_*64.dylib" \) -exec cp {} "dist/${{ matrix.os }}/" \;
+          echo "Collected files:"
+          ls -l dist/${{ matrix.os }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ECRDriver-${{ matrix.os }}-${{ matrix.build_type }}
+          path: dist/${{ matrix.os }}
+          if-no-files-found: error
+
+  summary:
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: always()
+    steps:
+      - name: Build matrix summary
+        run: echo "All platform builds finished (Windows / Linux / macOS)."
