@@ -36,15 +36,15 @@ public:
 
 #ifdef NDEBUG
     void info(std::wstring_view message, std::wstring_view file = L"", int line = 0) {
-        log(L"INFO", message, file, line);
+        logDebug(L"INFO", message, file, line);
     }
 
     void warn(std::wstring_view message, std::wstring_view file = L"", int line = 0) {
-        log(L"WARN", message, file, line);
+        logDebug(L"WARN", message, file, line);
     }
 
     void error(std::wstring_view message, std::wstring_view file = L"", int line = 0) {
-        log(L"ERROR", message, file, line);
+        logDebug(L"ERROR", message, file, line);
     }
 #else
     void info(std::wstring_view message) {

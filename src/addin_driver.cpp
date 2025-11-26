@@ -66,7 +66,7 @@ bool CAddInECRDriver::Init(void* pConnection)
     initializeDriver();
 
 	LOG_INFO_ADD(L"AddIn", L"Init host application information");
-    LOG_INFO_ADD(L"AddIn", L"Type platform:" + getHostAppTypeName(m_platformInfo.HostAppType));
+    LOG_INFO_ADD(L"AddIn", L"Type platform:" + getHostAppTypeName(m_platformInfo.AppType));
     LOG_INFO_ADD(L"AddIn", L"Version platform:" + m_platformInfo.HostAppVersion);
     LOG_INFO_ADD(L"AddIn", L"User agent information:" + m_platformInfo.UserAgentInformation);
 
@@ -716,28 +716,28 @@ void CAddInECRDriver::initializeDriver()
                 switch (info->Application)
                 {
                 case IPlatformInfo::AppType::eAppThinClient:
-                    m_platformInfo.HostAppType = HostAppType::eAppThickClient;
+                    m_platformInfo.AppType = HostAppType::eAppThickClient;
                     break;
                 case IPlatformInfo::AppType::eAppThickClient:
-                    m_platformInfo.HostAppType = HostAppType::eAppThickClient;
+                    m_platformInfo.AppType = HostAppType::eAppThickClient;
                     break;
                 case IPlatformInfo::AppType::eAppWebClient:
-                    m_platformInfo.HostAppType = HostAppType::eAppWebClient;
+                    m_platformInfo.AppType = HostAppType::eAppWebClient;
                     break;
                 case IPlatformInfo::AppType::eAppServer:
-                    m_platformInfo.HostAppType = HostAppType::eAppServer;
+                    m_platformInfo.AppType = HostAppType::eAppServer;
                     break;
                 case IPlatformInfo::AppType::eAppExtConn:
-                    m_platformInfo.HostAppType = HostAppType::eAppExtConn;
+                    m_platformInfo.AppType = HostAppType::eAppExtConn;
                     break;
                 case IPlatformInfo::AppType::eAppMobileClient:
-                    m_platformInfo.HostAppType = HostAppType::eAppMobileClient;
+                    m_platformInfo.AppType = HostAppType::eAppMobileClient;
                     break;
                 case IPlatformInfo::AppType::eAppMobileServer:
-                    m_platformInfo.HostAppType = HostAppType::eAppMobileServer;
+                    m_platformInfo.AppType = HostAppType::eAppMobileServer;
                     break;
                 default:
-                    m_platformInfo.HostAppType = HostAppType::eAppUnknown;
+                    m_platformInfo.AppType = HostAppType::eAppUnknown;
                 }
 
                 m_platformInfo.HostAppVersion = str_utils::to_wstring(info->AppVersion);

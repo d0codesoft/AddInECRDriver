@@ -159,7 +159,7 @@ std::wstring getHostAppTypeName(HostAppType type);
 
 struct HostPlatformInfo
 {
-    HostAppType         HostAppType = HostAppType::eAppUnknown;
+    HostAppType         AppType = HostAppType::eAppUnknown;
     std::wstring        HostAppVersion = {};
     std::wstring        UserAgentInformation = {};
 	HostAttachedType    AttachedType = HostAttachedType::eAttachedUnknown;
