@@ -511,7 +511,7 @@ std::wstring generateGUID() {
     char uuidStr[37]; // UUID string format is 36 characters plus null terminator
     uuid_unparse(uuid, uuidStr);
 
-    guidBuff = guidString(uuidStr, uuidStr + strlen(uuidStr));
+    guidBuff.assign(uuidStr, uuidStr + std::strlen(uuidStr));
 #endif
 
     if (guidBuff.size() >= 2 && guidBuff.front() == L'{' && guidBuff.back() == L'}') {
