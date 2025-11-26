@@ -37,7 +37,7 @@ Logger::Logger(std::wstring_view channelName) : mChannelName(channelName) {
 
 std::wstring Logger::getLogFilePath()
 {
-	return Logger::current_log_path;
+    return Logger::current_log_path.wstring();
 }
 
 std::wstring Logger::get_full_path(const std::wstring& path)
