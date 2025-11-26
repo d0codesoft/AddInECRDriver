@@ -133,43 +133,48 @@ std::optional<std::wstring> VariantHelper::getStrDoubleValue(const tVariant& var
 }
 
 bool VariantHelper::isValueString(const tVariant& var) {
-    return TV_VT(&var) == VTYPE_PWSTR || TV_VT(&var) == VTYPE_PSTR;
+    return TV_VT(&var) == ENUMVAR::VTYPE_PWSTR || TV_VT(&var) == ENUMVAR::VTYPE_PSTR;
 }
 
 bool VariantHelper::isValueInt(const tVariant& var) {
-    return TV_VT(&var) == VTYPE_I4 || TV_VT(&var) == VTYPE_INT
-        || TV_VT(&var) == VTYPE_I1 || TV_VT(&var) == VTYPE_UI4
-        || TV_VT(&var) == VTYPE_UI2 || TV_VT(&var) == VTYPE_UI1
-        || TV_VT(&var) == VTYPE_UINT || TV_VT(&var) == VTYPE_ERROR;
+    return TV_VT(&var) == ENUMVAR::VTYPE_I4 || TV_VT(&var) == ENUMVAR::VTYPE_INT
+        || TV_VT(&var) == ENUMVAR::VTYPE_I1 || TV_VT(&var) == ENUMVAR::VTYPE_UI4
+        || TV_VT(&var) == ENUMVAR::VTYPE_UI2 || TV_VT(&var) == ENUMVAR::VTYPE_UI1
+        || TV_VT(&var) == ENUMVAR::VTYPE_UINT || TV_VT(&var) == ENUMVAR::VTYPE_ERROR;
 }
 
 bool VariantHelper::isValueLong(const tVariant& var)
 {
-	return TV_VT(&var) == VTYPE_I4 || TV_VT(&var) == VTYPE_INT
-		|| TV_VT(&var) == VTYPE_I1 || TV_VT(&var) == VTYPE_UI4
-		|| TV_VT(&var) == VTYPE_UI2 || TV_VT(&var) == VTYPE_UI1
-		|| TV_VT(&var) == VTYPE_UINT || TV_VT(&var) == VTYPE_ERROR
-        || TV_VT(&var) == VTYPE_HRESULT;
+	return TV_VT(&var) == ENUMVAR::VTYPE_I4 || TV_VT(&var) == ENUMVAR::VTYPE_INT
+		|| TV_VT(&var) == ENUMVAR::VTYPE_I1 || TV_VT(&var) == ENUMVAR::VTYPE_UI4
+		|| TV_VT(&var) == ENUMVAR::VTYPE_UI2 || TV_VT(&var) == ENUMVAR::VTYPE_UI1
+		|| TV_VT(&var) == ENUMVAR::VTYPE_UINT || TV_VT(&var) == ENUMVAR::VTYPE_ERROR
+        || TV_VT(&var) == ENUMVAR::VTYPE_HRESULT;
 }
 
 bool VariantHelper::isValueBool(const tVariant& var) {
-    return TV_VT(&var) == VTYPE_BOOL;
+    return TV_VT(&var) == ENUMVAR::VTYPE_BOOL;
 }
 
 bool VariantHelper::isValueDouble(const tVariant& var) {
-    return TV_VT(&var) == VTYPE_R8 || TV_VT(&var) == VTYPE_R4;
+    return TV_VT(&var) == ENUMVAR::VTYPE_R8 || TV_VT(&var) == ENUMVAR::VTYPE_R4;
 }
 
 bool VariantHelper::isValueDate(const tVariant& var) {
-    return TV_VT(&var) == VTYPE_DATE;
+    return TV_VT(&var) == ENUMVAR::VTYPE_DATE;
 }
 
 bool VariantHelper::isValueArray(const tVariant& var) {
+#if defined(_WIN32) or defined(_WIN64)
     return TV_ISARRAY(&var);
+#else
+    auto vt = TV_VT(&var);
+    return vt == ENUMVAR::VTYPE_ARRAY || vt == ENUMVAR::VTYPE_VECTOR;
+#endif
 }
 
 bool VariantHelper::isValueEmpty(const tVariant& var) {
-    return TV_VT(&var) == VTYPE_EMPTY;
+    return TV_VT(&var) == ENUMVAR::VTYPE_EMPTY;
 }
 
 std::wstring VariantHelper::getTypeValue(const tVariant& var)
