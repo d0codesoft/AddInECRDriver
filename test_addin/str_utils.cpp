@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "str_utils.h"
 #include <limits>
 #include <vector>
@@ -367,6 +367,13 @@ std::u16string str_utils::to_u16string(const wchar_t* str)
 	}
 
 	return result;
+}
+
+std::u16string str_utils::to_u16string(const char16_t* str)
+{
+	if (!str)
+		return std::u16string();
+	return std::u16string(str);
 }
 
 std::string str_utils::to_string(const std::wstring& str)

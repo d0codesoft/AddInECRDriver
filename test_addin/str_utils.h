@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #ifndef STR_UTILS_H
 #define STR_UTILS_H
@@ -19,6 +19,7 @@ namespace str_utils
 	std::u16string to_u16string(const std::wstring& str);
 	std::u16string to_u16string(const char* str, const std::string& encoding = "UTF-8");
 	std::u16string to_u16string(const wchar_t* str);
+	std::u16string to_u16string(const char16_t* str);
 
 	std::string to_string(const std::wstring& str);
 	std::string to_string(const std::u16string& str);

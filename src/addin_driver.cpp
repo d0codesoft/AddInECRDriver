@@ -336,14 +336,13 @@ void CAddInECRDriver::SetLocale(const WCHAR_T* loc)
     std::u16string locale = std::u16string(loc);
 	auto lang = detectLanguage(locale);
 #else
-    char* char_locale = ConvertWCharToChar(loc);
-    setenv("LANG", char_locale, 1);    // Set environment variable
-    setenv("LC_ALL", char_locale, 1);  // Apply to all locales
-    setlocale(LC_ALL, char_locale);
-    free(char_locale); // Free the allocated memory
+    std::string char_locale = str_utils::to_string(loc);
+    setenv("LANG", char_locale.c_str(), 1);    // Set environment variable
+    setenv("LC_ALL", char_locale.c_str(), 1);  // Apply to all locales
+    setlocale(LC_ALL, char_locale.c_str());
     
     std::u16string locale = str_utils::to_u16string(loc);
-    auto lang = detectLanguage(locale);
+    auto lang = detectLanguage(loc);
     //We convert in char* char_locale
     //also we establish locale
     //setlocale(LC_ALL, char_locale);
