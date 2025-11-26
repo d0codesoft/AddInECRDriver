@@ -170,8 +170,8 @@ else()
 endif()
 
 # OpenSSL (cross-platform)
-find_package(OpenSSL REQUIRED)
-target_link_libraries(${lib_name} PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+find_package(OpenSSL COMPONENTS SSL)
+target_link_libraries(${lib_name} PRIVATE OpenSSL::SSL)
 
 add_library(pugixml STATIC
     ${CMAKE_SOURCE_DIR}/include/pugixml/pugixml.cpp
@@ -189,6 +189,14 @@ target_compile_definitions(pugixml PUBLIC
 
 # Link pugixml into your driver
 target_link_libraries(${lib_name} PRIVATE pugixml)
+
+if(UNIX)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(UUID REQUIRED uuid)
+
+    target_include_directories(${lib_name} PRIVATE ${UUID_INCLUDE_DIRS})
+    target_link_libraries(${lib_name} PRIVATE ${UUID_LIBRARIES})
+endif()
 
 #find_package(pugixml CONFIG REQUIRED)
 #target_link_libraries(${lib_name} PRIVATE pugixml)
