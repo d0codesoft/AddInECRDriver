@@ -213,7 +213,7 @@ bool WebSocketConnection::isConnected() const {
 ComConnection::ComConnection()
     : serial_(io_context_)
 {
-    this->port = "COM1";
+    this->port_ = "COM1";
 	this->baud_rate_ = 9600;
 }
 

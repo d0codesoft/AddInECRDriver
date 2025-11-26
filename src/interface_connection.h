@@ -204,8 +204,8 @@ public:
 
 private:
     boost::asio::io_context ioc_;
-    boost::asio::ssl::context ssl_ctx_{ boost::asio::ssl::context::tlsv13_client };
     boost::asio::strand<boost::asio::io_context::executor_type> strand_;
+    boost::asio::ssl::context ssl_ctx_{ boost::asio::ssl::context::tlsv13_client };
     boost::asio::ip::tcp::resolver resolver_; // For DNS resolution
     boost::beast::websocket::stream<boost::asio::ssl::stream<boost::asio::ip::tcp::socket>> ws_;
 
@@ -253,7 +253,7 @@ private:
 	boost::asio::serial_port serial_;
 	std::atomic<bool> keepAlive_{ true };
 	std::chrono::milliseconds reconnectDelay_{ 5000 };
-    std::string port;
+    std::string port_;
 	uint32_t baud_rate_;
 };
 

@@ -15,6 +15,15 @@
 #include <clocale>
 #endif
 
+#if defined(_WIN32) || defined(_WIN64)
+#ifdef min
+#undef min
+#endif
+#ifdef max
+#undef max
+#endif
+#endif
+
 #include <stdio.h>
 #include <wchar.h>
 #include <string>
@@ -46,8 +55,10 @@ CAddInECRDriver::CAddInECRDriver()
 //---------------------------------------------------------------------------//
 CAddInECRDriver::~CAddInECRDriver()
 {
-	if (m_driver)
+    if (m_driver)
+    {
         m_driver.reset();
+    }
 }
 
 //---------------------------------------------------------------------------//
@@ -124,7 +135,11 @@ long CAddInECRDriver::FindProp(const WCHAR_T* wsPropName)
         });
 
     if (it != properties.end()) {
-        size_t index = std::distance(properties.begin(), it);
+        const auto dist = std::distance(properties.begin(), it);
+        if (dist < 0 || static_cast<size_t>(dist) > static_cast<size_t>(std::numeric_limits<long>::max())) {
+            return plPropNum;
+		}
+        const size_t index = static_cast<size_t>(dist);
         plPropNum = static_cast<long>(index);
     }
     
@@ -134,8 +149,11 @@ long CAddInECRDriver::FindProp(const WCHAR_T* wsPropName)
 const WCHAR_T* CAddInECRDriver::GetPropName(long lPropNum, long lPropAlias)
 {
     const auto& properties = this->m_driver->GetProperties();
-	if (properties.empty() && lPropNum >= properties.size())
-		return NULL;
+    if (properties.empty()
+        || lPropNum < 0
+        || static_cast<size_t>(lPropNum) >= properties.size()) {
+        return NULL;
+    }
 
     std::u16string wsCurrentName = {};
 
@@ -164,11 +182,16 @@ const WCHAR_T* CAddInECRDriver::GetPropName(long lPropNum, long lPropAlias)
 bool CAddInECRDriver::GetPropVal(const long lPropNum, tVariant* pvarPropVal)
 {
     const auto& properties = this->m_driver->GetProperties();
-	if (properties.empty() && lPropNum >= properties.size())
+    if (properties.empty()
+        || lPropNum < 0
+        || static_cast<size_t>(lPropNum) >= properties.size()) {
         return false;
+    }
 	
     if (!properties[lPropNum].getPropValFunc)
-		return false;
+    {
+        return false;
+    }
 
 	return properties[lPropNum].getPropValFunc(pvarPropVal);
 }
@@ -177,11 +200,16 @@ bool CAddInECRDriver::GetPropVal(const long lPropNum, tVariant* pvarPropVal)
 bool CAddInECRDriver::SetPropVal(const long lPropNum, tVariant* varPropVal)
 {
     const auto& properties = this->m_driver->GetProperties();
-    if (properties.empty() && lPropNum >= properties.size())
+    if (properties.empty()
+        || lPropNum < 0
+        || static_cast<size_t>(lPropNum) >= properties.size()) {
         return false;
+    }
 
     if (!properties[lPropNum].setPropValFunc)
+    {
         return false;
+    }
     
     return properties[lPropNum].setPropValFunc(varPropVal);
 }
@@ -189,8 +217,11 @@ bool CAddInECRDriver::SetPropVal(const long lPropNum, tVariant* varPropVal)
 bool CAddInECRDriver::IsPropReadable(const long lPropNum)
 {
     const auto& properties = this->m_driver->GetProperties();
-    if (properties.empty() && lPropNum >= properties.size())
+    if (properties.empty()
+        || lPropNum < 0
+        || static_cast<size_t>(lPropNum) >= properties.size()) {
         return false;
+    }
 
     return properties[lPropNum].isReadable;
 }
@@ -198,8 +229,11 @@ bool CAddInECRDriver::IsPropReadable(const long lPropNum)
 bool CAddInECRDriver::IsPropWritable(const long lPropNum)
 {
     const auto& properties = this->m_driver->GetProperties();
-    if (properties.empty() && lPropNum >= properties.size())
+    if (properties.empty()
+        || lPropNum < 0
+        || static_cast<size_t>(lPropNum) >= properties.size()) {
         return false;
+    }
 
     return properties[lPropNum].isWritable;
 }
@@ -214,8 +248,10 @@ long CAddInECRDriver::FindMethod(const WCHAR_T* wsMethodName)
 {
 	long plMethodNum = -1;
     const auto& methods = m_driver->GetMethods();
-	if (methods.empty())
-		return plMethodNum;
+    if (methods.empty())
+    {
+        return plMethodNum;
+    }
 
     std::u16string methodName = {};
 	if (!getString(wsMethodName, methodName)) {
@@ -229,7 +265,11 @@ long CAddInECRDriver::FindMethod(const WCHAR_T* wsMethodName)
 
 
     if (it != methods.end()) {
-        size_t index = std::distance(methods.begin(), it);
+        const auto dist = std::distance(methods.begin(), it);
+        if (dist < 0 || static_cast<size_t>(dist) > static_cast<size_t>(std::numeric_limits<long>::max())) {
+            return plMethodNum;
+        }
+		const size_t index = static_cast<size_t>(dist);
         plMethodNum = static_cast<long>(index);
     }
 
@@ -240,8 +280,12 @@ const WCHAR_T* CAddInECRDriver::GetMethodName(const long lMethodNum, const long 
 {
     const auto& methods = m_driver->GetMethods();
 
-	if (methods.empty() && lMethodNum >= methods.size())
-		return NULL;
+    if (methods.empty()
+        || lMethodNum < 0
+        || static_cast<size_t>(lMethodNum) >= methods.size())
+    {
+        return NULL;
+    }
 	
     std::u16string wsCurrentName = {};
 
@@ -269,8 +313,11 @@ const WCHAR_T* CAddInECRDriver::GetMethodName(const long lMethodNum, const long 
 long CAddInECRDriver::GetNParams(const long lMethodNum)
 {
     const auto& methods = m_driver->GetMethods();
-	if (methods.empty() && lMethodNum >= methods.size())
-		return 0;
+    if (methods.empty()
+        || lMethodNum < 0
+        || static_cast<size_t>(lMethodNum) >= methods.size()) {
+        return 0;
+    }
 	
 	return static_cast<long>(methods[lMethodNum].paramCount);
 }
@@ -278,14 +325,24 @@ long CAddInECRDriver::GetNParams(const long lMethodNum)
 bool CAddInECRDriver::GetParamDefValue(const long lMethodNum, const long lParamNum,
     tVariant* pvarParamDefValue)
 {
-    TV_VT(pvarParamDefValue) = VTYPE_EMPTY;
+	setNullValue(pvarParamDefValue);
+    //TV_VT(pvarParamDefValue) = VTYPE_EMPTY;
 
     const auto& methods = m_driver->GetMethods();
-    if (methods.empty() && lMethodNum >= methods.size())
+    if (methods.empty()
+        || lMethodNum < 0
+        || static_cast<size_t>(lMethodNum) >= methods.size()) {
         return false;
+    }
+	const auto method_index = static_cast<size_t>(lMethodNum);
+    if (lParamNum < 0
+        || static_cast<size_t>(lParamNum) >= methods[lMethodNum].paramCount) {
+        return false;
+    }
+    const auto param_index = static_cast<unsigned int>(lParamNum);
 
-	auto itParam = methods[lMethodNum].default_value_param.find(lParamNum);
-    if (itParam == methods[lMethodNum].default_value_param.end())
+	auto itParam = methods[method_index].default_value_param.find(param_index);
+    if (itParam == methods[method_index].default_value_param.end())
         return true;
 
     return SetParam(pvarParamDefValue, &itParam->second);
@@ -294,8 +351,11 @@ bool CAddInECRDriver::GetParamDefValue(const long lMethodNum, const long lParamN
 bool CAddInECRDriver::HasRetVal(const long lMethodNum)
 {
     const auto& methods = m_driver->GetMethods();
-    if (methods.empty() && lMethodNum >= methods.size())
+    if (methods.empty()
+        || lMethodNum < 0
+        || static_cast<size_t>(lMethodNum) >= methods.size()) {
         return false;
+    }
 
     return methods[lMethodNum].hasRetVal;
 }
@@ -304,8 +364,11 @@ bool CAddInECRDriver::CallAsProc(const long lMethodNum,
     tVariant* paParams, const long lSizeArray)
 {
     const auto& methods = m_driver->GetMethods();
-    if (methods.empty() && lMethodNum >= methods.size())
+    if (methods.empty()
+        || lMethodNum < 0
+        || static_cast<size_t>(lMethodNum) >= methods.size()) {
         return false;
+    }
 
 
 	if (std::holds_alternative<CallAsProc1C>(methods[lMethodNum].ptr_method)) {
@@ -319,8 +382,11 @@ bool CAddInECRDriver::CallAsFunc(const long lMethodNum,
     tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray)
 {
     const auto& methods = m_driver->GetMethods();
-    if (methods.empty() && lMethodNum >= methods.size())
+    if (methods.empty()
+        || lMethodNum < 0
+        || static_cast<size_t>(lMethodNum) >= methods.size()) {
         return false;
+    }
 
     if (std::holds_alternative<CallAsFunc1C>(methods[lMethodNum].ptr_method)) {
         return std::get<CallAsFunc1C>(methods[lMethodNum].ptr_method)(pvarRetValue, paParams, lSizeArray);
@@ -343,9 +409,6 @@ void CAddInECRDriver::SetLocale(const WCHAR_T* loc)
     
     std::u16string locale = str_utils::to_u16string(loc);
     auto lang = detectLanguage(loc);
-    //We convert in char* char_locale
-    //also we establish locale
-    //setlocale(LC_ALL, char_locale);
 #endif
 	_setLanguageCode(lang);
 }
@@ -366,8 +429,9 @@ void ADDIN_API CAddInECRDriver::SetUserInterfaceLanguageCode(const WCHAR_T* lang
 //---------------------------------------------------------------------------//
 bool CAddInECRDriver::setMemManager(void* mem)
 {
-	if (!mem)
-		return false;
+    if (!mem) {
+        return false;
+    }
 
     m_iMemory = static_cast<IMemoryManager*>(mem);
     return m_iMemory != nullptr;
@@ -419,8 +483,6 @@ bool CAddInECRDriver::getString1C(const std::u16string& source, WCHAR_T** value,
 		{
 			(*value)[i] = (WCHAR_T)source[i];
 		}
-        //memcpy(*value, source.c_str(), source.size() * sizeof(char16_t));
-        //(*value)[source.size()] = 0;
         length = static_cast<uint32_t>(source.size());
         return true;
     }
@@ -677,7 +739,7 @@ bool CAddInECRDriver::SetParam(tVariant* pvarParamDefValue, const ParamDefault* 
 
     if (std::holds_alternative<int>(*defaultParam)) {
         TV_VT(pvarParamDefValue) = VTYPE_I4;
-		long lVal = std::get<int>(*defaultParam);
+		int lVal = std::get<int>(*defaultParam);
 		TV_I4(pvarParamDefValue) = lVal;
     }
     else if (std::holds_alternative<std::u16string>(*defaultParam)) {
