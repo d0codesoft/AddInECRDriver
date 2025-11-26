@@ -2,36 +2,45 @@
 #include "pch.h"
 #include "logger.h"
 
-#if !defined(OS_LINUX) && !defined(OS_MACOS)
+#ifdef _WIN32
+#include <windows.h>
 
-BOOL APIENTRY DllMain( HMODULE hModule,
-                       DWORD  ul_reason_for_call,
-                       LPVOID lpReserved
-                     )
+BOOL APIENTRY DllMain(HMODULE hModule,
+    DWORD  ul_reason_for_call,
+    LPVOID lpReserved)
 {
     switch (ul_reason_for_call)
     {
     case DLL_PROCESS_ATTACH: {
-		auto logDir = Logger::getLogDriverFilePath();
-		LOGGER_INITIALIZE_DEFAULT(logDir);
-		LOG_INFO_ADD(L"Driver", L"Driver loaded");
+        auto logDir = Logger::getLogDriverFilePath();
+        LOGGER_INITIALIZE_DEFAULT(logDir);
+        LOG_INFO_ADD(L"Driver", L"Driver loaded");
         break;
     }
-    case DLL_THREAD_ATTACH:
-        break;
-    case DLL_THREAD_DETACH:
-        break;
     case DLL_PROCESS_DETACH:
-		LOG_INFO_ADD(L"Driver", L"Driver unloaded");
+        LOG_INFO_ADD(L"Driver", L"Driver unloaded");
+        break;
+    case DLL_THREAD_ATTACH:
+    case DLL_THREAD_DETACH:
         break;
     }
     return TRUE;
 }
-#else
-__attribute__((constructor)) void lib_init() {
-    //SysUtils::initLogging(); // Initialize logging
+
+#else // POSIX (Linux/macOS)
+
+__attribute__((constructor))
+static void lib_init()
+{
+    auto logDir = Logger::getLogDriverFilePath();
+    LOGGER_INITIALIZE_DEFAULT(logDir);
+    LOG_INFO_ADD(L"Driver", L"Driver loaded");
 }
 
-__attribute__((destructor)) void lib_cleanup() {
+__attribute__((destructor))
+static void lib_cleanup()
+{
+    LOG_INFO_ADD(L"Driver", L"Driver unloaded");
 }
+
 #endif
