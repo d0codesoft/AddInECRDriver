@@ -2502,46 +2502,53 @@ bool DriverPOSTerminal::ActionOpenFileLog(tVariant* pvarRetValue, tVariant* paPa
 	// Get the log file path
 	std::wstring logFilePath = Logger::getLogFilePath();
 
-	// Check if the file exists
-	if (logFilePath.empty() || GetFileAttributes(logFilePath.c_str()) == INVALID_FILE_ATTRIBUTES) {
-		return fail(pvarRetValue, L"ActionOpenFileLog", IDS_DRIVER_ERROR_DEVICEID_IDENTEFIER);
+	// Cross‑platform file existence check
+#if defined(_WIN32) || defined(_WIN64)
+	if (logFilePath.empty()) {
+		return fail(pvarRetValue, L"ActionOpenFileLog", IDS_DRIVER_ERROR_DEVICEID_IDENTEFIER, L"Log file path is empty");
 	}
+	DWORD attr = GetFileAttributesW(logFilePath.c_str());
+	if (attr == INVALID_FILE_ATTRIBUTES || (attr & FILE_ATTRIBUTE_DIRECTORY)) {
+		return fail(pvarRetValue, L"ActionOpenFileLog", IDS_DRIVER_ERROR_DEVICEID_IDENTEFIER, L"Log file does not exist");
+	}
+#else
+	if (logFilePath.empty()) {
+		return fail(pvarRetValue, L"ActionOpenFileLog", IDS_DRIVER_ERROR_DEVICEID_IDENTEFIER, L"Log file path is empty");
+	}
+	std::string utf8Path = str_utils::to_string(logFilePath);
+	struct stat sb {};
+	if (stat(utf8Path.c_str(), &sb) != 0 || !S_ISREG(sb.st_mode)) {
+		return fail(pvarRetValue, L"ActionOpenFileLog", IDS_DRIVER_ERROR_DEVICEID_IDENTEFIER, L"Log file does not exist");
+	}
+#endif
 
-#if defined(CURRENT_OS_WINDOWS)
-
-	// Open the file using the default associated application
-	HINSTANCE result = ShellExecute(
-		nullptr,                // Parent window handle (nullptr for no parent)
-		L"open",                // Operation to perform
-		logFilePath.c_str(),    // File to open
-		nullptr,                // Parameters (not needed for opening a file)
-		nullptr,                // Default directory (not needed)
-		SW_SHOWNORMAL           // Show the application normally
-	);
-
-	// Check if the operation was successful
-	if (reinterpret_cast<std::intptr_t>(result) <= 32) {
+	// Open file with default application
+#if defined(_WIN32) || defined(_WIN64)
+	HINSTANCE hRes = ShellExecuteW(
+		nullptr,
+		L"open",
+		logFilePath.c_str(),
+		nullptr,
+		nullptr,
+		SW_SHOWNORMAL);
+	if (reinterpret_cast<std::intptr_t>(hRes) <= 32) {
 		return fail(pvarRetValue, L"ActionOpenFileLog", L"Failed to open log file");
 	}
-#elif defined(CURRENT_OS_MACOS)
-	// macOS-specific implementation
-	std::string command = "open \"" + str_utils::to_string(logFilePath) + "\"";
-	if (std::system(command.c_str()) != 0) {
+#elif defined(__APPLE__) || defined(__MACH__)
+	std::string cmd = "open \"" + utf8Path + "\"";
+	if (std::system(cmd.c_str()) != 0) {
 		return fail(pvarRetValue, L"ActionOpenFileLog", L"Failed to open log file");
 	}
-#elif defined(CURRENT_OS_LINUX)
-	// Linux-specific implementation
-	std::string command = "xdg-open \"" + str_utils::to_string(logFilePath) + "\"";
-	if (std::system(command.c_str()) != 0) {
+#elif defined(__linux__)
+	std::string cmd = "xdg-open \"" + utf8Path + "\"";
+	if (std::system(cmd.c_str()) != 0) {
 		return fail(pvarRetValue, L"ActionOpenFileLog", L"Failed to open log file");
 	}
 #else
-	// Unsupported platform
 	return fail(pvarRetValue, L"ActionOpenFileLog", L"Unsupported platform");
 #endif
 
 	m_addInBase->setBoolValue(pvarRetValue, true);
-
 	return true;
 }
 
