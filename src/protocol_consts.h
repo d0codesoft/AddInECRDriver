@@ -1,6 +1,10 @@
 ﻿#pragma once
 #include <string>
 
+#if !defined(_WIN32) && !defined(_WIN64)
+using UINT = unsigned int;
+#endif
+
 const std::wstring PROTOCOL_VERSION = L"1.0";
 
 // Methods
