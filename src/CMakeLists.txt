@@ -175,7 +175,6 @@ target_link_libraries(${lib_name} PRIVATE OpenSSL::SSL)
 
 add_library(pugixml STATIC
     ${CMAKE_SOURCE_DIR}/include/pugixml/pugixml.cpp
-    ${CMAKE_SOURCE_DIR}/include/pugixml/pugixml.hpp
 )
 
 target_include_directories(pugixml PUBLIC
@@ -186,6 +185,8 @@ target_compile_definitions(pugixml PUBLIC
     PUGIXML_WCHAR_MODE
     PUGIXML_STATIC
 )
+
+set_target_properties(pugixml PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 # Link pugixml into your driver
 target_link_libraries(${lib_name} PRIVATE pugixml)
