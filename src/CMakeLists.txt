@@ -134,12 +134,22 @@ option(USE_SYSTEM_BOOST "Use system-installed Boost via CONFIG mode" ON)
 
 if(USE_SYSTEM_BOOST)
 
-    # Required Boost components
-    find_package(boost 1.89 CONFIG REQUIRED)
+    set(Boost_USE_STATIC_LIBS ON)
+    set(Boost_USE_MULTITHREADED ON)
 
-    # Link libraries
+    # Required Boost components
+    find_package(Boost 1.89 CONFIG REQUIRED COMPONENTS
+                        system
+                        asio
+                        beast
+                        thread
+    )
+
     target_link_libraries(${lib_name} PRIVATE
-        Boost::boost
+         Boost::system
+         Boost::asio
+         Boost::beast
+         Boost::thread
     )
 
     # MSVC runtime customization (optional)
