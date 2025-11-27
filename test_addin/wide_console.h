@@ -77,11 +77,16 @@ public:
 #else
         std::cout << text;
         if (logFile_.is_open()) {
-            if (addTimestamp) { logFile_ << getCurrentDateTime(); }
-            logFile_ << text;
+            if (addTimestamp) {
+                logFile_ << getCurrentDateTime();
+                addTimestamp = false;
+            }
+            // Convert std::string to std::wstring before writing to wofstream
+            std::wstring wtext = str_utils::to_wstring(text);
+            logFile_ << wtext;
         }
-#endif
         return *this;
+#endif
     }
 
     // Оператор вывода для стандартных типов (int, double и т. д.)
