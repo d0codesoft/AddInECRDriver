@@ -33,7 +33,7 @@
     <ClCompile Include="wide_console.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="str_utils.cpp">
+    <ClCompile Include="str_utils_test.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="extension_test_script.cpp">
@@ -53,7 +53,7 @@
     <ClInclude Include="wide_console.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="str_utils.h">
+    <ClInclude Include="str_utils_test.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="extension_test_script.h">

@@ -67,10 +67,10 @@ std::wstring getVariantValue(const tVariant& variant)
         wss << (TV_BOOL(&variant) ? L"true" : L"false");
         break;
     case VTYPE_PSTR:
-        wss << str_utils::to_wstring(std::string(TV_STR(&variant))) << L" (PSTR)";
+        wss << str_utils_test::to_wstring(std::string(TV_STR(&variant))) << L" (PSTR)";
         break;
     case VTYPE_PWSTR:
-        wss << str_utils::to_wstring(TV_WSTR(&variant)) << L" (PWSTR)";
+        wss << str_utils_test::to_wstring(TV_WSTR(&variant)) << L" (PWSTR)";
         break;
     case VTYPE_DATE:
         wss << TV_DATE(&variant) << L" (date)";
@@ -83,9 +83,16 @@ std::wstring getVariantValue(const tVariant& variant)
     return wss.str();
 }
 
-SharedLibrary::SharedLibrary(const std::wstring& libName) : handle(LoadSharedLibrary(libName.c_str())) {
+SharedLibrary::SharedLibrary(const std::wstring& libName) {
+#ifdef _WIN32
+    handle = LoadSharedLibrary(libName.c_str());
+#else
+    std::string narrowLibName = str_utils_test::to_string(libName);
+    handle = LoadSharedLibrary(narrowLibName.c_str());
+#endif
+
     if (!handle) {
-        std::wcout << L"Failed to load the library: " << libName;
+        std::wcout << L"Failed to load the library: " << libName << std::endl;
     }
 }
 

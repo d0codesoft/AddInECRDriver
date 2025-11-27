@@ -1,13 +1,13 @@
 ﻿#pragma once
 
-#ifndef STR_UTILS_H
-#define STR_UTILS_H
+#ifndef STR_UTILS_TEST_H
+#define STR_UTILS_TEST_H
 
 #include <string>
 #include <iostream>
 #include <optional>
 
-namespace str_utils
+namespace str_utils_test
 {
 
 	std::wstring to_wstring(const std::string& str, const std::string& encoding = "UTF-8");
@@ -36,5 +36,5 @@ namespace str_utils
 
 } // namespace str_utils
 
-#endif // STR_UTILS_H
+#endif // STR_UTILS_TEST_H
 

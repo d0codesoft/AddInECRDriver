@@ -14,7 +14,7 @@ set(Header_Files
     ComponentBaseTester.h
     extension_test_script.h
     parser_call.h
-    str_utils.h
+    str_utils_test.h
     wide_console.h
 )
 set(Source_Files
@@ -23,7 +23,7 @@ set(Source_Files
     ComponentBaseTester.cpp
     extension_test_script.cpp
     parser_call.cpp
-    str_utils.cpp
+    str_utils_test.cpp
     test_addin.cpp
     wide_console.cpp
 )

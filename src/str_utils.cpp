@@ -384,6 +384,11 @@ std::u16string str_utils::to_u16string(const wchar_t* str)
 	return result;
 }
 
+std::u16string str_utils::to_u16string(const char16_t* str)
+{
+	return std::u16string(str);
+}
+
 std::string str_utils::to_string(const std::wstring& str)
 {
 	std::string result;

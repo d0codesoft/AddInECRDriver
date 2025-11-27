@@ -65,14 +65,14 @@ std::wstring getStringValue(const tVariant& var)
     switch (TV_VT(&var))
     {
     case VTYPE_PWSTR: {
-		std::wstring wstr = str_utils::to_wstring(var.pwstrVal);
+		std::wstring wstr = str_utils_test::to_wstring(var.pwstrVal);
         return wstr;
     }
     case VTYPE_PSTR:
 #ifdef _WIN32
-        return str_utils::to_wstring(std::string(var.pstrVal), "windows-1251");
+        return str_utils_test::to_wstring(std::string(var.pstrVal), "windows-1251");
 #else
-		return str_utils::to_wstring(std::string(var.pstrVal));
+		return str_utils_test::to_wstring(std::string(var.pstrVal));
 #endif
     }
     return std::wstring();

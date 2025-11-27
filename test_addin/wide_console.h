@@ -9,7 +9,7 @@
 #include <fstream>
 #include <chrono>
 #include <iomanip>
-#include "str_utils.h"
+#include "str_utils_test.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -34,7 +34,7 @@ public:
         SetCurrentConsoleFontEx(GetStdHandle(STD_OUTPUT_HANDLE), FALSE, &cfi);
 #endif
 
-		const auto logFilePath = str_utils::to_string(logFileName);
+		const auto logFilePath = str_utils_test::to_string(logFileName);
         std::wifstream check_file(logFilePath, std::ios::binary | std::ios::ate);
         bool is_empty = check_file.tellg() == 0;
         check_file.close();
@@ -72,7 +72,7 @@ public:
     // Оператор вывода для std::string (автоматически преобразует в UTF-16 на Windows)
     Console& operator<<(const std::string& text) {
 #ifdef _WIN32
-        std::wstring wtext = str_utils::to_wstring(text);
+        std::wstring wtext = str_utils_test::to_wstring(text);
         return *this << wtext;
 #else
         std::cout << text;
@@ -82,7 +82,7 @@ public:
                 addTimestamp = false;
             }
             // Convert std::string to std::wstring before writing to wofstream
-            std::wstring wtext = str_utils::to_wstring(text);
+            std::wstring wtext = str_utils_test::to_wstring(text);
             logFile_ << wtext;
         }
         return *this;

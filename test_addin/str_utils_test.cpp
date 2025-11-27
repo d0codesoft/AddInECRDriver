@@ -1,6 +1,6 @@
 ﻿#include "pch.h"
-#include "str_utils.h"
-#include <limits>
+#include "str_utils_test.h"
+#include <limits>>
 #include <vector>
 #include <algorithm>
 
@@ -17,7 +17,7 @@
 #include <cstring>
 #endif
 
-std::wstring str_utils::to_wstring(const std::string& str, const std::string& encoding) {
+std::wstring str_utils_test::to_wstring(const std::string& str, const std::string& encoding) {
 #if defined(_WIN32)
 	UINT codePage;
 
@@ -73,7 +73,7 @@ std::wstring str_utils::to_wstring(const std::string& str, const std::string& en
 #endif
 }
 
-std::wstring str_utils::to_wstring(const std::u16string& str)
+std::wstring str_utils_test::to_wstring(const std::u16string& str)
 {
 	std::wstring result;
 
@@ -115,7 +115,7 @@ std::wstring str_utils::to_wstring(const std::u16string& str)
 	return result;
 }
 
-std::wstring str_utils::to_wstring(const char* str, const std::string& encoding)
+std::wstring str_utils_test::to_wstring(const char* str, const std::string& encoding)
 {
 	if (!str)
 		return {};
@@ -171,7 +171,7 @@ std::wstring str_utils::to_wstring(const char* str, const std::string& encoding)
 #endif
 }
 
-std::wstring str_utils::to_wstring(const char16_t* str)
+std::wstring str_utils_test::to_wstring(const char16_t* str)
 {
 	if (!str) return {};
 
@@ -211,22 +211,22 @@ std::wstring str_utils::to_wstring(const char16_t* str)
 	return result;
 }
 
-std::wstring str_utils::to_wstring(const int value)
+std::wstring str_utils_test::to_wstring(const int value)
 {
 	return std::to_wstring(value);
 }
 
-std::wstring str_utils::to_wstring(const size_t value)
+std::wstring str_utils_test::to_wstring(const size_t value)
 {
 	return std::to_wstring(value);
 }
 
-std::wstring str_utils::to_wstring(const long value)
+std::wstring str_utils_test::to_wstring(const long value)
 {
 	return std::to_wstring(value);
 }
 
-std::u16string str_utils::to_u16string(const std::string& str, const std::string& encoding)
+std::u16string str_utils_test::to_u16string(const std::string& str, const std::string& encoding)
 {
 	if (str.empty()) return {};
 
@@ -278,7 +278,7 @@ std::u16string str_utils::to_u16string(const std::string& str, const std::string
 #endif
 }
 
-std::u16string str_utils::to_u16string(const std::wstring& str)
+std::u16string str_utils_test::to_u16string(const std::wstring& str)
 {
 	std::u16string result;
 
@@ -303,7 +303,7 @@ std::u16string str_utils::to_u16string(const std::wstring& str)
 	return result;
 }
 
-std::u16string str_utils::to_u16string(const char* str, const std::string& encoding)
+std::u16string str_utils_test::to_u16string(const char* str, const std::string& encoding)
 {
 	if (!str || !*str) return {};
 
@@ -355,7 +355,7 @@ std::u16string str_utils::to_u16string(const char* str, const std::string& encod
 #endif
 }
 
-std::u16string str_utils::to_u16string(const wchar_t* str)
+std::u16string str_utils_test::to_u16string(const wchar_t* str)
 {
 	std::u16string result;
 
@@ -384,7 +384,7 @@ std::u16string str_utils::to_u16string(const wchar_t* str)
 	return result;
 }
 
-std::string str_utils::to_string(const std::wstring& str)
+std::string str_utils_test::to_string(const std::wstring& str)
 {
 	std::string result;
 	result.reserve(str.size());  // rough estimate
@@ -426,7 +426,7 @@ std::string str_utils::to_string(const std::wstring& str)
 	return result;
 }
 
-std::string str_utils::to_string(const std::u16string& str)
+std::string str_utils_test::to_string(const std::u16string& str)
 {
 	std::string result;
 	result.reserve(str.size());  // a rough reserve
@@ -483,7 +483,7 @@ std::string str_utils::to_string(const std::u16string& str)
 	return result;
 }
 
-std::string str_utils::to_string(const wchar_t* str)
+std::string str_utils_test::to_string(const wchar_t* str)
 {
 	if (!str) return {};
 
@@ -528,7 +528,7 @@ std::string str_utils::to_string(const wchar_t* str)
 #endif
 }
 
-std::string str_utils::to_string(const char16_t* str)
+std::string str_utils_test::to_string(const char16_t* str)
 {
 	std::string result;
 
@@ -579,7 +579,7 @@ std::string str_utils::to_string(const char16_t* str)
 	return result;
 }
 
-bool str_utils::iequals(const std::wstring& a, const std::wstring& b) noexcept
+bool str_utils_test::iequals(const std::wstring& a, const std::wstring& b) noexcept
 {
 #ifdef _WIN32
 	// Unicode-aware, ordinal, case-insensitive
@@ -597,7 +597,7 @@ bool str_utils::iequals(const std::wstring& a, const std::wstring& b) noexcept
 #endif
 }
 
-bool str_utils::iequals(const std::string& a, const std::string& b) noexcept
+bool str_utils_test::iequals(const std::string& a, const std::string& b) noexcept
 {
 	if (a.size() != b.size())
 		return false;
@@ -608,7 +608,7 @@ bool str_utils::iequals(const std::string& a, const std::string& b) noexcept
 		});
 }
 
-std::optional<uint32_t> str_utils::to_UInt(const std::wstring& value)
+std::optional<uint32_t> str_utils_test::to_UInt(const std::wstring& value)
 {
 	// Trim whitespace
 	const auto first = value.find_first_not_of(L" \t\r\n");
@@ -630,7 +630,7 @@ std::optional<uint32_t> str_utils::to_UInt(const std::wstring& value)
 	return result;
 }
 
-std::optional<double> str_utils::to_Double(const std::wstring& value)
+std::optional<double> str_utils_test::to_Double(const std::wstring& value)
 {
 	try {
 		// Normalize decimal separator: accept comma by converting it to dot
