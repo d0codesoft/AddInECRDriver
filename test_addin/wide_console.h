@@ -1,4 +1,4 @@
-#pragma once
+п»ї#pragma once
 
 #ifndef WIDE_CONSOLE_H
 #define WIDE_CONSOLE_H
@@ -19,10 +19,10 @@ class Console {
 public:
     Console(const std::wstring& logFileName = L"test.log") {
 #ifdef _WIN32
-        // Установить кодировку консоли на UTF-8
+        // РЈСЃС‚Р°РЅРѕРІРёС‚СЊ РєРѕРґРёСЂРѕРІРєСѓ РєРѕРЅСЃРѕР»Рё РЅР° UTF-8
         SetConsoleOutputCP(CP_UTF8);
 
-        // Установить шрифт консоли на шрифт, поддерживающий кириллицу (например, Consolas)
+        // РЈСЃС‚Р°РЅРѕРІРёС‚СЊ С€СЂРёС„С‚ РєРѕРЅСЃРѕР»Рё РЅР° С€СЂРёС„С‚, РїРѕРґРґРµСЂР¶РёРІР°СЋС‰РёР№ РєРёСЂРёР»Р»РёС†Сѓ (РЅР°РїСЂРёРјРµСЂ, Consolas)
         CONSOLE_FONT_INFOEX cfi;
         cfi.cbSize = sizeof(cfi);
         cfi.nFont = 0;
@@ -34,26 +34,27 @@ public:
         SetCurrentConsoleFontEx(GetStdHandle(STD_OUTPUT_HANDLE), FALSE, &cfi);
 #endif
 
-        std::ifstream check_file(logFileName, std::ios::binary | std::ios::ate);
+		const auto logFilePath = str_utils::to_string(logFileName);
+        std::wifstream check_file(logFilePath, std::ios::binary | std::ios::ate);
         bool is_empty = check_file.tellg() == 0;
         check_file.close();
 
         if (is_empty) {
-            std::ofstream logFile(logFileName, std::ios::binary);
+            std::wofstream logFile(logFilePath, std::ios::binary);
             if (logFile.is_open()) {
                 const char bom[] = "\xFF\xFE";
-                logFile.write(bom, sizeof(bom) - 1);
+                logFile.write(reinterpret_cast<const wchar_t*>(bom), sizeof(bom) / sizeof(wchar_t) - 1);
                 logFile.close();
             }
         }
 
-        logFile_.open(logFileName, std::ios::binary | std::ios::app);
-		if (logFile_.is_open()) {
+        logFile_.open(logFilePath, std::ios::binary | std::ios::app);
+        if (logFile_.is_open()) {
             logFile_.imbue(std::locale(".UTF-8"));
-		}
+        }
     }
 
-    // Оператор вывода для std::wstring
+    // РћРїРµСЂР°С‚РѕСЂ РІС‹РІРѕРґР° РґР»СЏ std::wstring
     Console& operator<<(const std::wstring& text) {
 #ifdef _WIN32
         DWORD written;
@@ -68,7 +69,7 @@ public:
         return *this;
     }
 
-    // Оператор вывода для std::string (автоматически преобразует в UTF-16 на Windows)
+    // РћРїРµСЂР°С‚РѕСЂ РІС‹РІРѕРґР° РґР»СЏ std::string (Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё РїСЂРµРѕР±СЂР°Р·СѓРµС‚ РІ UTF-16 РЅР° Windows)
     Console& operator<<(const std::string& text) {
 #ifdef _WIN32
         std::wstring wtext = str_utils::to_wstring(text);
@@ -83,7 +84,7 @@ public:
         return *this;
     }
 
-    // Оператор вывода для стандартных типов (int, double и т. д.)
+    // РћРїРµСЂР°С‚РѕСЂ РІС‹РІРѕРґР° РґР»СЏ СЃС‚Р°РЅРґР°СЂС‚РЅС‹С… С‚РёРїРѕРІ (int, double Рё С‚. Рґ.)
     template <typename T>
     Console& operator<<(const T& value) {
 #ifdef _WIN32
@@ -98,7 +99,7 @@ public:
         return *this;
     }
 
-    // Оператор вывода для std::endl
+    // РћРїРµСЂР°С‚РѕСЂ РІС‹РІРѕРґР° РґР»СЏ std::endl
     Console& operator<<(std::wostream& (*manip)(std::wostream&)) {
 #ifdef _WIN32
         std::wcout << manip;

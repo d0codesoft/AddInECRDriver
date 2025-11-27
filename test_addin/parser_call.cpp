@@ -1,4 +1,4 @@
-#include "parser_call.h"
+п»ї#include "parser_call.h"
 #include <ranges>
 
 std::string trim(const std::string& input) {
@@ -7,7 +7,7 @@ std::string trim(const std::string& input) {
 	auto front = std::ranges::find_if(input, is_not_space);
 	auto back = std::ranges::find_if(input | std::views::reverse, is_not_space);
 
-	if (front == input.end()) return ""; // строка только из пробелов
+	if (front == input.end()) return ""; // СЃС‚СЂРѕРєР° С‚РѕР»СЊРєРѕ РёР· РїСЂРѕР±РµР»РѕРІ
 
 	return std::string(front, back.base());
 }

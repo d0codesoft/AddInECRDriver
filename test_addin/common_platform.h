@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #ifndef COMMON_PLATFORM_H
 #define COMMON_PLATFORM_H
@@ -23,11 +23,6 @@ using LibHandle = void*;
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <unicode/ucnv.h>
-#include <unicode/ustring.h>
-#include <unicode/unistr.h>
-#include <unicode/ucsdet.h>
-#include <unicode/utypes.h>
 #include <stdexcept>
 #include <vector>
 #include <types.h>

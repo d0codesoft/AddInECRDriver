@@ -211,6 +211,21 @@ std::wstring str_utils::to_wstring(const char16_t* str)
 	return result;
 }
 
+std::wstring str_utils::to_wstring(const int value)
+{
+	return std::to_wstring(value);
+}
+
+std::wstring str_utils::to_wstring(const size_t value)
+{
+	return std::to_wstring(value);
+}
+
+std::wstring str_utils::to_wstring(const long value)
+{
+	return std::to_wstring(value);
+}
+
 std::u16string str_utils::to_u16string(const std::string& str, const std::string& encoding)
 {
 	if (str.empty()) return {};
@@ -367,13 +382,6 @@ std::u16string str_utils::to_u16string(const wchar_t* str)
 	}
 
 	return result;
-}
-
-std::u16string str_utils::to_u16string(const char16_t* str)
-{
-	if (!str)
-		return std::u16string();
-	return std::u16string(str);
 }
 
 std::string str_utils::to_string(const std::wstring& str)

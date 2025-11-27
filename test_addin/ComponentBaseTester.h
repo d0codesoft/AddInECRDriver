@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #ifndef COMPONENT_BASE_TESTER_H
 #define COMPONENT_BASE_TESTER_H
@@ -54,11 +54,11 @@ protected:
 };
 
 struct MethodInfo {
-	std::u16string nameEn;
-    std::u16string nameRu;
-	int indexMethod;
-	bool hasReturnValue;
-	int countParams;
+    std::u16string nameEn{};
+    std::u16string nameRu{};
+	int indexMethod = -1;
+	bool hasReturnValue = false;
+	int countParams = 0;
 };
 
 class MethodManager {
@@ -70,8 +70,8 @@ public:
         return std::span<const MethodInfo>(methodsNames_);
     }
 
-    void addMethod(const std::u16string& nameEn, const std::u16string& nameRu, int index) {
-        methodsNames_.push_back({ nameEn, nameRu, index });
+    void addMethod(const std::u16string& nameEn, const std::u16string& nameRu, int index, bool hasReturnValue, int countParams) {
+        methodsNames_.push_back({ nameEn, nameRu, index, hasReturnValue, countParams });
     }
 
 	void addMethod(MethodInfo method) {
@@ -127,8 +127,8 @@ public:
         tesProps();
         testMethods();
         testSetLocale();
-        // Ê ñîæàëåíèþ, íå âñå âíåøíèå êîìïîíåíòû èñïîëüçóþò ïîñëåäíþþ âåðñèþ ñ UserLanguageBase
-		// ïîýòîìó òåñòèðîâàíèå ýòîé ôóíêöèè ìîæåò ïðèâåñòè ê îøèáêå Exception thrown: read access violation.
+        // Ðš ÑÐ¾Ð¶Ð°Ð»ÐµÐ½Ð¸ÑŽ, Ð½Ðµ Ð²ÑÐµ Ð²Ð½ÐµÑˆÐ½Ð¸Ðµ ÐºÐ¾Ð¼Ð¿Ð¾Ð½ÐµÐ½Ñ‚Ñ‹ Ð¸ÑÐ¿Ð¾Ð»ÑŒÐ·ÑƒÑŽÑ‚ Ð¿Ð¾ÑÐ»ÐµÐ´Ð½ÑŽÑŽ Ð²ÐµÑ€ÑÐ¸ÑŽ Ñ UserLanguageBase
+		// Ð¿Ð¾ÑÑ‚Ð¾Ð¼Ñƒ Ñ‚ÐµÑÑ‚Ð¸Ñ€Ð¾Ð²Ð°Ð½Ð¸Ðµ ÑÑ‚Ð¾Ð¹ Ñ„ÑƒÐ½ÐºÑ†Ð¸Ð¸ Ð¼Ð¾Ð¶ÐµÑ‚ Ð¿Ñ€Ð¸Ð²ÐµÑÑ‚Ð¸ Ðº Ð¾ÑˆÐ¸Ð±ÐºÐµ Exception thrown: read access violation.
         // testSetUserInterfaceLanguageCode();
 
 		// Run extension test cases
@@ -400,9 +400,9 @@ private:
             }
         }
         else {
-            auto methodGetVersion = this->extTest_->getMethodsInfo()->findMethodByName(u"GetInterfaceRevision");
+            methodGetVersion = this->extTest_->getMethodsInfo()->findMethodByName(u"GetInterfaceRevision");
             if (methodGetVersion.has_value()) {
-                INIT_TVARIANT_VECTOR(params, methodGetVersion.value().countParams);
+                INIT_TVARIANT_VECTOR(params, static_cast<size_t>(methodGetVersion.value().countParams));
                 tVariant retValue;
 
                 try {
@@ -458,7 +458,7 @@ private:
             return result;
         }
 
-		INIT_TVARIANT_VECTOR(params, methodGetVersion.value().countParams);
+		INIT_TVARIANT_VECTOR(params, static_cast<size_t>(methodGetVersion.value().countParams));
 		tVariant retValue;
 		try {
 			extTest_->testCallAsFunc(u"GetDescription", params, retValue);
@@ -469,15 +469,30 @@ private:
                 if (methodGetVersion.value().countParams == 7) {
 					auto isInterfaceRevision = getBoolValue(params[4]);
 					auto isMainDriver = getBoolValue(params[5]);
-					this->interfaceRevision_ = getLongValue(params[3]);
+					interfaceRevision_ = getLongValue(params[3]);
 					equipmentType_ = getStringValue(params[2]);
-                    std::wstring descriptionDriver = L"Íàèìåíîâàíèå: " + getStringValue(params[0]) + L"\n"
-                        + L"Îïèñàíèå: " + getStringValue(params[1]) + L"\n"
-                        + L"ÒèïÎáîðóäîâàíèÿ: " + equipmentType_ + L"\n"
-                        + L"ÐåâèçèÿÈíòåðôåéñà: " + std::to_wstring(interfaceRevision_) + L"\n"
-                        + L"ÈíòåãðàöèîííàÿÁèáëèîòåêà: " + ((isInterfaceRevision) ? L"Äà" : L"Íåò") + L"\n"
-                        + L"ÎñíîâíîéÄðàéâåðÓñòàíîâëåí: " + ((isMainDriver) ? L"Äà" : L"Íåò") + L"\n"
-                        + L"URLCêà÷èâàíèÿ: " + getStringValue(params[6]) + L"\n";
+                    std::wstring descriptionDriver{};
+                    descriptionDriver.append(L"ÐÐ°Ð¸Ð¼ÐµÐ½Ð¾Ð²Ð°Ð½Ð¸Ðµ: ");
+                    descriptionDriver.append(getStringValue(params[0]));
+                    descriptionDriver.append(L"\n");
+                    descriptionDriver.append(L"ÐžÐ¿Ð¸ÑÐ°Ð½Ð¸Ðµ: ");
+                    descriptionDriver.append(getStringValue(params[1]));
+                    descriptionDriver.append(L"\n");
+                    descriptionDriver.append(L"Ð¢Ð¸Ð¿ÐžÐ±Ð¾Ñ€ÑƒÐ´Ð¾Ð²Ð°Ð½Ð¸Ñ: ");
+                    descriptionDriver.append(equipmentType_);
+                    descriptionDriver.append(L"\n");
+                    descriptionDriver.append(L"Ð ÐµÐ²Ð¸Ð·Ð¸ÑÐ˜Ð½Ñ‚ÐµÑ€Ñ„ÐµÐ¹ÑÐ°: ");
+                    descriptionDriver.append(std::to_wstring(interfaceRevision_));
+                    descriptionDriver.append(L"\n");
+                    descriptionDriver.append(L"Ð˜Ð½Ñ‚ÐµÐ³Ñ€Ð°Ñ†Ð¸Ð¾Ð½Ð½Ð°ÑÐ‘Ð¸Ð±Ð»Ð¸Ð¾Ñ‚ÐµÐºÐ°: ");
+                    descriptionDriver.append(((isInterfaceRevision.value_or(false)) ? L"Ð”Ð°" : L"ÐÐµÑ‚"));
+                    descriptionDriver.append(L"\n");
+                    descriptionDriver.append(L"ÐžÑÐ½Ð¾Ð²Ð½Ð¾Ð¹Ð”Ñ€Ð°Ð¹Ð²ÐµÑ€Ð£ÑÑ‚Ð°Ð½Ð¾Ð²Ð»ÐµÐ½: ");
+                    descriptionDriver.append(((isMainDriver.value_or(false)) ? L"Ð”Ð°" : L"ÐÐµÑ‚"));
+                    descriptionDriver.append(L"\n");
+                    descriptionDriver.append(L"URLCÐºÐ°Ñ‡Ð¸Ð²Ð°Ð½Ð¸Ñ: ");
+                    descriptionDriver.append(getStringValue(params[6]));
+                    descriptionDriver.append(L"\n");
                     FREE_TVARIANT_MEMORY(*extTest_->getMemoryManager(), params[0]);
                     FREE_TVARIANT_MEMORY(*extTest_->getMemoryManager(), params[1]);
                     FREE_TVARIANT_MEMORY(*extTest_->getMemoryManager(), params[2]);
@@ -509,7 +524,7 @@ private:
                 return result;
             }
 
-            INIT_TVARIANT_VECTOR(params, methodGetVersion.value().countParams);
+            INIT_TVARIANT_VECTOR(params, static_cast<size_t>(methodGetVersion.value().countParams));
             try {
                 extTest_->testCallAsFunc(u"GetParameters", params, retValue);
                 if (TV_VT(&retValue) == VTYPE_BOOL) {
@@ -528,7 +543,7 @@ private:
                 return result;
             }
 
-            INIT_TVARIANT_VECTOR(params, methodGetVersion.value().countParams);
+            INIT_TVARIANT_VECTOR(params, static_cast<size_t>(methodGetVersion.value().countParams));
 
 
 			if (equipmentType_.empty() || methodGetVersion.value().countParams!=2) {
@@ -567,7 +582,7 @@ private:
         }
 
         // Initialize parameters for the method
-        INIT_TVARIANT_VECTOR(params, methodInfo.value().countParams);
+        INIT_TVARIANT_VECTOR(params, static_cast<size_t>(methodInfo.value().countParams));
 
         try {
             // Call the method

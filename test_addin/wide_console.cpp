@@ -1,3 +1,3 @@
-#include "wide_console.h"
+﻿#include "wide_console.h"
 
 Console wconsole;

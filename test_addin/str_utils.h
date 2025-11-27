@@ -14,6 +14,9 @@ namespace str_utils
 	std::wstring to_wstring(const std::u16string& str);
 	std::wstring to_wstring(const char* str, const std::string& encoding = "UTF-8");
 	std::wstring to_wstring(const char16_t* str);
+	std::wstring to_wstring(const int value);
+	std::wstring to_wstring(const size_t value);
+	std::wstring to_wstring(const long value);
 
 	std::u16string to_u16string(const std::string& str, const std::string& encoding = "UTF-8");
 	std::u16string to_u16string(const std::wstring& str);

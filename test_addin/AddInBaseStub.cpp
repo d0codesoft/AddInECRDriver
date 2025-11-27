@@ -1,4 +1,4 @@
-#include "AddInBaseStub.h"
+﻿#include "AddInBaseStub.h"
 
 std::vector<std::u16string> splitString(const std::u16string& input, char16_t delimiter)
 {

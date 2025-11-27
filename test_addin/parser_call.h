@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #ifndef PARSER_CALL_H
 #define PARSER_CALL_H
@@ -10,17 +10,17 @@
 #include <iostream>
 
 enum class CallType {
+	Undefined = -1,
 	CallAsProc,
-	CallAsFunc
+	CallAsFunc,
 };
 
-
 struct ParsedCall {
-	CallType callType;      // "CallAsProc" or "CallAsFunc"
-	std::string methodName;    // "Init" or "Compute"
-	int paramCount;            // Number of parameters
-	std::vector<std::string> params; // Parameters as strings
-	std::optional<std::string> resultVar; // Only for CallAsFunc
+	CallType callType = CallType::Undefined;		// "CallAsProc" or "CallAsFunc"
+	std::string methodName{};						// "Init" or "Compute"
+	int paramCount = 0;								// Number of parameters
+	std::vector<std::string> params{};				// Parameters as strings
+	std::optional<std::string> resultVar;			// Only for CallAsFunc
 };
 
 std::optional<CallType> getCallTypeFromString(const std::string& str);

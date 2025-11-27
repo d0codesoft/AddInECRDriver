@@ -1,20 +1,13 @@
 ﻿cmake_minimum_required(VERSION 3.21 FATAL_ERROR)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Выбор компиляторов
-# Выбор компиляторов
 if(WIN32)
     set(CMAKE_C_COMPILER clang)
     set(CMAKE_CXX_COMPILER clang++)
 
-    # Проверка MinGW окружения (Clang или GCC)
     if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         message(STATUS "Detected MinGW toolchain with compiler: ${CMAKE_CXX_COMPILER_ID}")
 
-        # Добавляем статическую линковку
-        #add_link_options(-static -static-libgcc -static-libstdc++)
-
-        # Попытка найти LLD для ThinLTO (без жестких путей)
         find_program(LLVM_LLD NAMES ld.lld lld)
         if(LLVM_LLD)
             add_link_options(-fuse-ld=lld)
@@ -24,7 +17,6 @@ if(WIN32)
             set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto")
         endif()
 
-        # Настройка archiver и ranlib (без жестких путей)
         find_program(LLVM_AR NAMES llvm-ar)
         find_program(LLVM_RANLIB NAMES llvm-ranlib)
         if(LLVM_AR AND LLVM_RANLIB)
@@ -47,10 +39,8 @@ elseif(UNIX)
 endif()
 
 
-# Проект
 project(POSTerminal VERSION 1.0.0 LANGUAGES CXX)
 
-# Опция IPO/LTO
 option(ENABLE_IPO "Enable Interprocedural Optimization / LTO (Release only)" ON)
 if(ENABLE_IPO)
     include(CheckIPOSupported)
@@ -214,7 +204,7 @@ include(CMake/GlobalSettingsInclude.cmake OPTIONAL)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # Feature toggles
-option(ENABLE_TEST_ADDIN "Build test_addin subproject" OFF)
+option(ENABLE_TEST_ADDIN "Build executable test_addin" ON)
 
 # Sub-projects
 add_subdirectory(src)

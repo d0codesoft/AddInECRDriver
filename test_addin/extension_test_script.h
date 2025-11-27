@@ -1,4 +1,4 @@
-#pragma once
+п»ї#pragma once
 
 #ifndef EXTENSION_TEST_SCRIPT_H
 #define EXTENSION_TEST_SCRIPT_H
@@ -59,7 +59,7 @@ private:
             }
 
 			std::vector<tVariant> params;
-			params.insert(params.end(), method.value().countParams, tVariant());
+			params.insert(params.end(), static_cast<size_t>(method.value().countParams), tVariant());
 			params[0].vt = VTYPE_EMPTY;
             tVariant retValue;
             this->extTest_->testCallAsFunc(u"GetLastError", params, retValue);
@@ -106,7 +106,7 @@ private:
                     return false;
                 }
 
-                if (method.value().countParams != params.size()) {
+                if (static_cast<size_t>(method.value().countParams) != params.size()) {
 					wconsole << L"  Error: Invalid count of parameters: " << str_utils::to_wstring(execName) << std::endl;
 					return false;
                 }
@@ -143,10 +143,11 @@ private:
     }
 
     std::vector<tVariant> parseParams(const int countParams, const std::span<const std::string>& tokens) {
-        std::vector<tVariant> params(countParams);
-		int i = 0;
+        std::vector<tVariant> params(static_cast<size_t>(countParams));
+		size_t i = 0;
+		size_t _countParams = static_cast<size_t>(countParams);
         for (auto& var : tokens) {
-			if (i >= countParams) break;
+			if (i >= _countParams) break;
 			setVariantValue(params[i], var);
 			i++;
         }
@@ -160,14 +161,14 @@ private:
         }
 
         if (str.find("[") != std::string::npos && str.find("]") != std::string::npos) {
-			// Если строка содержит квадратные скобки, интерпретируем как переменную хранящую данные предыдущих вызовов
-			std::string nameContent = str.substr(0, str.find("[")); // Удаляем квадратные скобки
-			std::string content = str.substr(str.find("[") + 1, str.find("]") - str.find("[") - 1); // Удаляем квадратные скобки
+			// Р•СЃР»Рё СЃС‚СЂРѕРєР° СЃРѕРґРµСЂР¶РёС‚ РєРІР°РґСЂР°С‚РЅС‹Рµ СЃРєРѕР±РєРё, РёРЅС‚РµСЂРїСЂРµС‚РёСЂСѓРµРј РєР°Рє РїРµСЂРµРјРµРЅРЅСѓСЋ С…СЂР°РЅСЏС‰СѓСЋ РґР°РЅРЅС‹Рµ РїСЂРµРґС‹РґСѓС‰РёС… РІС‹Р·РѕРІРѕРІ
+			std::string nameContent = str.substr(0, str.find("[")); // РЈРґР°Р»СЏРµРј РєРІР°РґСЂР°С‚РЅС‹Рµ СЃРєРѕР±РєРё
+			std::string content = str.substr(str.find("[") + 1, str.find("]") - str.find("[") - 1); // РЈРґР°Р»СЏРµРј РєРІР°РґСЂР°С‚РЅС‹Рµ СЃРєРѕР±РєРё
 			auto it = paramsExecute.find(str_utils::to_wstring(nameContent));
 			if (it != paramsExecute.end()) {
-                int indexValue = -1;
+                size_t indexValue = 0;
                 try {
-                    indexValue = std::stoi(content);
+                    indexValue = static_cast<size_t>(std::stoi(content));
                 }
                 catch (...) {
                     var.vt = VTYPE_EMPTY;
@@ -185,9 +186,10 @@ private:
 				if (std::holds_alternative<std::wstring>(_val)) {
 					std::wstring value = std::get<std::wstring>(_val);
 					var.vt = VTYPE_PWSTR;
+                    auto _size = static_cast<const unsigned long>(value.size()) + 1 + sizeof(char16_t);
 					this->extTest_->getMemoryManager()->AllocMemory(
 						reinterpret_cast<void**>(&var.pwstrVal),
-						(static_cast<const long>(value.size()) + 1) * sizeof(char16_t)
+						static_cast<const unsigned long>(_size)
 					);
 					std::copy(value.begin(), value.end(), reinterpret_cast<char16_t*>(var.pwstrVal));
 					var.pwstrVal[value.size()] = u'\0';
@@ -214,14 +216,15 @@ private:
 			return true;
         }
 
-        // Если строка в кавычках, интерпретируем как строку
+        // Р•СЃР»Рё СЃС‚СЂРѕРєР° РІ РєР°РІС‹С‡РєР°С…, РёРЅС‚РµСЂРїСЂРµС‚РёСЂСѓРµРј РєР°Рє СЃС‚СЂРѕРєСѓ
         if (str.size() >= 2 && str.front() == '"' && str.back() == '"') {
-            std::string content = str.substr(1, str.size() - 2); // Удаляем кавычки
+            std::string content = str.substr(1, str.size() - 2); // РЈРґР°Р»СЏРµРј РєР°РІС‹С‡РєРё
             std::u16string val = str_utils::to_u16string(content);
             var.vt = VTYPE_PWSTR;
+            auto _size = static_cast<const unsigned long>(val.size()) + 1 + sizeof(char16_t);
             this->extTest_->getMemoryManager()->AllocMemory(
                 reinterpret_cast<void**>(&var.pwstrVal),
-                (static_cast<const long>(val.size()) + 1) * sizeof(char16_t)
+                static_cast<const unsigned long>(_size)
             );
             std::copy(val.begin(), val.end(), reinterpret_cast<char16_t*>(var.pwstrVal));
             var.pwstrVal[val.size()] = u'\0';
@@ -249,12 +252,13 @@ private:
             catch (...) {}
         }
 
-        // По умолчанию — строка
+        // РџРѕ СѓРјРѕР»С‡Р°РЅРёСЋ вЂ” СЃС‚СЂРѕРєР°
         std::u16string val = str_utils::to_u16string(str);
         var.vt = VTYPE_PWSTR;
+        auto _size = static_cast<const unsigned long>(val.size()) + 1 + sizeof(char16_t);
         this->extTest_->getMemoryManager()->AllocMemory(
             reinterpret_cast<void**>(&var.pwstrVal),
-            (static_cast<const long>(val.size()) + 1) * sizeof(char16_t)
+            static_cast<const unsigned long>(_size)
         );
         std::copy(val.begin(), val.end(), reinterpret_cast<char16_t*>(var.pwstrVal));
         var.pwstrVal[val.size()] = u'\0';
@@ -263,42 +267,42 @@ private:
     }
 
     void startTest(const std::string& line) {
-        // Удаляем пробелы из строки
+        // РЈРґР°Р»СЏРµРј РїСЂРѕР±РµР»С‹ РёР· СЃС‚СЂРѕРєРё
         std::string trimmedLine = trim(line);
 
-        // Разделяем строку по символу "="
+        // Р Р°Р·РґРµР»СЏРµРј СЃС‚СЂРѕРєСѓ РїРѕ СЃРёРјРІРѕР»Сѓ "="
         size_t delimiterPos = trimmedLine.find('=');
         if (delimiterPos == std::string::npos) {
             wconsole << L"Error: Invalid format in [Test] section: " << str_utils::to_wstring(line) << std::endl;
             return;
         }
 
-        // Извлекаем ключ (первый параметр) и значение (второй параметр)
+        // РР·РІР»РµРєР°РµРј РєР»СЋС‡ (РїРµСЂРІС‹Р№ РїР°СЂР°РјРµС‚СЂ) Рё Р·РЅР°С‡РµРЅРёРµ (РІС‚РѕСЂРѕР№ РїР°СЂР°РјРµС‚СЂ)
         std::string key = trimmedLine.substr(0, delimiterPos);
         std::string value = trimmedLine.substr(delimiterPos + 1);
 
-        // Удаляем пробелы из ключа и значения
+        // РЈРґР°Р»СЏРµРј РїСЂРѕР±РµР»С‹ РёР· РєР»СЋС‡Р° Рё Р·РЅР°С‡РµРЅРёСЏ
         key = trim(key);
         value = trim(value);
 
-        // Проверяем, что ключ равен "Name"
+        // РџСЂРѕРІРµСЂСЏРµРј, С‡С‚Рѕ РєР»СЋС‡ СЂР°РІРµРЅ "Name"
         if (key != "Name") {
             wconsole << L"Error: Unexpected key in [Test] section: " << str_utils::to_wstring(key) << std::endl;
             return;
         }
 
-        // Убираем кавычки из значения, если они есть
+        // РЈР±РёСЂР°РµРј РєР°РІС‹С‡РєРё РёР· Р·РЅР°С‡РµРЅРёСЏ, РµСЃР»Рё РѕРЅРё РµСЃС‚СЊ
         if (!value.empty() && value.front() == '"' && value.back() == '"') {
             value = value.substr(1, value.size() - 2);
         }
 
-        // Печатаем секции "Start test" и "Name"
+        // РџРµС‡Р°С‚Р°РµРј СЃРµРєС†РёРё "Start test" Рё "Name"
         wconsole << L"---------------------------------------------" << std::endl;
         wconsole << L"Start test section " << str_utils::to_wstring(value) << std::endl;
     }
 
 	bool readScriptFile() {
-        std::ifstream file(fileScript);
+        std::ifstream file(str_utils::to_string(fileScript));
         if (!file.is_open()) {
             wconsole << L"  Error: Cannot open test script file: " << fileScript << std::endl;
             return false;

@@ -11,6 +11,11 @@ void printConsole(const std::wstring& text) {
 #endif
 }
 
+std::wstring getLibraryName()
+{
+    return std::wstring();
+}
+
 std::wstring getVariantValue(const tVariant& variant)
 {
     std::wstringstream wss;
