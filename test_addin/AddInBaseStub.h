@@ -12,7 +12,7 @@
 #include <unicode/unistr.h>
 #include <variant>
 #include <ComponentBase.h>
-#include "str_utils_test.h"
+#include "str_utils_tools.h"
 
 std::vector<std::u16string> splitString(const std::u16string& input, char16_t delimiter);
 
@@ -34,14 +34,14 @@ public:
 class MsgBoxStub : public IMsgBox {
 public:
     bool ADDIN_API Confirm(const WCHAR_T* queryText, tVariant* retVal) override {
-        std::string text = str_utils_test::to_string(queryText);
+        std::string text = str_utils_tools::to_string(queryText);
         std::cout << "[IMsgBox Confirm] " << text << std::endl;
         // Variant handling omitted (tVariant layout unknown). Caller may inspect retVal.
         return true;
     }
 
     bool ADDIN_API Alert(const WCHAR_T* text) override {
-        std::string msg = str_utils_test::to_string(text);
+        std::string msg = str_utils_tools::to_string(text);
         std::cout << "[IMsgBox Alert] " << msg << std::endl;
         return true;
     }
@@ -78,8 +78,8 @@ public:
         const WCHAR_T* descr, long scode) override {
 
         // Конвертация WCHAR_T* в std::wstring с использованием ICU
-        std::string sourceStr = str_utils_test::to_string(source);
-        std::string descrStr = str_utils_test::to_string(descr);
+        std::string sourceStr = str_utils_tools::to_string(source);
+        std::string descrStr = str_utils_tools::to_string(descr);
 
         // Вывод сообщения об ошибке в консоль
         std::cout << "Error Code: " << wcode << "\n"
@@ -104,7 +104,7 @@ public:
     bool ADDIN_API RegisterProfileAs(WCHAR_T* wszProfileName) override {
 
         // Конвертация WCHAR_T* в std::wstring с использованием ICU
-        std::string profileUni = str_utils_test::to_string(wszProfileName);
+        std::string profileUni = str_utils_tools::to_string(wszProfileName);
 
         // Вывод сообщения о регистрации профиля в консоль
         std::cout << "Profile registered as: " << profileUni << std::endl;
@@ -126,8 +126,8 @@ public:
     bool ADDIN_API ExternalEvent(WCHAR_T* wszSource, WCHAR_T* wszMessage,
         WCHAR_T* wszData) override {
 
-        std::string sourceStr = str_utils_test::to_string(wszSource);
-        std::string messageStr = str_utils_test::to_string(wszMessage);
+        std::string sourceStr = str_utils_tools::to_string(wszSource);
+        std::string messageStr = str_utils_tools::to_string(wszMessage);
 
         std::cout << "External event: " << sourceStr << " Messsage: " << messageStr << " " << std::endl;
         return true;
@@ -139,7 +139,7 @@ public:
 
     bool ADDIN_API SetStatusLine(WCHAR_T* wszStatusLine) override {
 
-        std::string statusLine = str_utils_test::to_string(wszStatusLine);
+        std::string statusLine = str_utils_tools::to_string(wszStatusLine);
         std::cout << "Set status line: " << statusLine << std::endl;
         return true;
     }

@@ -1,6 +1,34 @@
 ﻿#include "common_platform.h"
 #include <iomanip>
 
+
+#ifdef _WIN32
+// Получить текстовое описание ошибки Windows
+std::wstring GetLastErrorAsString()
+{
+    DWORD errorMessageID = GetLastError();
+    if (errorMessageID == 0) {
+        return L"No error";
+    }
+
+    LPWSTR messageBuffer = nullptr;
+    size_t size = FormatMessageW(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+        NULL,
+        errorMessageID,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        (LPWSTR)&messageBuffer,
+        0,
+        NULL
+    );
+
+    std::wstring message(messageBuffer, size);
+    LocalFree(messageBuffer);
+
+    return message;
+}
+#endif
+
 void printConsole(const std::wstring& text) {
 #ifdef _WIN32
     DWORD written;
@@ -67,10 +95,10 @@ std::wstring getVariantValue(const tVariant& variant)
         wss << (TV_BOOL(&variant) ? L"true" : L"false");
         break;
     case VTYPE_PSTR:
-        wss << str_utils_test::to_wstring(std::string(TV_STR(&variant))) << L" (PSTR)";
+        wss << str_utils_tools::to_wstring(std::string(TV_STR(&variant))) << L" (PSTR)";
         break;
     case VTYPE_PWSTR:
-        wss << str_utils_test::to_wstring(TV_WSTR(&variant)) << L" (PWSTR)";
+        wss << str_utils_tools::to_wstring(TV_WSTR(&variant)) << L" (PWSTR)";
         break;
     case VTYPE_DATE:
         wss << TV_DATE(&variant) << L" (date)";
@@ -86,9 +114,23 @@ std::wstring getVariantValue(const tVariant& variant)
 SharedLibrary::SharedLibrary(const std::wstring& libName) {
 #ifdef _WIN32
     handle = LoadSharedLibrary(libName.c_str());
+    if (!handle) {
+        DWORD errorCode = GetLastError();
+        std::wstring errorMsg = GetLastErrorAsString();
+        std::wcout << L"Failed to load the library: " << libName << std::endl;
+        std::wcout << L"Error code: " << errorCode << std::endl;
+        std::wcout << L"Error message: " << errorMsg << std::endl;
+    }
 #else
-    std::string narrowLibName = str_utils_test::to_string(libName);
+    std::string narrowLibName = str_utils_tools::to_string(libName);
     handle = LoadSharedLibrary(narrowLibName.c_str());
+    if (!handle) {
+        const char* error = dlerror();
+        std::wcout << L"Failed to load the library: " << libName << std::endl;
+        if (error) {
+            std::wcout << L"Error: " << str_utils_tools::to_wstring(error) << std::endl;
+        }
+    }
 #endif
 
     if (!handle) {

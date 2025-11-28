@@ -33,13 +33,13 @@
     <ClCompile Include="wide_console.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="str_utils_test.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="extension_test_script.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="parser_call.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="str_utils_tools.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -53,13 +53,13 @@
     <ClInclude Include="wide_console.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="str_utils_test.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="extension_test_script.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="parser_call.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="str_utils_tools.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

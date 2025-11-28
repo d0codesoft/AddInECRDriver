@@ -14,7 +14,7 @@ set(Header_Files
     ComponentBaseTester.h
     extension_test_script.h
     parser_call.h
-    str_utils_test.h
+    str_utils_tools.h
     wide_console.h
 )
 set(Source_Files
@@ -23,7 +23,7 @@ set(Source_Files
     ComponentBaseTester.cpp
     extension_test_script.cpp
     parser_call.cpp
-    str_utils_test.cpp
+    str_utils_tools.cpp
     test_addin.cpp
     wide_console.cpp
 )
@@ -110,6 +110,28 @@ else()
         $<$<CONFIG:Debug>:-O0>
         $<$<CONFIG:Debug>:-g>
     )
+
+    # Static linking for runtime libraries
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        # GCC: static libstdc++ and libgcc
+        target_link_options(${PROJECT_NAME} PRIVATE
+            -static-libgcc
+            -static-libstdc++
+        )
+    elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        # Clang with libstdc++
+        if(NOT CMAKE_CXX_FLAGS MATCHES "-stdlib=libc\\+\\+")
+            target_link_options(${PROJECT_NAME} PRIVATE
+                -static-libgcc
+                -static-libstdc++
+            )
+        else()
+            # Clang with libc++
+            target_link_options(${PROJECT_NAME} PRIVATE
+                -static
+            )
+        endif()
+    endif()
 endif()
 
 # Optional IPO/LTO

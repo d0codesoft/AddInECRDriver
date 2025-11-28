@@ -12,7 +12,7 @@
 #include <optional>
 #include <string>
 #include "ComponentBaseTester.h"
-#include "str_utils_test.h"
+#include "str_utils_tools.h"
 #include "parser_call.h"
 
 class IExtensionTestScript :
@@ -86,7 +86,7 @@ private:
 
 		auto parsedCall = call_param.value();
 
-        std::u16string execName = str_utils_test::to_u16string(parsedCall.methodName);
+        std::u16string execName = str_utils_tools::to_u16string(parsedCall.methodName);
         int countParam = parsedCall.paramCount;
         std::vector<tVariant> params{};
         if (countParam > 0) {
@@ -102,12 +102,12 @@ private:
             try {
 				auto method = this->extTest_->getMethodsInfo()->findMethodByName(execName);
                 if (!method.has_value()) {
-                    wconsole << L"  Error: Procedure not found: " << str_utils_test::to_wstring(execName) << std::endl;
+                    wconsole << L"  Error: Procedure not found: " << str_utils_tools::to_wstring(execName) << std::endl;
                     return false;
                 }
 
                 if (static_cast<size_t>(method.value().countParams) != params.size()) {
-					wconsole << L"  Error: Invalid count of parameters: " << str_utils_test::to_wstring(execName) << std::endl;
+					wconsole << L"  Error: Invalid count of parameters: " << str_utils_tools::to_wstring(execName) << std::endl;
 					return false;
                 }
 
@@ -123,7 +123,7 @@ private:
 						return true;
 					}
                     else {
-                        wconsole << L"  Error execute function: " << str_utils_test::to_wstring(execName) << std::endl;
+                        wconsole << L"  Error execute function: " << str_utils_tools::to_wstring(execName) << std::endl;
                         return false;
                     }
 				}
@@ -136,7 +136,7 @@ private:
 				return true;
 			}
 			catch (const std::exception& e) {
-				wconsole << L"  Error execute procedure: " << str_utils_test::to_wstring(execName) << L" : " << e.what() << std::endl;
+				wconsole << L"  Error execute procedure: " << str_utils_tools::to_wstring(execName) << L" : " << e.what() << std::endl;
 			}
         }
         return false;
@@ -164,7 +164,7 @@ private:
 			// Если строка содержит квадратные скобки, интерпретируем как переменную хранящую данные предыдущих вызовов
 			std::string nameContent = str.substr(0, str.find("[")); // Удаляем квадратные скобки
 			std::string content = str.substr(str.find("[") + 1, str.find("]") - str.find("[") - 1); // Удаляем квадратные скобки
-			auto it = paramsExecute.find(str_utils_test::to_wstring(nameContent));
+			auto it = paramsExecute.find(str_utils_tools::to_wstring(nameContent));
 			if (it != paramsExecute.end()) {
                 size_t indexValue = 0;
                 try {
@@ -172,13 +172,13 @@ private:
                 }
                 catch (...) {
                     var.vt = VTYPE_EMPTY;
-                    wconsole << L"  Error: Set variant value Invalid convert index value: " << str_utils_test::to_wstring(nameContent) << L" index: " << str_utils_test::to_wstring(content) << std::endl;
+                    wconsole << L"  Error: Set variant value Invalid convert index value: " << str_utils_tools::to_wstring(nameContent) << L" index: " << str_utils_tools::to_wstring(content) << std::endl;
                     return false;
                 }
                 
                 if (it->second.empty() && it->second.size()<indexValue) {
 					var.vt = VTYPE_EMPTY;
-					wconsole << L"  Error: index variable: " << str_utils_test::to_wstring(nameContent) << std::endl;
+					wconsole << L"  Error: index variable: " << str_utils_tools::to_wstring(nameContent) << std::endl;
 					return false;
 				}
 
@@ -186,7 +186,7 @@ private:
 				if (std::holds_alternative<std::wstring>(_val)) {
 					std::wstring value = std::get<std::wstring>(_val);
 					var.vt = VTYPE_PWSTR;
-                    auto _size = static_cast<const unsigned long>(value.size()) + 1 + sizeof(char16_t);
+                    auto _size = (static_cast<const unsigned long>(value.size()) + 1) * sizeof(char16_t);
 					this->extTest_->getMemoryManager()->AllocMemory(
 						reinterpret_cast<void**>(&var.pwstrVal),
 						static_cast<const unsigned long>(_size)
@@ -208,7 +208,7 @@ private:
 				}
 				else {
 					var.vt = VTYPE_EMPTY;
-					wconsole << L"  Error: Set variant value Unsupported type for parameter: " << str_utils_test::to_wstring(nameContent) << std::endl;
+					wconsole << L"  Error: Set variant value Unsupported type for parameter: " << str_utils_tools::to_wstring(nameContent) << std::endl;
 					return false;
 				}
 				return true;
@@ -219,9 +219,9 @@ private:
         // Если строка в кавычках, интерпретируем как строку
         if (str.size() >= 2 && str.front() == '"' && str.back() == '"') {
             std::string content = str.substr(1, str.size() - 2); // Удаляем кавычки
-            std::u16string val = str_utils_test::to_u16string(content);
+            std::u16string val = str_utils_tools::to_u16string(content);
             var.vt = VTYPE_PWSTR;
-            auto _size = static_cast<const unsigned long>(val.size()) + 1 + sizeof(char16_t);
+            auto _size = (static_cast<const unsigned long>(val.size()) + 1) * sizeof(char16_t);
             this->extTest_->getMemoryManager()->AllocMemory(
                 reinterpret_cast<void**>(&var.pwstrVal),
                 static_cast<const unsigned long>(_size)
@@ -253,9 +253,9 @@ private:
         }
 
         // По умолчанию — строка
-        std::u16string val = str_utils_test::to_u16string(str);
+        std::u16string val = str_utils_tools::to_u16string(str);
         var.vt = VTYPE_PWSTR;
-        auto _size = static_cast<const unsigned long>(val.size()) + 1 + sizeof(char16_t);
+        auto _size = (static_cast<const unsigned long>(val.size()) + 1) * sizeof(char16_t);
         this->extTest_->getMemoryManager()->AllocMemory(
             reinterpret_cast<void**>(&var.pwstrVal),
             static_cast<const unsigned long>(_size)
@@ -273,7 +273,7 @@ private:
         // Разделяем строку по символу "="
         size_t delimiterPos = trimmedLine.find('=');
         if (delimiterPos == std::string::npos) {
-            wconsole << L"Error: Invalid format in [Test] section: " << str_utils_test::to_wstring(line) << std::endl;
+            wconsole << L"Error: Invalid format in [Test] section: " << str_utils_tools::to_wstring(line) << std::endl;
             return;
         }
 
@@ -287,7 +287,7 @@ private:
 
         // Проверяем, что ключ равен "Name"
         if (key != "Name") {
-            wconsole << L"Error: Unexpected key in [Test] section: " << str_utils_test::to_wstring(key) << std::endl;
+            wconsole << L"Error: Unexpected key in [Test] section: " << str_utils_tools::to_wstring(key) << std::endl;
             return;
         }
 
@@ -298,11 +298,11 @@ private:
 
         // Печатаем секции "Start test" и "Name"
         wconsole << L"---------------------------------------------" << std::endl;
-        wconsole << L"Start test section " << str_utils_test::to_wstring(value) << std::endl;
+        wconsole << L"Start test section " << str_utils_tools::to_wstring(value) << std::endl;
     }
 
 	bool readScriptFile() {
-        std::ifstream file(str_utils_test::to_string(fileScript));
+        std::ifstream file(str_utils_tools::to_string(fileScript));
         if (!file.is_open()) {
             wconsole << L"  Error: Cannot open test script file: " << fileScript << std::endl;
             return false;
@@ -333,7 +333,7 @@ private:
 	}
 
     void _saveResultValues(std::string nameResultValue, std::vector<tVariant>& params, tVariant& result) {
-		std::wstring _name = str_utils_test::to_wstring(nameResultValue);
+		std::wstring _name = str_utils_tools::to_wstring(nameResultValue);
 		paramsExecute[_name].clear();
         int iCount = 0;
         for (const auto& param : params) {
@@ -406,7 +406,7 @@ private:
     }
 
     void _saveValues(std::string nameResultValue, std::vector<tVariant>& params) {
-        std::wstring _name = str_utils_test::to_wstring(nameResultValue);
+        std::wstring _name = str_utils_tools::to_wstring(nameResultValue);
         paramsExecute[_name].clear();
         for (const auto& param : params) {
 			if (param.vt == VTYPE_EMPTY) {

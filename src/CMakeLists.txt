@@ -284,7 +284,8 @@ if (MSVC)
         /SUBSYSTEM:WINDOWS
         /MACHINE:X64
         /ERRORREPORT:PROMPT
-        $<$<CONFIG:Release>:/OPT:REF /OPT:ICF>
+        $<$<CONFIG:Release>:/OPT:REF>
+        $<$<CONFIG:Release>:/OPT:ICF>
     )
 else()
 	target_compile_options(${lib_name} PRIVATE
@@ -327,6 +328,19 @@ else()
 		$<$<CONFIG:Debug>:-g>
 		$<$<CONFIG:Debug>:-DDEBUG>
 	)
+
+    	# Static linking for C++ runtime libraries
+	target_link_options(${lib_name} PRIVATE
+		-static-libgcc
+		-static-libstdc++
+	)
+	
+	# For Clang with libc++ (if applicable)
+	if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_FLAGS MATCHES "-stdlib=libc\\+\\+")
+		target_link_options(${lib_name} PRIVATE
+			-static
+		)
+	endif()
 endif()
 
 # Add this near your target definition for the sanitizer build only

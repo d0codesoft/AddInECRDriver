@@ -7,9 +7,10 @@
 #include <string>
 #include <locale>
 #include <fstream>
+#include <filesystem>
 #include <chrono>
 #include <iomanip>
-#include "str_utils_test.h"
+#include "str_utils_tools.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -33,14 +34,14 @@ public:
         wcscpy_s(cfi.FaceName, L"Consolas");    // Choose your font
         SetCurrentConsoleFontEx(GetStdHandle(STD_OUTPUT_HANDLE), FALSE, &cfi);
 #endif
+        std::filesystem::path logPath(logFileName);
 
-		const auto logFilePath = str_utils_test::to_string(logFileName);
-        std::wifstream check_file(logFilePath, std::ios::binary | std::ios::ate);
+        std::wifstream check_file(logPath, std::ios::binary | std::ios::ate);
         bool is_empty = check_file.tellg() == 0;
         check_file.close();
 
         if (is_empty) {
-            std::wofstream logFile(logFilePath, std::ios::binary);
+            std::wofstream logFile(logPath, std::ios::binary);
             if (logFile.is_open()) {
                 const char bom[] = "\xFF\xFE";
                 logFile.write(reinterpret_cast<const wchar_t*>(bom), sizeof(bom) / sizeof(wchar_t) - 1);
@@ -48,9 +49,30 @@ public:
             }
         }
 
-        logFile_.open(logFilePath, std::ios::binary | std::ios::app);
+        logFile_.open(logPath, std::ios::binary | std::ios::app);
         if (logFile_.is_open()) {
-            logFile_.imbue(std::locale(".UTF-8"));
+#ifdef _WIN32
+            try
+            {
+                logFile_.imbue(std::locale(".UTF-8"));
+            }
+            catch (const std::runtime_error&) {
+                // Fallback to classic locale if UTF-8 is not available
+                logFile_.imbue(std::locale::classic());
+            }
+#else
+            try {
+                logFile_.imbue(std::locale("en_US.UTF-8"));
+            }
+            catch (const std::runtime_error&) {
+                try {
+                    logFile_.imbue(std::locale("C.UTF-8"));
+                }
+                catch (const std::runtime_error&) {
+                    logFile_.imbue(std::locale::classic());
+                }
+            }
+#endif
         }
     }
 
@@ -72,7 +94,7 @@ public:
     // Оператор вывода для std::string (автоматически преобразует в UTF-16 на Windows)
     Console& operator<<(const std::string& text) {
 #ifdef _WIN32
-        std::wstring wtext = str_utils_test::to_wstring(text);
+        std::wstring wtext = str_utils_tools::to_wstring(text);
         return *this << wtext;
 #else
         std::cout << text;
@@ -82,7 +104,7 @@ public:
                 addTimestamp = false;
             }
             // Convert std::string to std::wstring before writing to wofstream
-            std::wstring wtext = str_utils_test::to_wstring(text);
+            std::wstring wtext = str_utils_tools::to_wstring(text);
             logFile_ << wtext;
         }
         return *this;

@@ -27,7 +27,7 @@ using LibHandle = void*;
 #include <vector>
 #include <types.h>
 #include "wide_console.h"
-#include "str_utils.h"
+#include "str_utils_tools.h"
 
 void printConsole(const std::wstring& text);
 

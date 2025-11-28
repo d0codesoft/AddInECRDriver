@@ -37,11 +37,11 @@ std::unordered_map<std::wstring, std::wstring> parseArgs(int argc, char* argv[])
 		std::string arg = argv[i];
 
 		if (arg.rfind("--", 0) == 0) { // Starts with "--"
-			std::wstring key = str_utils_test::to_wstring(arg);
+			std::wstring key = str_utils_tools::to_wstring(arg);
 			std::wstring value = {};
 
 			if (i + 1 < argc) {
-				std::wstring nextArg = str_utils_test::to_wstring(argv[i + 1]);
+				std::wstring nextArg = str_utils_tools::to_wstring(argv[i + 1]);
 
 				if (nextArg.rfind(L"--", 0) != 0) { // Not another option
 					value = nextArg;
@@ -72,7 +72,7 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 	
-	std::wstring libName = str_utils_test::to_wstring(std::string(argv[1]));
+	std::wstring libName = str_utils_tools::to_wstring(std::string(argv[1]));
 	if (libName.empty()) {
 		wconsole << L"Error name AddIn library is empty!" << std::endl;
 		return 1;
@@ -147,7 +147,7 @@ int main(int argc, char* argv[])
 
 	std::wcout << L"Class names in library" << std::endl;
 	for (const auto& name : names) {
-		wconsole << L"	class: " << str_utils_test::to_wstring(name) << std::endl;
+		wconsole << L"	class: " << str_utils_tools::to_wstring(name) << std::endl;
 	}
 	wconsole << L"Success get class names" << std::endl;
 

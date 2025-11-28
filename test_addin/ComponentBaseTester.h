@@ -8,7 +8,7 @@
 #include <string>
 #include "AddInBaseStub.h"
 #include "ComponentBase.h"
-#include "str_utils_test.h"
+#include "str_utils_tools.h"
 #include <regex>
 #include <span>
 
@@ -186,7 +186,7 @@ private:
         wconsole << L"Testing RegisterExtensionAs... ";
         WCHAR_T* extensionName = nullptr;
         if (component_->RegisterExtensionAs(&extensionName)) {
-            wconsole << L"Testing RegisterExtensionAs - Success, Extension Name: " << str_utils_test::to_wstring(extensionName) << std::endl;
+            wconsole << L"Testing RegisterExtensionAs - Success, Extension Name: " << str_utils_tools::to_wstring(extensionName) << std::endl;
 			memoryManager_.FreeMemory(reinterpret_cast<void**>(&extensionName));
         }
         else {
@@ -206,7 +206,7 @@ private:
             auto propIndex = component_->FindProp(propNameRu);
             auto isPropReadable = component_->IsPropReadable(propIndex);
             auto isPropWritable = component_->IsPropWritable(propIndex);
-            wconsole << str_utils_test::to_wstring(propNameEn) << L" / " << str_utils_test::to_wstring(propNameRu) << std::endl;
+            wconsole << str_utils_tools::to_wstring(propNameEn) << L" / " << str_utils_tools::to_wstring(propNameRu) << std::endl;
 			if (propIndex == -1) {
 				wconsole << L"Fail - Property not found" << std::endl;
             }
@@ -247,7 +247,7 @@ private:
 				}
 
                 wconsole << L"Method[" << nMethodIndex << L"] : ";
-                wconsole << str_utils_test::to_wstring(nameMethodEn) << L" / " << str_utils_test::to_wstring(nameMethodRu) << std::endl;
+                wconsole << str_utils_tools::to_wstring(nameMethodEn) << L" / " << str_utils_tools::to_wstring(nameMethodRu) << std::endl;
                 wconsole << L"  Return value:" << hasRetValue << L"  Count parameters: " << nParams << std::endl;
                 for (int nParamIndex = 0; nParamIndex < nParams; nParamIndex++) {
                     tVariant var;
@@ -289,7 +289,7 @@ public:
     void testCallAsProc(long numProc, std::vector<tVariant>& params) override {
         auto nameMethodEn = component_->GetMethodName(numProc, 0);
         auto nameMethodRu = component_->GetMethodName(numProc, 1);
-        wconsole << L"Testing CallAsProc... " << str_utils_test::to_wstring(nameMethodEn) << L" / " << str_utils_test::to_wstring(nameMethodRu);
+        wconsole << L"Testing CallAsProc... " << str_utils_tools::to_wstring(nameMethodEn) << L" / " << str_utils_tools::to_wstring(nameMethodRu);
         if (component_->CallAsProc(numProc, params.data(), static_cast<const long>(params.size()))) {
             wconsole << L"CallAsProc - Success" << std::endl;
         }
@@ -299,20 +299,20 @@ public:
     }
 
     void testCallAsProc(std::u16string nameProc, std::vector<tVariant>& params) override {
-        wconsole << L"Testing CallAsProc... " << str_utils_test::to_wstring(nameProc);
+        wconsole << L"Testing CallAsProc... " << str_utils_tools::to_wstring(nameProc);
         long numProc = component_->FindMethod(nameProc.c_str());
         if (numProc > -1 ) {
 			testCallAsProc(numProc, params);
         }
         else {
-            wconsole << L"Testing CallAsProc... " << str_utils_test::to_wstring(nameProc) << L" Failed" << std::endl;
+            wconsole << L"Testing CallAsProc... " << str_utils_tools::to_wstring(nameProc) << L" Failed" << std::endl;
         }
     }
 
     void testCallAsFunc(long numFunc, std::vector<tVariant>& params, tVariant& retValue) override {
         auto nameMethodEn = component_->GetMethodName(numFunc, 0);
         auto nameMethodRu = component_->GetMethodName(numFunc, 1);
-        wconsole << L"Testing CallAsFunc... " << str_utils_test::to_wstring(nameMethodEn) << " / " << str_utils_test::to_wstring(nameMethodRu) << std::endl;
+        wconsole << L"Testing CallAsFunc... " << str_utils_tools::to_wstring(nameMethodEn) << " / " << str_utils_tools::to_wstring(nameMethodRu) << std::endl;
         if (component_->CallAsFunc(numFunc, &retValue, params.data(), static_cast<const long>(params.size()))) {
 			wconsole << L"Success result : " << getVariantValue(retValue) << std::endl;
             for (size_t index = 0; index < params.size(); ++index) {
@@ -332,7 +332,7 @@ public:
 			testCallAsFunc(numFunc, params, retValue);
         }
 		else {
-			wconsole << L"Testing CallAsFunc... " << str_utils_test::to_wstring(nameFunc) << L" Failed" << std::endl;
+			wconsole << L"Testing CallAsFunc... " << str_utils_tools::to_wstring(nameFunc) << L" Failed" << std::endl;
 		}
     }
 
@@ -552,7 +552,7 @@ private:
 			}
 
 			TV_VT(&params[0]) = VTYPE_PWSTR;
-			auto strEqName = str_utils_test::to_u16string(equipmentType_);
+			auto strEqName = str_utils_tools::to_u16string(equipmentType_);
 			params[0].pwstrVal = strEqName.data();
             try {
                 extTest_->testCallAsFunc(u"EquipmentParameters", params, retValue);
