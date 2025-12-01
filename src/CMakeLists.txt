@@ -67,7 +67,10 @@ target_compile_features(${lib_name} PUBLIC cxx_std_20)
 
 # Precompiled header (supported by MSVC, Clang, GCC since CMake 3.16)
 if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.16)
-    target_precompile_headers(${lib_name} PRIVATE pch.h)
+    # Use PCH only for Debug to reduce the size of Release
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_CONFIGURATION_TYPES)
+        target_precompile_headers(${lib_name} PRIVATE pch.h)
+    endif()
 endif()
 
 # Keep custom property propagation only if provided (Windows-specific)
@@ -97,6 +100,10 @@ set_target_properties(${lib_name} PROPERTIES
     FOLDER "ECRDriver"
     PREFIX ""
     OUTPUT_NAME "ECR_Driver_PT_${platform_name}${arch_bits}"
+    # Для MinGW: установить имя import library без префикса lib
+    ARCHIVE_OUTPUT_NAME "ECR_Driver_PT_${platform_name}${arch_bits}"
+    IMPORT_PREFIX ""
+    IMPORT_SUFFIX ".dll.a"
 )
 
 # Platform-specific output names
@@ -129,27 +136,37 @@ target_include_directories(${lib_name} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/../include/vncomp"
 )
 
+# Option for aggressive size optimization
+option(OPTIMIZE_FOR_SIZE "Optimize for minimal binary size" ON)
+if(OPTIMIZE_FOR_SIZE)
+    message(STATUS "Size optimization enabled for ${lib_name}")
+endif()
+
 # --- Boost auto detection & usage ---
 option(USE_SYSTEM_BOOST "Use system-installed Boost via CONFIG mode" ON)
+option(BOOST_STATIC_LINK "Link Boost statically" ON)
 
 if(USE_SYSTEM_BOOST)
 
-    set(Boost_USE_STATIC_LIBS ON)
+    set(Boost_USE_STATIC_LIBS ${BOOST_STATIC_LINK})
     set(Boost_USE_MULTITHREADED ON)
 
     # Required Boost components
     find_package(Boost 1.89 CONFIG REQUIRED COMPONENTS
                         system
-                        asio
-                        beast
                         thread
     )
 
     target_link_libraries(${lib_name} PRIVATE
          Boost::system
-         Boost::asio
-         Boost::beast
          Boost::thread
+    )
+
+    # Define macros to minimize Boost
+    target_compile_definitions(${lib_name} PRIVATE
+        BOOST_ASIO_NO_DEPRECATED
+        BOOST_BEAST_NO_SOURCE
+        BOOST_ALL_NO_LIB  # Disable autolink
     )
 
     # MSVC runtime customization (optional)
@@ -162,6 +179,12 @@ else()
     target_include_directories(${lib_name} PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}/../boost"
     )
+    
+    target_compile_definitions(${lib_name} PRIVATE
+        BOOST_ASIO_NO_DEPRECATED
+        BOOST_BEAST_NO_SOURCE
+    )
+    
     if(WIN32)
         target_link_directories(${lib_name} PRIVATE
             "$<$<CONFIG:Debug>:${CMAKE_CURRENT_SOURCE_DIR}/../boost/stage/lib>"
@@ -315,12 +338,18 @@ else()
 		$<$<AND:$<COMPILE_LANG_AND_ID:CXX,Clang>,$<CONFIG:Debug>>:-fsanitize=undefined>
 		$<$<AND:$<COMPILE_LANG_AND_ID:CXX,Clang>,$<CONFIG:Debug>>:-fsanitize=address>
 
-		# RTTI и исключения
+		# RTTI and exceptions
 		-frtti
 		-fexceptions
 
-		# Режимы конфигурации
-		$<$<CONFIG:Release>:-O3>
+        # Size optimization for Release
+		$<$<CONFIG:Release>:-ffunction-sections>
+		$<$<CONFIG:Release>:-fdata-sections>
+		$<$<CONFIG:Release>:-fvisibility=hidden>
+		$<$<CONFIG:Release>:-fvisibility-inlines-hidden>
+
+		# Configuration modes
+		$<$<CONFIG:Release>:$<IF:$<BOOL:${OPTIMIZE_FOR_SIZE}>,-Os,-O3>>
 		$<$<CONFIG:Release>:-DNDEBUG>
 		$<$<CONFIG:RelWithDebInfo>:-O2>
 		$<$<CONFIG:RelWithDebInfo>:-g>
@@ -329,43 +358,107 @@ else()
 		$<$<CONFIG:Debug>:-DDEBUG>
 	)
 
-    	# Static linking for C++ runtime libraries
+    # Static linking for C++ runtime libraries
 	target_link_options(${lib_name} PRIVATE
 		-static-libgcc
 		-static-libstdc++
+		
+		# Удаление неиспользуемых секций (Release)
+		$<$<CONFIG:Release>:-Wl,--gc-sections>
+		$<$<CONFIG:Release>:-Wl,--strip-all>
+		$<$<CONFIG:Release>:-Wl,--icf=all>
+		
+		# Уменьшение размера таблицы символов
+		$<$<CONFIG:Release>:-Wl,-s>
 	)
 	
-	# For Clang with libc++ (if applicable)
-	if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_FLAGS MATCHES "-stdlib=libc\\+\\+")
-		target_link_options(${lib_name} PRIVATE
-			-static
-		)
+	# For Clang: статическая линковка libc++
+	if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+		if(CMAKE_CXX_FLAGS MATCHES "-stdlib=libc\\+\\+")
+			# Если используется libc++, линкуем статически
+			target_compile_options(${lib_name} PRIVATE -stdlib=libc++)
+			target_link_options(${lib_name} PRIVATE
+				-static-libstdc++
+				-stdlib=libc++
+				-lc++
+				-lc++abi
+			)
+		else()
+			# Используем libstdc++ статически (уже установлено выше)
+			target_link_options(${lib_name} PRIVATE
+				-static-libgcc
+				-static-libstdc++
+			)
+		endif()
 	endif()
 endif()
 
-# Add this near your target definition for the sanitizer build only
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  # If you drive ld.lld directly or the driver doesn't inject libs, add them explicitly:
-  execute_process(
-    COMMAND ${CMAKE_CXX_COMPILER} -print-resource-dir
-    OUTPUT_VARIABLE CLANG_RESOURCE_DIR
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
-  set(CLANG_RT_DIR "${CLANG_RESOURCE_DIR}/lib/windows")
+# Sanitizers configuration
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        # Option: use static sanitizers instead of dynamic ones
+        option(USE_STATIC_SANITIZERS "Use static sanitizer libraries" OFF)
+        
+        if(WIN32)
+            # На Windows Clang НЕ поддерживает -static-libsan
+            if(USE_STATIC_SANITIZERS)
+                message(WARNING "Static sanitizers not supported on Windows with Clang, using dynamic linking")
+            endif()
+            
+            # Динамическая линковка санитайзеров для Windows
+            execute_process(
+                COMMAND ${CMAKE_CXX_COMPILER} -print-resource-dir
+                OUTPUT_VARIABLE CLANG_RESOURCE_DIR
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+            )
+            set(CLANG_RT_DIR "${CLANG_RESOURCE_DIR}/lib/windows")
 
-  target_link_directories(${lib_name} PRIVATE "${CLANG_RT_DIR}")
-  target_link_libraries(${lib_name}
-    PRIVATE
-      clang_rt.asan_dynamic-x86_64
-      clang_rt.ubsan_standalone-x86_64
-  )
+            target_link_directories(${lib_name} PRIVATE "${CLANG_RT_DIR}")
+            target_link_libraries(${lib_name}
+                PRIVATE
+                    clang_rt.asan_dynamic-x86_64
+                    clang_rt.ubsan_standalone-x86_64
+            )
+        else()
+            # На Linux/Unix можно попробовать статическую линковку
+            target_compile_options(${lib_name} PRIVATE
+                -fsanitize=address,undefined
+                -fno-omit-frame-pointer
+            )
+            target_link_options(${lib_name} PRIVATE
+                -fsanitize=address,undefined
+            )
+            
+            if(USE_STATIC_SANITIZERS)
+                # Попытка статической линковки (может не работать на всех системах)
+                target_link_options(${lib_name} PRIVATE
+                    -static-libasan
+                    -static-libubsan
+                )
+            endif()
+        endif()
+    elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+        # GCC sanitizers
+        target_compile_options(${lib_name} PRIVATE
+            -fsanitize=address,undefined
+            -fno-omit-frame-pointer
+        )
+        target_link_options(${lib_name} PRIVATE
+            -fsanitize=address,undefined
+        )
+    endif()
 endif()
 
 # Interprocedural optimization / LTO (guarded by compiler support)
 include(CheckIPOSupported)
 check_ipo_supported(RESULT ipo_supported OUTPUT ipo_msg)
 if(ipo_supported)
+    # Включить для Release И RelWithDebInfo
     set_property(TARGET ${lib_name} PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+    set_property(TARGET ${lib_name} PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO TRUE)
+    message(STATUS "IPO/LTO enabled for ${lib_name}")
+else()
+    message(STATUS "IPO/LTO not supported: ${ipo_msg}")
 endif()
 
 # Output directories (use generic variables; avoid VS-only properties)
