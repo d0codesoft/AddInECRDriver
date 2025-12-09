@@ -41,6 +41,10 @@ const std::wstring PROTOCOL_MESSAGE_PARAM_GET_LAST_RESULT = L"getLastResult";
 const std::wstring PROTOCOL_MESSAGE_PARAM_LAST_RESULT = L"LastResult";
 const std::wstring PROTOCOL_MESSAGE_PARAM_LAST_STAT_MSG_CODE = L"LastStatMsgCode";
 
+const std::wstring PROTOCOL_MESSAGE_PARAM_DEVICE_TYPE = L"deviceType";
+const std::wstring PROTOCOL_MESSAGE_PARAM_DEVICE_TYPE_TERMINAL = L"Terminal";
+const std::wstring PROTOCOL_MESSAGE_PARAM_DEVICE_TYPE_PIN_PAD = L"PinPad";
+
 // Response codes (as UINT)
 const UINT PROTOCOL_RESPONSE_CODE_GENERAL_ERROR = 1000; // General error (exceptional case)
 const UINT PROTOCOL_RESPONSE_CODE_CANCELED_BY_USER = 1001; // Transaction canceled by user

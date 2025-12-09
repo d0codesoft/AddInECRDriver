@@ -2599,7 +2599,7 @@ bool DriverPOSTerminal::InitConnection(std::wstring& deviceID, std::wstring &err
 	auto host = str_utils::to_string(paramHost.value());
 	auto port = static_cast<uint16_t>(paramPort.value());
 
-	if (!terminalController.get()->connect(host, port)) {
+	if (!terminalController->connect(host, port)) {
 		error = L"Failed to connect";
 		return false;
 	}
@@ -2650,8 +2650,9 @@ bool DriverPOSTerminal::testConnection(std::vector<DriverParameter>& paramConnec
 	auto host = str_utils::to_string(paramHost.value());
 	auto port = static_cast<uint16_t>(paramPort.value());
 
-	if (!protocolChanel.get()->connect(host, port)) {
+	if (!protocolChanel->connect(host, port)) {
 		addErrorDriver(u"Failed to connect", L"InitConnection: Failed to connect");
+		protocolChanel.reset();
 		return false;
 	}
 

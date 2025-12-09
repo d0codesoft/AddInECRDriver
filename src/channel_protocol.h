@@ -253,6 +253,10 @@ public:
 		return terminalVendor_;
 	}
 
+	std::optional< POSTerminalOperationResponseV2> processTransactionV2(POSTerminalOperationRequestV2& paramProcess, std::wstring& outError);
+
+	bool createOperationGetPhoneNumber(POSTerminalOperationRequestV2& paramProcess, std::wstring deviceType = PROTOCOL_MESSAGE_PARAM_DEVICE_TYPE_TERMINAL);
+
 private:
 
 	bool _connect(const std::string& address, std::optional<uint16_t> port = 2000);

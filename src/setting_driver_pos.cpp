@@ -6,6 +6,7 @@
 #include "str_utils.h"
 #include "logger.h"
 #include "connection_types.h"
+#include "manager_hwid.h"
 
 SettingDriverPos::SettingDriverPos()
     : m_settings({
@@ -66,7 +67,8 @@ SettingDriverPos::SettingDriverPos()
                 {
                     {L"DriverVersion", L"Версія драйвера", L"", L"String", L"", L"1.0.0", true, {}},
                     {L"LicenseStatus", L"Статус ліцензії", L"", L"String", L"", L"Не активована", true, {}},
-                    {L"LicenseKey", L"Ключ ліцензії", L"Введіть ключ ліцензії", L"String", L"", L"", false, {} }
+                    {L"LicenseKey", L"Ключ ліцензії", L"Введіть ключ ліцензії", L"String", L"", L"", false, {} },
+                    {L"KeyMachine", L"Ключ робочої станції", L"", L"String", L"", CManagerHwid::GetHWID(), true, {} }
                 }
             }
         }

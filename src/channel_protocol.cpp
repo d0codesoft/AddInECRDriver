@@ -112,6 +112,16 @@ std::unique_ptr<POSTerminalOperationResponse> POSTerminalController::processTran
 	return nullptr;
 }
 
+bool POSTerminalController::createOperationGetPhoneNumber(POSTerminalOperationRequestV2& paramProcess, std::wstring deviceType)
+{
+	paramProcess.OperationType = POSTerminalCommandType::Cmd_GetPhoneNumber;
+	Params _params = {
+		{ PROTOCOL_MESSAGE_PARAM_DEVICE_TYPE , deviceType }
+	};
+	paramProcess.Parameters = _params;
+	return true;
+}
+
 bool POSTerminalController::_connect(const std::string& address, std::optional<uint16_t> port)
 {
 	if (connection_->isConnected()) {

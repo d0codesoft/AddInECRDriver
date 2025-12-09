@@ -100,9 +100,14 @@ class TcpConnection :
 {
 public:
     TcpConnection() : 
-        io_context_(),
-        socket_(io_context_)
+        io_context_()
+        , resolver_(io_context_)
+        , socket_(io_context_)
     {
+    }
+
+    ~TcpConnection() {
+		disconnect();
     }
 
     bool connect(const std::string& host, std::optional<uint16_t> port) override;
@@ -142,7 +147,8 @@ private:
 
     boost::asio::io_context io_context_;
     Strand strand_{ boost::asio::make_strand(io_context_) };
-	boost::asio::ip::tcp::socket socket_; ///< Boost.Asio TCP socket
+    boost::asio::ip::tcp::resolver resolver_; // For DNS resolution
+    boost::asio::ip::tcp::socket socket_; ///< Boost.Asio TCP socket
 
 	std::array<char, 4096> read_buf_{}; ///< Buffer for reading data
 
@@ -166,14 +172,14 @@ public:
     WebSocketConnection()
         : ioc_()
         , strand_(boost::asio::make_strand(ioc_))
-        , ssl_ctx_(boost::asio::ssl::context::tlsv13_client)
         , resolver_(ioc_)
-        , ws_(strand_, ssl_ctx_)       
+        , ws_(strand_)       
     {
-        ssl_ctx_.set_default_verify_paths();
-        ssl_ctx_.set_verify_mode(boost::asio::ssl::verify_peer);
     }
 
+    ~WebSocketConnection() {
+        disconnect();
+	}
 
     bool connect(const std::string& host, std::optional<uint16_t> port) override;
 
@@ -197,64 +203,79 @@ public:
 		reconnectDelay_ = delay;
 	}
 
-    void startListening(std::function<void(std::vector<uint8_t>)> callback) override {
-        (void)callback; // silence C4100 until implemented
-		throw std::runtime_error("Not implemented");
-    }
+    void startListening(std::function<void(std::vector<uint8_t>)> callback) override;
 
 private:
+    using WorkGuard = boost::asio::executor_work_guard<boost::asio::io_context::executor_type>;
+    using Strand = boost::asio::strand<boost::asio::io_context::executor_type>;
+
+    void startIoThreadIfNeeded_();
+    void stopIoThread_();
+
     boost::asio::io_context ioc_;
-    boost::asio::strand<boost::asio::io_context::executor_type> strand_;
-    boost::asio::ssl::context ssl_ctx_{ boost::asio::ssl::context::tlsv13_client };
+    Strand strand_;
     boost::asio::ip::tcp::resolver resolver_; // For DNS resolution
-    boost::beast::websocket::stream<boost::asio::ssl::stream<boost::asio::ip::tcp::socket>> ws_;
+    boost::beast::websocket::stream<boost::asio::ip::tcp::socket> ws_;
 
     bool connected_ = false;
-	std::atomic<bool> keepAlive_{ true };
-	std::chrono::milliseconds reconnectDelay_{ 5000 };
+    std::atomic<bool> readingThread_{ false }; ///< On thread reading data
+    std::atomic<bool> keepAlive_{ true }; ///< Flag to keep the connection alive
+    std::atomic<bool> stopListening_{ false }; ///< Flag to stop listening
+    std::chrono::milliseconds reconnectDelay_{ 5000 }; ///< Delay before reconnecting
+    std::thread ioThread_;
+    std::optional<WorkGuard> workGuard_;
+    std::thread listeningThread_; ///< Thread for listening to incoming data
+
+    std::array<char, 4096> read_buf_{}; ///< Buffer for reading data
+
+    std::string host_; ///< Host to connect to
+    std::optional<uint16_t> port_; ///< Port to connect to
+
+    std::vector<IErrorObserver*> observers_; ///< Observers for error notifications
 };
 
 class ComConnection : public IConnection, public std::enable_shared_from_this<ComConnection> {
 public:
     ComConnection();
-    bool connect(const std::string& host, std::optional<uint16_t> port) override {
-		return false;
-    }
-    void disconnect() override {
-		// Not implemented
-		throw std::runtime_error("Not implemented");
-    }
-    bool isConnected() const override {
-		return false;
-    }
-    bool send(const std::span<const uint8_t> data) override {
-		throw std::runtime_error("Not implemented");
-    }
-	std::optional<std::vector<uint8_t>> receive() override {
-		throw std::runtime_error("Not implemented");
-	}
+    ~ComConnection() { try { disconnect(); } catch (...) {} }
 
-	ConnectionType getType() override {
-		return ConnectionType::COM;
-	}
+    bool connect(const std::string& host, std::optional<uint16_t> port) override;
+    void disconnect() override;
+    bool isConnected() const override;
+    bool send(const std::span<const uint8_t> data) override;
+    std::optional<std::vector<uint8_t>> receive() override;
+
+    ConnectionType getType() override { return ConnectionType::COM; }
 
     void startListening(std::function<void(std::vector<uint8_t>)> callback) override;
 
-	void enableKeepAlive(bool enable) override {
-		keepAlive_ = enable;
-	}
-
-	void setReconnectDelay(std::chrono::milliseconds delay) override {
-		reconnectDelay_ = delay;
-	}
+    void enableKeepAlive(bool enable) override { keepAlive_ = enable; }
+    void setReconnectDelay(std::chrono::milliseconds delay) override { reconnectDelay_ = delay; }
 
 private:
-	boost::asio::io_context io_context_;
-	boost::asio::serial_port serial_;
-	std::atomic<bool> keepAlive_{ true };
-	std::chrono::milliseconds reconnectDelay_{ 5000 };
-    std::string port_;
-	uint32_t baud_rate_;
+    using WorkGuard = boost::asio::executor_work_guard<boost::asio::io_context::executor_type>;
+    using Strand = boost::asio::strand<boost::asio::io_context::executor_type>;
+
+    void startIoThreadIfNeeded_();
+    void stopIoThread_();
+
+    boost::asio::io_context io_context_;
+    Strand strand_{ boost::asio::make_strand(io_context_) };
+    boost::asio::serial_port serial_{ io_context_ };
+
+    std::array<char, 4096> read_buf_{};   // read buffer
+
+    std::atomic<bool> readingThread_{ false };
+    std::atomic<bool> keepAlive_{ true };
+    std::atomic<bool> stopListening_{ false };
+    std::chrono::milliseconds reconnectDelay_{ 5000 };
+    std::thread ioThread_;
+    std::optional<WorkGuard> workGuard_;
+
+    std::string port_ = "COM1"; // default port name (Windows). On *nix pass like "/dev/ttyUSB0".
+    uint32_t baud_rate_ = 9600;
+
+    std::vector<IErrorObserver*> observers_;
 };
 
 class ConnectionFactory {

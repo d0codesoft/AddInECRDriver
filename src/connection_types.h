@@ -7,15 +7,14 @@
 #include <variant>
 #include <type_traits>
 
-
 #ifndef CONNECTION_TYPES_H
 #define CONNECTION_TYPES_H
 
-enum class ConnectionType {
+enum class ConnectionType : int {
     TCP = 0,
-    COM,
-    WebSocket,
-    USB
+    COM = 1,
+    WebSocket = 2,
+    USB = 3
 };
 
 const std::unordered_map<ConnectionType, std::wstring> ConnectionTypeNames = {
@@ -57,7 +56,7 @@ int toConnectionTypeValue(const T& value) {
             }
         }
     }
-    else if constexpr (std::is_same<T, int>::value) {
+    else if constexpr (std::is_same<T, int>::value || std::is_same<T, long>::value) {
         switch (value) {
         case 0: return static_cast<int>(ConnectionType::TCP);
         case 1: return static_cast<int>(ConnectionType::COM);

@@ -14,10 +14,7 @@
 #include <vector>
 #include <memory>
 #include "connection_types.h"
-
-//using GetParamFunc = bool (*)(tVariant* pvarParamDefValue);
-//typedef bool (*CallAsProcFunc)(tVariant* paParams, const long lSizeArray);
-//typedef bool (*CallAsFuncFunc)(tVariant* pvarRetValue, tVariant* paParams, const long lSizeArray);
+#include "protocol_operation_types.h"
 
 using CallAsProc1C = std::function<bool(tVariant*, const long)>;
 using CallAsFunc1C = std::function<bool(tVariant*, tVariant*, const long)>;
@@ -457,6 +454,15 @@ enum class POSTerminalOperationType {
 	PayWithCashWithdrawal,
 	PayElectronicCertificate,
 	ReturnElectronicCertificate,
+    GetPhoneNumber,
+    PinChangeBonusCard,
+    CheckConnection,
+    ReadCardDiscount,
+    GetTerminalInfo,
+    PingDevice,
+    GetBalance,
+    ServiceRefund,
+    ServicePbP,
     NoSet
 };
 
@@ -470,7 +476,10 @@ static const std::unordered_map<POSTerminalOperationType, std::wstring> Operatio
 	{ POSTerminalOperationType::CancelAuthorisation, L"CancelAuthorisation" },
 	{ POSTerminalOperationType::PayWithCashWithdrawal, L"PayWithCashWithdrawal" },
 	{ POSTerminalOperationType::PayElectronicCertificate, L"PayElectronicCertificate" },
-	{ POSTerminalOperationType::ReturnElectronicCertificate, L"ReturnElectronicCertificate" }
+	{ POSTerminalOperationType::ReturnElectronicCertificate, L"ReturnElectronicCertificate" },
+	{ POSTerminalOperationType::GetPhoneNumber, L"GetPhoneNumber" },
+    { POSTerminalOperationType::NoSet, L"NoSet" },
+	{ POSTerminalOperationType::PinChangeBonusCard, L"PinChangeBonusCard" }
 };
 
 // Enum for Indicator Statuses
@@ -479,7 +488,6 @@ enum class POSTerminalIndicatorStatus {
 	Success = 1,         // Операция выполнена успешно
 	Failure = 2          // Операция не выполнена
 };
-
 
 enum class POSTerminalLastStatMsgCode : uint8_t {
     NotAvailable = 0,  // Status code is not available
@@ -586,6 +594,18 @@ struct POSTerminalOperationResponse {
 	std::wstring bankAcquirer;
 	std::wstring paymentSystem;
 	std::wstring subMerchant;
+};
+
+struct POSTerminalOperationRequestV2 {
+    POSTerminalCommandType OperationType = POSTerminalCommandType::Cmd_NoSet;   // Тип операции
+	std::unordered_map<std::wstring, std::variant<std::wstring, long, double, bool>> Parameters; // Параметры операции
+};
+
+struct POSTerminalOperationResponseV2 {
+    POSTerminalCommandType OperationType = POSTerminalCommandType::Cmd_NoSet;   // Тип операции
+    bool result = false;
+    std::unordered_map<std::wstring, std::variant<std::wstring, long, double, bool>> Parameters; // Параметры ответа
+    std::wstring errorDescription;
 };
 
 bool isValidPOSTerminalOperationParameters(const POSTerminalOperationParameters& op, const POSTerminalOperationType opType);

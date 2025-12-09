@@ -306,10 +306,16 @@ bool CAddInECRDriver::GetParamDefValue(const long lMethodNum, const long lParamN
     //TV_VT(pvarParamDefValue) = VTYPE_EMPTY;
 
     const auto& methods = m_driver->GetMethods();
-    if (methods.empty() || lMethodNum <0 || lMethodNum >= methods.size()) {
+    if (methods.empty() || lMethodNum < 0 || static_cast<size_t>(lMethodNum) >= methods.size()) {
         return false;
     }
-    if (lParamNum < 0 || lParamNum >= methods[lMethodNum].paramCount) {
+    const auto methodIdx = static_cast<size_t>(lMethodNum);
+
+    if (lParamNum < 0) {
+        return false;
+    }
+    const auto paramIdx = static_cast<size_t>(lParamNum);
+    if (paramIdx >= methods[methodIdx].paramCount) {
         return false;
     }
 	auto itParam = methods[lMethodNum].default_value_param.find(lParamNum);

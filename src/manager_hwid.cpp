@@ -20,6 +20,7 @@
 #include <string>
 #include <vector>
 #include "str_utils.h"
+#include "logger.h"
 
 #ifdef __linux__
 static std::string read_file_trim(const char* path) {
@@ -187,8 +188,12 @@ std::wstring CManagerHwid::GetHWID()
             if (!combined.empty()) combined += "-";
             combined += s;
         }
+		LOG_INFO_ADD(L"HWID", L"HWID combined: " + str_utils::to_wstring(combined));
         return str_utils::to_wstring(combined);
 	}
+    else {
+		LOG_INFO_ADD(L"HWID", L"No HWID data found");
+    }
 
 	return std::wstring();
 }

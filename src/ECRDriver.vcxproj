@@ -203,6 +203,8 @@
     <ClInclude Include="manager_hwid.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="protocol_consts.h" />
+    <ClInclude Include="protocol_operation_types.h" />
+    <ClInclude Include="protocol_version.h" />
     <ClInclude Include="setting_driver_pos.h" />
     <ClInclude Include="storage_manager.h" />
     <ClInclude Include="string_conversion.h" />
@@ -233,6 +235,8 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="protocol_consts.cpp" />
+    <ClCompile Include="protocol_operation_types.cpp" />
+    <ClCompile Include="protocol_version.cpp" />
     <ClCompile Include="setting_driver_pos.cpp" />
     <ClCompile Include="storage_manager.cpp" />
     <ClCompile Include="string_conversion.cpp" />
